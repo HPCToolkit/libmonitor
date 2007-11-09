@@ -17,7 +17,7 @@
 #
 # Libmonitor top-level Makefile.am.
 #
-# $Id$
+# $Id: Makefile.am 4 2007-11-09 18:52:03Z krentel $
 #
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
