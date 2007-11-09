@@ -1,8 +1,8 @@
-dnl
-dnl  Libmonitor top-level configure.ac.
-dnl
-dnl  $Id$
-dnl
+#
+#  Libmonitor top-level configure.ac.
+#
+#  $Id$
+#
 
 AC_INIT([libmonitor], [1.0])
 AC_REVISION([$Id$])
