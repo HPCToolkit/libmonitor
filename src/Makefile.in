@@ -15,8 +15,7 @@
 @SET_MAKE@
 
 #
-#  Libmonitor src/Makefile.am and Makefile.in.
-#
+#  Libmonitor src/Makefile.am.
 #  $Id: Makefile.am 4 2007-11-09 18:52:03Z krentel $
 #
 
