@@ -119,6 +119,10 @@
 #define MONITOR_GET_REAL_NAME_WRAP(var, name)  MONITOR_REQUIRE_DLSYM(var, #name )
 #endif
 
+#define MONITOR_ASM_LABEL(name)		\
+    asm volatile (".globl " #name );	\
+    asm volatile ( #name ":" )
+
 #define MONITOR_RUN_ONCE(var)				\
     static char monitor_has_run_##var = 0;		\
     if ( monitor_has_run_##var ) { return; }		\
