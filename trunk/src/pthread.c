@@ -3,22 +3,22 @@
  *
  *  Copyright (c) 2007, Rice University.
  *  All rights reserved.
- *  
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are
  *  met:
- *  
+ *
  *  * Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
- *  
+ *
  *  * Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  *  * Neither the name of Rice University (RICE) nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
- *  
+ *
  *  This software is provided by RICE and contributors "as is" and any
  *  express or implied warranties, including, but not limited to, the
  *  implied warranties of merchantability and fitness for a particular
@@ -216,10 +216,10 @@ monitor_make_thread_node(void)
 
 /*
  *  Runs in the new thread.
- * 
+ *
  *  Returns: 0 on success, or 1 if at exit cleanup and thus we don't
  *  allow any new threads.
- */ 
+ */
 static int
 monitor_link_thread_node(struct monitor_thread_node *tn)
 {
@@ -455,8 +455,7 @@ monitor_pthread_start_routine(void *arg)
 	return (NULL);
     }
 
-    asm volatile (".globl monitor_unwind_thread_fence1");
-    asm volatile ("monitor_unwind_thread_fence1:");
+    MONITOR_ASM_LABEL(monitor_unwind_thread_fence1);
     MONITOR_DEBUG("calling monitor_init_thread(num = %u) ...\n",
 		  tn->tn_thread_num);
     tn->tn_user_data = monitor_init_thread(tn->tn_thread_num);
@@ -465,8 +464,7 @@ monitor_pthread_start_routine(void *arg)
     tn->tn_appl_started = 1;
     ret = (tn->tn_start_routine)(tn->tn_arg);
     PTHREAD_CLEANUP_POP(1);
-    asm volatile (".globl monitor_unwind_thread_fence2");
-    asm volatile ("monitor_unwind_thread_fence2:");
+    MONITOR_ASM_LABEL(monitor_unwind_thread_fence2);
 
     return (ret);
 }
