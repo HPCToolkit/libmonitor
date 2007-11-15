@@ -167,7 +167,6 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-library_list = @library_list@
 localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@

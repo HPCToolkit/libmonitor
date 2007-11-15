@@ -876,13 +876,14 @@ FFLAGS
 ac_ct_F77
 LIBTOOL
 wrap_list
-library_list
-MONITOR_TEST_USE_FORK_TRUE
-MONITOR_TEST_USE_FORK_FALSE
 MONITOR_TEST_LINK_PRELOAD_TRUE
 MONITOR_TEST_LINK_PRELOAD_FALSE
 MONITOR_TEST_LINK_STATIC_TRUE
 MONITOR_TEST_LINK_STATIC_FALSE
+MONITOR_TEST_USE_DLOPEN_TRUE
+MONITOR_TEST_USE_DLOPEN_FALSE
+MONITOR_TEST_USE_FORK_TRUE
+MONITOR_TEST_USE_FORK_FALSE
 MONITOR_TEST_USE_PTHREADS_TRUE
 MONITOR_TEST_USE_PTHREADS_FALSE
 LIBOBJS
@@ -1493,12 +1494,13 @@ Optional Features:
   --disable-libtool-lock  avoid locking (might break parallel builds)
 
   --enable-debug          debug mode is always on [default=no]
-  --enable-fork           include support for fork and exec families
-                          [default=yes]
   --enable-link-preload   build dynamic shared library to run monitor with
                           LD_PRELOAD [default=yes]
   --enable-link-static    build monitor.o object file to link monitor
                           statically [default=yes]
+  --enable-dlfcn          include support for dlopen [default=yes]
+  --enable-fork           include support for fork and exec families
+                          [default=yes]
   --enable-pthreads       include pthread support [default=yes]
 
 Optional Packages:
@@ -4362,7 +4364,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4365 "configure"' > conftest.$ac_ext
+  echo '#line 4367 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7088,11 +7090,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7091: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7093: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7095: \$? = $ac_status" >&5
+   echo "$as_me:7097: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7356,11 +7358,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7359: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7361: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7363: \$? = $ac_status" >&5
+   echo "$as_me:7365: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7460,11 +7462,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7463: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7465: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7467: \$? = $ac_status" >&5
+   echo "$as_me:7469: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8925,7 +8927,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8928 "configure"' > conftest.$ac_ext
+    echo '#line 8930 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9789,7 +9791,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9792 "configure"
+#line 9794 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9889,7 +9891,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9892 "configure"
+#line 9894 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12225,11 +12227,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12228: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12230: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12232: \$? = $ac_status" >&5
+   echo "$as_me:12234: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12329,11 +12331,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12332: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12334: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12336: \$? = $ac_status" >&5
+   echo "$as_me:12338: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12865,7 +12867,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 12868 "configure"' > conftest.$ac_ext
+    echo '#line 12870 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -13920,11 +13922,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13923: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13925: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13927: \$? = $ac_status" >&5
+   echo "$as_me:13929: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14024,11 +14026,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14027: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14029: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14031: \$? = $ac_status" >&5
+   echo "$as_me:14033: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15469,7 +15471,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15472 "configure"' > conftest.$ac_ext
+    echo '#line 15474 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16243,11 +16245,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16246: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16248: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16250: \$? = $ac_status" >&5
+   echo "$as_me:16252: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16511,11 +16513,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16514: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16516: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16518: \$? = $ac_status" >&5
+   echo "$as_me:16520: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16615,11 +16617,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16618: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16620: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16622: \$? = $ac_status" >&5
+   echo "$as_me:16624: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18080,7 +18082,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 18083 "configure"' > conftest.$ac_ext
+    echo '#line 18085 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -19428,7 +19430,6 @@ fi
 wrap_list="main _exit"
 
 
-
 #
 # Option: --enable-debug=no
 #
@@ -19452,211 +19453,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
-
-#
-# Option: --enable-fork=yes
-# Requires fork and exec families.
-#
-# Check whether --enable-fork was given.
-if test "${enable_fork+set}" = set; then
-  enableval=$enable_fork;
-else
-  enable_fork=yes
-fi
-
-
-if test "x$enable_fork" = xyes ; then
-    { echo "$as_me:$LINENO: checking for library containing fork" >&5
-echo $ECHO_N "checking for library containing fork... $ECHO_C" >&6; }
-if test "${ac_cv_search_fork+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char fork ();
-int
-main ()
-{
-return fork ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' c; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_search_fork=$ac_res
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext
-  if test "${ac_cv_search_fork+set}" = set; then
-  break
-fi
-done
-if test "${ac_cv_search_fork+set}" = set; then
-  :
-else
-  ac_cv_search_fork=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_fork" >&5
-echo "${ECHO_T}$ac_cv_search_fork" >&6; }
-ac_res=$ac_cv_search_fork
-if test "$ac_res" != no; then
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-  enable_fork=no
-fi
-
-fi
-if test "x$enable_fork" = xyes ; then
-    { echo "$as_me:$LINENO: checking for library containing execve" >&5
-echo $ECHO_N "checking for library containing execve... $ECHO_C" >&6; }
-if test "${ac_cv_search_execve+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char execve ();
-int
-main ()
-{
-return execve ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' c; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext &&
-       $as_test_x conftest$ac_exeext; then
-  ac_cv_search_execve=$ac_res
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext
-  if test "${ac_cv_search_execve+set}" = set; then
-  break
-fi
-done
-if test "${ac_cv_search_execve+set}" = set; then
-  :
-else
-  ac_cv_search_execve=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_execve" >&5
-echo "${ECHO_T}$ac_cv_search_execve" >&6; }
-ac_res=$ac_cv_search_execve
-if test "$ac_res" != no; then
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-else
-  enable_fork=no
-fi
-
-fi
-if test "x$enable_fork" = xyes ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define MONITOR_USE_FORK 1
-_ACEOF
-
-    wrap_list="${wrap_list} fork vfork"
-    wrap_list="${wrap_list} execl execlp execle execv execvp execve"
-fi
-
- if test x$enable_fork = xyes; then
-  MONITOR_TEST_USE_FORK_TRUE=
-  MONITOR_TEST_USE_FORK_FALSE='#'
-else
-  MONITOR_TEST_USE_FORK_TRUE='#'
-  MONITOR_TEST_USE_FORK_FALSE=
-fi
-
 
 #
 # Option: --enable-link-preload=yes
@@ -19875,6 +19671,329 @@ fi
 
 
 #
+# Option: --enable-dlfcn=yes
+# Note: AC uses 'enable_dlopen', so we use dlfcn.
+#
+# Check whether --enable-dlfcn was given.
+if test "${enable_dlfcn+set}" = set; then
+  enableval=$enable_dlfcn;
+else
+  enable_dlfcn=yes
+fi
+
+
+if test "x$enable_dlfcn" = xyes ; then
+    { echo "$as_me:$LINENO: checking for library containing dlopen" >&5
+echo $ECHO_N "checking for library containing dlopen... $ECHO_C" >&6; }
+if test "${ac_cv_search_dlopen+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dlopen ();
+int
+main ()
+{
+return dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' dl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_dlopen=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_dlopen+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_dlopen+set}" = set; then
+  :
+else
+  ac_cv_search_dlopen=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_dlopen" >&5
+echo "${ECHO_T}$ac_cv_search_dlopen" >&6; }
+ac_res=$ac_cv_search_dlopen
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  enable_dlfcn=no
+fi
+
+fi
+
+if test "x$enable_dlfcn" = xyes ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define MONITOR_USE_DLOPEN 1
+_ACEOF
+
+    wrap_list="${wrap_list} dlopen"
+fi
+
+ if test x$enable_dlfcn = xyes; then
+  MONITOR_TEST_USE_DLOPEN_TRUE=
+  MONITOR_TEST_USE_DLOPEN_FALSE='#'
+else
+  MONITOR_TEST_USE_DLOPEN_TRUE='#'
+  MONITOR_TEST_USE_DLOPEN_FALSE=
+fi
+
+
+#
+# Option: --enable-fork=yes
+# Requires fork and exec families.
+#
+# Check whether --enable-fork was given.
+if test "${enable_fork+set}" = set; then
+  enableval=$enable_fork;
+else
+  enable_fork=yes
+fi
+
+
+if test "x$enable_fork" = xyes ; then
+    { echo "$as_me:$LINENO: checking for library containing fork" >&5
+echo $ECHO_N "checking for library containing fork... $ECHO_C" >&6; }
+if test "${ac_cv_search_fork+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char fork ();
+int
+main ()
+{
+return fork ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' c; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_fork=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_fork+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_fork+set}" = set; then
+  :
+else
+  ac_cv_search_fork=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_fork" >&5
+echo "${ECHO_T}$ac_cv_search_fork" >&6; }
+ac_res=$ac_cv_search_fork
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  enable_fork=no
+fi
+
+fi
+if test "x$enable_fork" = xyes ; then
+    { echo "$as_me:$LINENO: checking for library containing execve" >&5
+echo $ECHO_N "checking for library containing execve... $ECHO_C" >&6; }
+if test "${ac_cv_search_execve+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char execve ();
+int
+main ()
+{
+return execve ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' c; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_execve=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_execve+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_execve+set}" = set; then
+  :
+else
+  ac_cv_search_execve=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_execve" >&5
+echo "${ECHO_T}$ac_cv_search_execve" >&6; }
+ac_res=$ac_cv_search_execve
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  enable_fork=no
+fi
+
+fi
+if test "x$enable_fork" = xyes ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define MONITOR_USE_FORK 1
+_ACEOF
+
+    wrap_list="${wrap_list} fork vfork"
+    wrap_list="${wrap_list} execl execlp execle execv execvp execve"
+fi
+
+ if test x$enable_fork = xyes; then
+  MONITOR_TEST_USE_FORK_TRUE=
+  MONITOR_TEST_USE_FORK_FALSE='#'
+else
+  MONITOR_TEST_USE_FORK_TRUE='#'
+  MONITOR_TEST_USE_FORK_FALSE=
+fi
+
+
+#
 # Option: --enable-pthreads=yes
 # Requires libpthread.
 #
@@ -19981,13 +20100,10 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
     wrap_list="${wrap_list} pthread_create"
-    library_list="${library_list} pthread"
     #
-    # Test if pthread_equal and pthread_cleanup_push/pop are macros or
+    # See if pthread_equal and pthread_cleanup_push/pop are macros or
     # library functions.
     #
-    OLDLIBS="$LIBS"
-    LIBS=
     { echo "$as_me:$LINENO: checking for pthread_equal in -lpthread" >&5
 echo $ECHO_N "checking for pthread_equal in -lpthread... $ECHO_C" >&6; }
 if test "${ac_cv_lib_pthread_pthread_equal+set}" = set; then
@@ -20057,7 +20173,6 @@ _ACEOF
 
 fi
 
-    LIBS=
     { echo "$as_me:$LINENO: checking for pthread_cleanup_push in -lpthread" >&5
 echo $ECHO_N "checking for pthread_cleanup_push in -lpthread... $ECHO_C" >&6; }
 if test "${ac_cv_lib_pthread_pthread_cleanup_push+set}" = set; then
@@ -20127,7 +20242,6 @@ _ACEOF
 
 fi
 
-    LIBS="$OLDLIBS"
 fi
 
  if test x$enable_pthreads = xyes; then
@@ -20263,13 +20377,6 @@ echo "$as_me: error: conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${MONITOR_TEST_USE_FORK_TRUE}" && test -z "${MONITOR_TEST_USE_FORK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_USE_FORK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"MONITOR_TEST_USE_FORK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${MONITOR_TEST_LINK_PRELOAD_TRUE}" && test -z "${MONITOR_TEST_LINK_PRELOAD_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_LINK_PRELOAD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -20281,6 +20388,20 @@ if test -z "${MONITOR_TEST_LINK_STATIC_TRUE}" && test -z "${MONITOR_TEST_LINK_ST
   { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_LINK_STATIC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"MONITOR_TEST_LINK_STATIC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MONITOR_TEST_USE_DLOPEN_TRUE}" && test -z "${MONITOR_TEST_USE_DLOPEN_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_USE_DLOPEN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MONITOR_TEST_USE_DLOPEN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MONITOR_TEST_USE_FORK_TRUE}" && test -z "${MONITOR_TEST_USE_FORK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_USE_FORK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MONITOR_TEST_USE_FORK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -20973,20 +21094,21 @@ FFLAGS!$FFLAGS$ac_delim
 ac_ct_F77!$ac_ct_F77$ac_delim
 LIBTOOL!$LIBTOOL$ac_delim
 wrap_list!$wrap_list$ac_delim
-library_list!$library_list$ac_delim
-MONITOR_TEST_USE_FORK_TRUE!$MONITOR_TEST_USE_FORK_TRUE$ac_delim
-MONITOR_TEST_USE_FORK_FALSE!$MONITOR_TEST_USE_FORK_FALSE$ac_delim
 MONITOR_TEST_LINK_PRELOAD_TRUE!$MONITOR_TEST_LINK_PRELOAD_TRUE$ac_delim
 MONITOR_TEST_LINK_PRELOAD_FALSE!$MONITOR_TEST_LINK_PRELOAD_FALSE$ac_delim
 MONITOR_TEST_LINK_STATIC_TRUE!$MONITOR_TEST_LINK_STATIC_TRUE$ac_delim
 MONITOR_TEST_LINK_STATIC_FALSE!$MONITOR_TEST_LINK_STATIC_FALSE$ac_delim
+MONITOR_TEST_USE_DLOPEN_TRUE!$MONITOR_TEST_USE_DLOPEN_TRUE$ac_delim
+MONITOR_TEST_USE_DLOPEN_FALSE!$MONITOR_TEST_USE_DLOPEN_FALSE$ac_delim
+MONITOR_TEST_USE_FORK_TRUE!$MONITOR_TEST_USE_FORK_TRUE$ac_delim
+MONITOR_TEST_USE_FORK_FALSE!$MONITOR_TEST_USE_FORK_FALSE$ac_delim
 MONITOR_TEST_USE_PTHREADS_TRUE!$MONITOR_TEST_USE_PTHREADS_TRUE$ac_delim
 MONITOR_TEST_USE_PTHREADS_FALSE!$MONITOR_TEST_USE_PTHREADS_FALSE$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 20; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 21; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -21606,11 +21728,13 @@ fi
 echo "$as_me: monitor CC CFLAGS: $CC $CFLAGS" >&6;}
 { echo "$as_me:$LINENO: monitor debug mode: $enable_debug" >&5
 echo "$as_me: monitor debug mode: $enable_debug" >&6;}
-{ echo "$as_me:$LINENO: monitor use fork: $enable_fork" >&5
-echo "$as_me: monitor use fork: $enable_fork" >&6;}
 { echo "$as_me:$LINENO: monitor link preload: $enable_link_preload" >&5
 echo "$as_me: monitor link preload: $enable_link_preload" >&6;}
 { echo "$as_me:$LINENO: monitor link static: $enable_link_static" >&5
 echo "$as_me: monitor link static: $enable_link_static" >&6;}
+{ echo "$as_me:$LINENO: monitor use dlfcn: $enable_dlfcn" >&5
+echo "$as_me: monitor use dlfcn: $enable_dlfcn" >&6;}
+{ echo "$as_me:$LINENO: monitor use fork: $enable_fork" >&5
+echo "$as_me: monitor use fork: $enable_fork" >&6;}
 { echo "$as_me:$LINENO: monitor use pthreads: $enable_pthreads" >&5
 echo "$as_me: monitor use pthreads: $enable_pthreads" >&6;}
