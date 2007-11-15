@@ -47,6 +47,9 @@ if MONITOR_TEST_LINK_PRELOAD
     libmonitor_la_SOURCES = $(MONITOR_MAIN_FILES)
     libmonitor_la_CPPFLAGS = -DMONITOR_DYNAMIC
     bin_SCRIPTS += monitor-run
+if MONITOR_TEST_USE_DLOPEN
+    libmonitor_la_SOURCES += dlopen.c
+endif
 if MONITOR_TEST_USE_FORK
     libmonitor_la_SOURCES += fork.c
 endif
@@ -60,6 +63,9 @@ if MONITOR_TEST_LINK_STATIC
     monitor_o_SOURCES = $(MONITOR_MAIN_FILES)
     monitor_o_CPPFLAGS = -DMONITOR_STATIC
     bin_SCRIPTS += monitor-link
+if MONITOR_TEST_USE_DLOPEN
+    monitor_o_SOURCES += dlopen.c
+endif
 if MONITOR_TEST_USE_FORK
     monitor_o_SOURCES += fork.c
 endif

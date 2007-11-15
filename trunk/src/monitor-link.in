@@ -28,7 +28,7 @@ exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
 monitor_file="${libexecdir}/monitor.o"
 monitor_wrap_names="@wrap_list@"
-monitor_library_names="@library_list@"
+monitor_library_names="@LIBS@"
 
 # Space-separated list of extra object files to add.
 insert_files=
@@ -36,7 +36,7 @@ insert_files=
 # Space-separated list of extra symbol names to wrap.
 wrap_names=
 
-# Space-separated list of extra library names to add.
+# Space-separated list of extra library names, eg: "-ldl -lm".
 library_names=
 
 die()
@@ -112,12 +112,6 @@ do
     wrap_args="${wrap_args} -Wl,--wrap,${name}"
 done
 
-library_args=
-for lib in $monitor_library_names $library_names
-do
-    library_args="${library_args} -l${lib}"
-done
-
 #
 # Must have a compiler command and at least one argument.
 #
@@ -126,6 +120,7 @@ test "x$2" != x || usage
 command="$1"
 shift
 
+library_args="${monitor_library_names} ${library_names}"
 args="${insert_files} ${monitor_file} ${library_args}"
 if test "$verbose" = yes ; then
     echo "new command line: " $command $wrap_args "$@" $args
