@@ -3,22 +3,22 @@
  *
  *  Copyright (c) 2007, Rice University.
  *  All rights reserved.
- *  
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are
  *  met:
- *  
+ *
  *  * Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
- *  
+ *
  *  * Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  *  * Neither the name of Rice University (RICE) nor the names of its
  *    contributors may be used to endorse or promote products derived from
  *    this software without specific prior written permission.
- *  
+ *
  *  This software is provided by RICE and contributors "as is" and any
  *  express or implied warranties, including, but not limited to, the
  *  implied warranties of merchantability and fitness for a particular
@@ -41,6 +41,7 @@
 #endif
 #include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -133,6 +134,56 @@ monitor_copy_va_args(char ***argv, char ***envp,
 }
 
 /*
+ *  Approximate whether the real exec will succeed by testing if
+ *  "file" is executable, either the pathname itself or somewhere on
+ *  PATH, depending on whether file contains '/'.  The problem is that
+ *  we have to decide whether to call monitor_fini_process() before we
+ *  know if exec succeeds, since exec doesn't return on success.
+ *
+ *  Returns: 1 if "file" is executable, else 0.
+ */
+#define COLON  ":"
+#define SLASH  '/'
+static int
+monitor_is_executable(const char *file)
+{
+    char buf[PATH_MAX], *path;
+    int  file_len, path_len;
+
+    if (file == NULL) {
+	MONITOR_DEBUG1("attempt to exec NULL path\n");
+	return (0);
+    }
+    /*
+     * If file contains '/', then try just the file name itself,
+     * otherwise, search for it on PATH.
+     */
+    if (strchr(file, SLASH) != NULL)
+	return (access(file, X_OK) == 0);
+
+    file_len = strlen(file);
+    path = getenv("PATH");
+    path += strspn(path, COLON);
+    while (*path != 0) {
+	path_len = strcspn(path, COLON);
+	if (path_len + file_len + 2 > PATH_MAX) {
+	    MONITOR_DEBUG("path length %d exceeds PATH_MAX %d\n",
+			  path_len + file_len + 2, PATH_MAX);
+	}
+	memcpy(buf, path, path_len);
+	buf[path_len] = SLASH;
+	memcpy(&buf[path_len + 1], file, file_len);
+	buf[path_len + 1 + file_len] = 0;
+	if (access(buf, X_OK) == 0)
+	    return (1);
+	path += path_len;
+	path += strspn(path, COLON);
+    }
+
+    return (0);
+}
+
+/*
  *----------------------------------------------------------------------
  *  FORK and EXEC OVERRIDE FUNCTIONS
  *----------------------------------------------------------------------
@@ -181,34 +232,35 @@ MONITOR_WRAP_NAME(vfork)(void)
 
 /*
  *  Override execl() and execv().
+ *
+ *  Note: we test if "path" is executable as an approximation to
+ *  whether exec will succeed, and thus whether we should call
+ *  monitor_fini_process.  But we still try the real exec in either
+ *  case.
  */
 static int
 monitor_execv(const char *path, char *const argv[])
 {
-    int ret;
+    int ret, is_exec;
 
     monitor_fork_init();
-    /*
-     * Approximate whether real exec will succeed by testing if the
-     * file is executable.
-     */
-    if (access(path, X_OK) < 0) {
-	MONITOR_DEBUG("attempt to exec non-executable path: %s\n", path);
-	errno = EACCES;
-	return (-1);
-    }
-    MONITOR_DEBUG("about to execv, pid: %d, path: %s\n",
+    is_exec = access(path, X_OK) == 0;
+    MONITOR_DEBUG("about to execv, expecting %s, pid: %d, path: %s\n",
+		  (is_exec ? "success" : "failure"),
 		  (int)getpid(), path);
-
-    monitor_end_process_fcn();
+    if (is_exec) {
+	monitor_end_process_fcn();
 #ifdef MONITOR_DYNAMIC
-    monitor_end_library_fcn();
+	monitor_end_library_fcn();
 #endif
-
+    }
     ret = (*real_execv)(path, argv);
-    MONITOR_WARN("real execv failed on pid: %d\n", (int)getpid());
 
     /* We only get here if real_execv fails. */
+    if (is_exec) {
+	MONITOR_WARN("unexpected execv failure on pid: %d\n",
+		     (int)getpid());
+    }
     return (ret);
 }
 
@@ -218,25 +270,26 @@ monitor_execv(const char *path, char *const argv[])
 static int
 monitor_execvp(const char *file, char *const argv[])
 {
-    int ret;
+    int ret, is_exec;
 
     monitor_fork_init();
-    /*
-     * FIXME - Walk PATH to see if file is executable.
-     * For now, we just assume that execvp succeeds.
-     */
-    MONITOR_DEBUG("about to execvp, pid: %d, file: %s\n",
+    is_exec = monitor_is_executable(file);
+    MONITOR_DEBUG("about to execvp, expecting %s, pid: %d, file: %s\n",
+		  (is_exec ? "success" : "failure"),
 		  (int)getpid(), file);
-
-    monitor_end_process_fcn();
+    if (is_exec) {
+	monitor_end_process_fcn();
 #ifdef MONITOR_DYNAMIC
-    monitor_end_library_fcn();
+	monitor_end_library_fcn();
 #endif
-
+    }
     ret = (*real_execvp)(file, argv);
-    MONITOR_WARN("real execvp failed on pid %d\n", (int)getpid());
 
     /* We only get here if real_execvp fails. */
+    if (is_exec) {
+	MONITOR_WARN("unexpected execvp failure on pid: %d\n",
+		     (int)getpid());
+    }
     return (ret);
 }
 
@@ -246,30 +299,26 @@ monitor_execvp(const char *file, char *const argv[])
 static int
 monitor_execve(const char *path, char *const argv[], char *const envp[])
 {
-    int ret;
+    int ret, is_exec;
 
     monitor_fork_init();
-    /*
-     * Approximate whether real exec will succeed by testing if the
-     * file is executable.
-     */
-    if (access(path, X_OK) < 0) {
-	MONITOR_DEBUG("attempt to exec non-executable path: %s\n", path);
-	errno = EACCES;
-	return (-1);
-    }
-    MONITOR_DEBUG("about to execve, pid: %d, path: %s\n",
+    is_exec = access(path, X_OK) == 0;
+    MONITOR_DEBUG("about to execve, expecting %s, pid: %d, path: %s\n",
+		  (is_exec ? "success" : "failure"),
 		  (int)getpid(), path);
-
-    monitor_end_process_fcn();
+    if (is_exec) {
+	monitor_end_process_fcn();
 #ifdef MONITOR_DYNAMIC
-    monitor_end_library_fcn();
+	monitor_end_library_fcn();
 #endif
-
+    }
     ret = (*real_execve)(path, argv, envp);
-    MONITOR_WARN("real execve failed on pid %d\n", (int)getpid());
 
     /* We only get here if real_execve fails. */
+    if (is_exec) {
+	MONITOR_WARN("unexpected execve failure on pid: %d\n",
+		     (int)getpid());
+    }
     return (ret);
 }
 
