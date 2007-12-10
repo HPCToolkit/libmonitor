@@ -116,12 +116,14 @@ following additional options.  See ./configure --help.
     --enable-dlfcn
     --enable-fork
     --enable-pthreads
+    --enable-signals
 	These options include support for monitoring dlopen, fork and
-	exec, and pthreads.  Even when enabled, configure will search
-	for the relevant libraries and functions and will disable them
-	if they are not found.  Note: --enable-dlopen is already used
-	by configure for something else, so we use dlfcn (named after
-	dlfcn.h) to enable support for dlopen.  Default=yes.
+	exec, pthreads and signals.  Even when enabled, configure will
+	search for the relevant libraries and functions and will
+	disable them if they are not found.
+	Note: --enable-dlopen is already used by configure for
+	something else, so we use dlfcn (named after dlfcn.h) to
+	enable support for dlopen.  Default=yes.
 
 =======================
 How to Run Libmonitor
