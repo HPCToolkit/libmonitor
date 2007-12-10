@@ -48,6 +48,9 @@
 /* Include support for pthreads. */
 #undef MONITOR_USE_PTHREADS
 
+/* Include support for signals. */
+#undef MONITOR_USE_SIGNALS
+
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 

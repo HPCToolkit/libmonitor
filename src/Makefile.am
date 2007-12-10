@@ -56,6 +56,9 @@ endif
 if MONITOR_TEST_USE_PTHREADS
     libmonitor_la_SOURCES += queue.h pthread.c
 endif
+if MONITOR_TEST_USE_SIGNALS
+    libmonitor_la_SOURCES += signal.c
+endif
 endif
 
 if MONITOR_TEST_LINK_STATIC
@@ -71,5 +74,8 @@ if MONITOR_TEST_USE_FORK
 endif
 if MONITOR_TEST_USE_PTHREADS
     monitor_o_SOURCES += queue.h pthread.c
+endif
+if MONITOR_TEST_USE_SIGNALS
+    monitor_o_SOURCES += signal.c
 endif
 endif

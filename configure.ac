@@ -34,7 +34,7 @@ dnl
 dnl  $Id$
 dnl
 
-AC_INIT([libmonitor], [0.60])
+AC_INIT([libmonitor], [0.70])
 AC_COPYRIGHT([libmonitor is Copyright (c) 2007, Rice University.
 See the file LICENSE for details.])
 AC_REVISION([$Id$])
@@ -185,6 +185,31 @@ fi
 AM_CONDITIONAL([MONITOR_TEST_USE_PTHREADS],
     [test x$enable_pthreads = xyes])
 
+#
+# Option: --enable-signals=yes
+#
+AC_ARG_ENABLE([signals],
+    [AS_HELP_STRING([--enable-signals],
+        [include support for signals [default=yes]])],
+    [],
+    [enable_signals=yes])
+
+if test "x$enable_signals" = xyes ; then
+    AC_SEARCH_LIBS([sigaction], [c], [], [enable_signals=no])
+fi
+if test "x$enable_signals" = xyes ; then
+    AC_DEFINE([MONITOR_USE_SIGNALS], [1],
+	[Include support for signals.])
+    wrap_list="${wrap_list} signal sigaction sigprocmask"
+fi
+
+AM_CONDITIONAL([MONITOR_TEST_USE_SIGNALS],
+    [test x$enable_signals = xyes])
+
+if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
+    wrap_list="${wrap_list} pthread_sigmask"
+fi
+
 AC_OUTPUT
 
 #
@@ -205,3 +230,4 @@ AC_MSG_NOTICE([monitor link static: $enable_link_static])
 AC_MSG_NOTICE([monitor use dlfcn: $enable_dlfcn])
 AC_MSG_NOTICE([monitor use fork: $enable_fork])
 AC_MSG_NOTICE([monitor use pthreads: $enable_pthreads])
+AC_MSG_NOTICE([monitor use signals: $enable_signals])
