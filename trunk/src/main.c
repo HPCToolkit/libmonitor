@@ -144,6 +144,10 @@ monitor_normal_init(void)
 #else
     MONITOR_REQUIRE_DLSYM(real_start_main, "__libc_start_main");
 #endif
+
+#ifdef MONITOR_USE_SIGNALS
+    monitor_signal_init();
+#endif
 }
 
 /*

@@ -96,9 +96,16 @@ typedef void *pthread_getspecific_fcn_t(pthread_key_t);
 typedef int   pthread_setspecific_fcn_t(pthread_key_t, const void *);
 typedef void  pthread_cleanup_push_fcn_t(void (*)(void *), void *);
 typedef void  pthread_cleanup_pop_fcn_t(int);
+typedef int   sigaction_fcn_t(int, const struct sigaction *,
+			      struct sigaction *);
+typedef int   sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
 
 #ifdef MONITOR_STATIC
 extern pthread_create_fcn_t  __real_pthread_create;
+#ifdef MONITOR_USE_SIGNALS
+extern sigaction_fcn_t    __real_sigaction;
+extern sigprocmask_fcn_t  __real_pthread_sigmask;
+#endif
 #endif
 
 static pthread_create_fcn_t  *real_pthread_create;
@@ -112,6 +119,8 @@ static pthread_getspecific_fcn_t  *real_pthread_getspecific;
 static pthread_setspecific_fcn_t  *real_pthread_setspecific;
 static pthread_cleanup_push_fcn_t  *real_pthread_cleanup_push;
 static pthread_cleanup_pop_fcn_t   *real_pthread_cleanup_pop;
+static sigaction_fcn_t    *real_sigaction;
+static sigprocmask_fcn_t  *real_pthread_sigmask;
 
 /*
  *  The global thread mutex protects monitor's list of threads and
@@ -156,7 +165,7 @@ extern void monitor_unwind_thread_fence2;
 
 /*
  *----------------------------------------------------------------------
- *  MONITOR THREAD FUNCTIONS
+ *  INTERNAL THREAD FUNCTIONS
  *----------------------------------------------------------------------
  */
 
@@ -191,6 +200,11 @@ monitor_thread_init(void)
 #ifdef MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN
     MONITOR_GET_REAL_NAME(real_pthread_cleanup_push, pthread_cleanup_push);
     MONITOR_GET_REAL_NAME(real_pthread_cleanup_pop,  pthread_cleanup_pop);
+#endif
+#ifdef MONITOR_USE_SIGNALS
+    MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
+#else
+    MONITOR_GET_REAL_NAME(real_sigaction, sigaction);
 #endif
     ret = (*real_pthread_key_create)(&monitor_pthread_key, NULL);
     if (ret != 0) {
@@ -341,7 +355,8 @@ monitor_thread_shootdown(void)
     my_action.sa_handler = monitor_thread_signal_handler;
     my_action.sa_mask = empty_set;
     my_action.sa_flags = 0;
-    if (sigaction(MONITOR_EXIT_CLEANUP_SIGNAL, &my_action, NULL) != 0) {
+    if ((*real_sigaction)(MONITOR_EXIT_CLEANUP_SIGNAL,
+			  &my_action, NULL) != 0) {
 	MONITOR_ERROR1("sigaction failed\n");
     }
 
@@ -529,3 +544,27 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
 
     return (ret);
 }
+
+/*
+ *  Allow the application to modify the thread signal mask, but don't
+ *  let it block a signal that the client catches.
+ */
+#ifdef MONITOR_USE_SIGNALS
+int
+MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
+				   sigset_t *oldset)
+{
+    sigset_t my_set;
+
+    monitor_signal_init();
+    MONITOR_GET_REAL_NAME_WRAP(real_pthread_sigmask, pthread_sigmask);
+
+    if (how == SIG_BLOCK || how == SIG_SETMASK) {
+	my_set = *set;
+	monitor_remove_client_signals(&my_set);
+	set = &my_set;
+    }
+
+    return (*real_pthread_sigmask)(how, set, oldset);
+}
+#endif
