@@ -82,6 +82,7 @@ struct monitor_signal_entry {
     char  mse_avoid;
     char  mse_invalid;
     char  mse_noterm;
+    char  mse_stop;
 };
 
 static struct monitor_signal_entry
@@ -97,6 +98,12 @@ static int monitor_signal_avoid_list[] = {
  */
 static int monitor_signal_noterm_list[] = {
     SIGCHLD, SIGCONT, SIGURG, SIGWINCH, -1
+};
+
+/*  Signals whose default action is to stop the process.
+ */
+static int monitor_signal_stop_list[] = {
+    SIGTSTP, SIGTTIN, SIGTTOU, -1
 };
 
 /*
@@ -147,7 +154,8 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
     }
     else if (sa->sa_handler == SIG_DFL) {
 	/*
-	 * Invoke the default action, which may terminate the process.
+	 * Invoke the default action: ignore the signal, stop the
+	 * process, or (by default) terminate the process.
 	 *
 	 * XXX - may want to siglongjmp() or _exit() directly before
 	 * ending the process, or may want to restart some signals
@@ -155,6 +163,11 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
 	 */
 	if (mse->mse_noterm)
 	    return;
+
+	if (mse->mse_stop) {
+	    raise(SIGSTOP);
+	    return;
+	}
 
 	monitor_end_process_fcn();
 #ifdef MONITOR_DYNAMIC
@@ -200,6 +213,9 @@ monitor_signal_init(void)
     }
     for (i = 0; monitor_signal_noterm_list[i] > 0; i++) {
 	monitor_signal_array[monitor_signal_noterm_list[i]].mse_noterm = 1;
+    }
+    for (i = 0; monitor_signal_stop_list[i] > 0; i++) {
+	monitor_signal_array[monitor_signal_stop_list[i]].mse_stop = 1;
     }
 
     num_avoid = 0;
