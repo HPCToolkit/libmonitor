@@ -53,6 +53,7 @@ AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
 AC_SUBST([wrap_list], ["main _exit"])
+AC_SUBST([mpi_cpp_flags])
 
 #
 # Option: --enable-debug=no
@@ -210,6 +211,27 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
     wrap_list="${wrap_list} pthread_sigmask"
 fi
 
+#
+# Option: --with-mpi=/path/to/MPI/install/dir
+#
+AC_ARG_WITH([mpi],
+    [AS_HELP_STRING([--with-mpi=PATH],
+	[path to MPI install directory [default=no]])],
+    [],
+    [with_mpi=no])
+
+if test "x$with_mpi" != xno ; then
+    AC_CHECK_FILE(["${with_mpi}/include/mpi.h"], [], [with_mpi=no])
+fi
+if test "x$with_mpi" != xno ; then
+    AC_DEFINE([MONITOR_USE_MPI], [1],
+	[Include support for MPI.])
+    mpi_cpp_flags="-I ${with_mpi}/include"
+fi
+
+AM_CONDITIONAL([MONITOR_TEST_USE_MPI],
+    [test x$with_mpi != xno])
+
 AC_OUTPUT
 
 #
@@ -231,3 +253,4 @@ AC_MSG_NOTICE([monitor use dlfcn: $enable_dlfcn])
 AC_MSG_NOTICE([monitor use fork: $enable_fork])
 AC_MSG_NOTICE([monitor use pthreads: $enable_pthreads])
 AC_MSG_NOTICE([monitor use signals: $enable_signals])
+AC_MSG_NOTICE([monitor with mpi: $with_mpi])

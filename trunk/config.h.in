@@ -45,6 +45,9 @@
 /* Include support for fork and exec families. */
 #undef MONITOR_USE_FORK
 
+/* Include support for MPI. */
+#undef MONITOR_USE_MPI
+
 /* Include support for pthreads. */
 #undef MONITOR_USE_PTHREADS
 

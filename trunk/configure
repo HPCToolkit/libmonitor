@@ -876,6 +876,7 @@ FFLAGS
 ac_ct_F77
 LIBTOOL
 wrap_list
+mpi_cpp_flags
 MONITOR_TEST_LINK_PRELOAD_TRUE
 MONITOR_TEST_LINK_PRELOAD_FALSE
 MONITOR_TEST_LINK_STATIC_TRUE
@@ -888,6 +889,8 @@ MONITOR_TEST_USE_PTHREADS_TRUE
 MONITOR_TEST_USE_PTHREADS_FALSE
 MONITOR_TEST_USE_SIGNALS_TRUE
 MONITOR_TEST_USE_SIGNALS_FALSE
+MONITOR_TEST_USE_MPI_TRUE
+MONITOR_TEST_USE_MPI_FALSE
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -1513,6 +1516,7 @@ Optional Packages:
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-tags[=TAGS]      include additional configurations [automatic]
+  --with-mpi=PATH         path to MPI install directory [default=no]
 
 Some influential environment variables:
   CC          C compiler command
@@ -4367,7 +4371,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4370 "configure"' > conftest.$ac_ext
+  echo '#line 4374 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7093,11 +7097,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7096: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7100: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7100: \$? = $ac_status" >&5
+   echo "$as_me:7104: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7361,11 +7365,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7364: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7368: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7368: \$? = $ac_status" >&5
+   echo "$as_me:7372: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7465,11 +7469,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7468: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7472: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7472: \$? = $ac_status" >&5
+   echo "$as_me:7476: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8930,7 +8934,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8933 "configure"' > conftest.$ac_ext
+    echo '#line 8937 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9794,7 +9798,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9797 "configure"
+#line 9801 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9894,7 +9898,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9897 "configure"
+#line 9901 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12230,11 +12234,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12233: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12237: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12237: \$? = $ac_status" >&5
+   echo "$as_me:12241: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12334,11 +12338,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12337: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12341: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12341: \$? = $ac_status" >&5
+   echo "$as_me:12345: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12870,7 +12874,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 12873 "configure"' > conftest.$ac_ext
+    echo '#line 12877 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -13925,11 +13929,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13928: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13932: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13932: \$? = $ac_status" >&5
+   echo "$as_me:13936: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14029,11 +14033,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14032: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14036: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14036: \$? = $ac_status" >&5
+   echo "$as_me:14040: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15474,7 +15478,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15477 "configure"' > conftest.$ac_ext
+    echo '#line 15481 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16248,11 +16252,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16251: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16255: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16255: \$? = $ac_status" >&5
+   echo "$as_me:16259: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16516,11 +16520,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16519: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16523: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16523: \$? = $ac_status" >&5
+   echo "$as_me:16527: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16620,11 +16624,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16623: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16627: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16627: \$? = $ac_status" >&5
+   echo "$as_me:16631: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18085,7 +18089,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 18088 "configure"' > conftest.$ac_ext
+    echo '#line 18092 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -19433,6 +19437,7 @@ fi
 wrap_list="main _exit"
 
 
+
 #
 # Option: --enable-debug=no
 #
@@ -20376,6 +20381,63 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
     wrap_list="${wrap_list} pthread_sigmask"
 fi
 
+#
+# Option: --with-mpi=/path/to/MPI/install/dir
+#
+
+# Check whether --with-mpi was given.
+if test "${with_mpi+set}" = set; then
+  withval=$with_mpi;
+else
+  with_mpi=no
+fi
+
+
+if test "x$with_mpi" != xno ; then
+    as_ac_File=`echo "ac_cv_file_"${with_mpi}/include/mpi.h"" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for \"${with_mpi}/include/mpi.h\"" >&5
+echo $ECHO_N "checking for \"${with_mpi}/include/mpi.h\"... $ECHO_C" >&6; }
+if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r ""${with_mpi}/include/mpi.h""; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+ac_res=`eval echo '${'$as_ac_File'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  :
+else
+  with_mpi=no
+fi
+
+fi
+if test "x$with_mpi" != xno ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define MONITOR_USE_MPI 1
+_ACEOF
+
+    mpi_cpp_flags="-I ${with_mpi}/include"
+fi
+
+ if test x$with_mpi != xno; then
+  MONITOR_TEST_USE_MPI_TRUE=
+  MONITOR_TEST_USE_MPI_FALSE='#'
+else
+  MONITOR_TEST_USE_MPI_TRUE='#'
+  MONITOR_TEST_USE_MPI_FALSE=
+fi
+
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -20539,6 +20601,13 @@ if test -z "${MONITOR_TEST_USE_SIGNALS_TRUE}" && test -z "${MONITOR_TEST_USE_SIG
   { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_USE_SIGNALS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"MONITOR_TEST_USE_SIGNALS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MONITOR_TEST_USE_MPI_TRUE}" && test -z "${MONITOR_TEST_USE_MPI_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MONITOR_TEST_USE_MPI\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MONITOR_TEST_USE_MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -21224,6 +21293,7 @@ FFLAGS!$FFLAGS$ac_delim
 ac_ct_F77!$ac_ct_F77$ac_delim
 LIBTOOL!$LIBTOOL$ac_delim
 wrap_list!$wrap_list$ac_delim
+mpi_cpp_flags!$mpi_cpp_flags$ac_delim
 MONITOR_TEST_LINK_PRELOAD_TRUE!$MONITOR_TEST_LINK_PRELOAD_TRUE$ac_delim
 MONITOR_TEST_LINK_PRELOAD_FALSE!$MONITOR_TEST_LINK_PRELOAD_FALSE$ac_delim
 MONITOR_TEST_LINK_STATIC_TRUE!$MONITOR_TEST_LINK_STATIC_TRUE$ac_delim
@@ -21236,11 +21306,13 @@ MONITOR_TEST_USE_PTHREADS_TRUE!$MONITOR_TEST_USE_PTHREADS_TRUE$ac_delim
 MONITOR_TEST_USE_PTHREADS_FALSE!$MONITOR_TEST_USE_PTHREADS_FALSE$ac_delim
 MONITOR_TEST_USE_SIGNALS_TRUE!$MONITOR_TEST_USE_SIGNALS_TRUE$ac_delim
 MONITOR_TEST_USE_SIGNALS_FALSE!$MONITOR_TEST_USE_SIGNALS_FALSE$ac_delim
+MONITOR_TEST_USE_MPI_TRUE!$MONITOR_TEST_USE_MPI_TRUE$ac_delim
+MONITOR_TEST_USE_MPI_FALSE!$MONITOR_TEST_USE_MPI_FALSE$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 23; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 26; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -21872,3 +21944,5 @@ echo "$as_me: monitor use fork: $enable_fork" >&6;}
 echo "$as_me: monitor use pthreads: $enable_pthreads" >&6;}
 { echo "$as_me:$LINENO: monitor use signals: $enable_signals" >&5
 echo "$as_me: monitor use signals: $enable_signals" >&6;}
+{ echo "$as_me:$LINENO: monitor with mpi: $with_mpi" >&5
+echo "$as_me: monitor with mpi: $with_mpi" >&6;}
