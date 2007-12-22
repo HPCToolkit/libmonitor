@@ -57,6 +57,8 @@ extern void monitor_init_thread_support(void);
 extern void *monitor_init_thread(unsigned tid);
 extern void monitor_fini_thread(void *user_data);
 extern void monitor_dlopen(const char *library);
+extern void monitor_init_mpi(int *argc, char ***argv);
+extern void monitor_fini_mpi(void);
 
 /*
  *  Monitor support functions.
@@ -65,6 +67,8 @@ extern int monitor_sigaction(int sig, monitor_sighandler_t *handler,
 			     int flags, struct sigaction *act);
 extern int monitor_unwind_process_bottom_frame(void *addr);
 extern int monitor_unwind_thread_bottom_frame(void *addr);
+extern int monitor_mpi_comm_size(void);
+extern int monitor_mpi_comm_rank(void);
 
 #ifdef __cplusplus
 }

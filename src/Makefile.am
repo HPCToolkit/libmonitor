@@ -59,6 +59,10 @@ endif
 if MONITOR_TEST_USE_SIGNALS
     libmonitor_la_SOURCES += signal.c
 endif
+if MONITOR_TEST_USE_MPI
+    libmonitor_la_SOURCES += mpi.c
+    libmonitor_la_CPPFLAGS += @mpi_cpp_flags@
+endif
 endif
 
 if MONITOR_TEST_LINK_STATIC
