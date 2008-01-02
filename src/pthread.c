@@ -397,10 +397,10 @@ monitor_thread_shootdown(void)
      */
     if (my_tn != NULL && !my_tn->tn_fini_started) {
 	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, num = %d) ...\n",
-		      tn->tn_user_data, tn->tn_thread_num);
-	tn->tn_fini_started = 1;
-	monitor_fini_thread(tn->tn_user_data);
-	tn->tn_fini_done = 1;
+		      my_tn->tn_user_data, my_tn->tn_thread_num);
+	my_tn->tn_fini_started = 1;
+	monitor_fini_thread(my_tn->tn_user_data);
+	my_tn->tn_fini_done = 1;
     }
 }
 
