@@ -106,6 +106,11 @@ static int monitor_signal_stop_list[] = {
     SIGTSTP, SIGTTIN, SIGTTOU, -1
 };
 
+/*  Sa_flags that monitor requires and forbids.
+ */
+#define SAFLAGS_REQUIRED   (SA_SIGINFO)
+#define SAFLAGS_FORBIDDEN  (SA_RESETHAND | SA_ONSTACK)
+
 /*
  *----------------------------------------------------------------------
  *  INTERNAL HELPER FUNCTIONS
@@ -229,7 +234,7 @@ monitor_signal_init(void)
 	    sa = &mse->mse_kern_act;
 	    sa->sa_sigaction = &monitor_signal_handler;
 	    sigemptyset(&sa->sa_mask);
-	    sa->sa_flags = SA_SIGINFO;
+	    sa->sa_flags = SAFLAGS_REQUIRED;
 	    ret = (*real_sigaction)(sig, sa, &mse->mse_appl_act);
 	    if (ret == 0) {
 		num_valid++;
@@ -260,6 +265,15 @@ monitor_remove_client_signals(sigset_t *set)
 	    sigdelset(set, sig);
 	}
     }
+}
+
+/*
+ *  Adjust sa_flags according to the required and forbidden sets.
+ */
+static inline int
+monitor_adjust_saflags(int flags)
+{
+    return (flags | SAFLAGS_REQUIRED) & ~(SAFLAGS_FORBIDDEN);
 }
 
 /*
@@ -294,7 +308,7 @@ monitor_sigaction(int sig, monitor_sighandler_t *handler,
     mse->mse_client_handler = handler;
     mse->mse_client_flags = flags;
     if (act != NULL) {
-	mse->mse_kern_act.sa_flags = act->sa_flags | SA_SIGINFO;
+	mse->mse_kern_act.sa_flags = monitor_adjust_saflags(act->sa_flags);
 	mse->mse_kern_act.sa_mask = act->sa_mask;
 	monitor_remove_client_signals(&mse->mse_kern_act.sa_mask);
 	(*real_sigaction)(sig, &mse->mse_kern_act, NULL);
@@ -337,11 +351,11 @@ monitor_appl_sigaction(int sig, const struct sigaction *act,
     }
     if (act != NULL) {
 	/*
-	 * Use the application's flags and mask, but insist on
-	 * SA_SIGINFO and don't block any client signals.
+	 * Use the application's flags and mask, adjusted for
+	 * monitor's needs.
 	 */
 	mse->mse_appl_act = *act;
-	mse->mse_kern_act.sa_flags = act->sa_flags | SA_SIGINFO;
+	mse->mse_kern_act.sa_flags = monitor_adjust_saflags(act->sa_flags);
 	mse->mse_kern_act.sa_mask = act->sa_mask;
 	monitor_remove_client_signals(&mse->mse_kern_act.sa_mask);
 	(*real_sigaction)(sig, &mse->mse_kern_act, NULL);
