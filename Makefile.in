@@ -13,11 +13,6 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
-
-#
-#  Libmonitor top-level Makefile.am.
-#  $Id: Makefile.am 6 2007-11-12 21:31:15Z krentel $
-#
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@

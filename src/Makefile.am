@@ -30,10 +30,9 @@
 ##  whether in contract, strict liability, or tort (including negligence
 ##  or otherwise) arising in any way out of the use of this software, even
 ##  if advised of the possibility of such damage.
-#
-#  Libmonitor src/Makefile.am.
-#  $Id$
-#
+##
+##  $Id$
+##
 
 MONITOR_MAIN_FILES = common.h monitor.h callback.c main.c
 MONITOR_SCRIPT_FILES = monitor-link monitor-run

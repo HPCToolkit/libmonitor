@@ -37,7 +37,6 @@ dnl
 AC_INIT([libmonitor], [0.70])
 AC_COPYRIGHT([libmonitor is Copyright (c) 2007, Rice University.
 See the file LICENSE for details.])
-AC_REVISION([$Id$])
 
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
