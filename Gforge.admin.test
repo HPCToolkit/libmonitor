@@ -1,0 +1,7 @@
+John M-C reported difficulty making svn commits to this project.
+Seemingly an authentication problem.  This is a file that I am using
+to test the authentication mechanism.  It should actually fail to
+commit as well.  It is my hope to confirm the exact text of the error
+message. 
+Andrew Uselton
+outreach.scidac.gov admin
