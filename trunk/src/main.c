@@ -342,6 +342,20 @@ monitor_library_fini_destructor(void)
  *  subset of monitor and delaying the choice of subset until link
  *  time (static case).
  */
+void * __attribute__ ((weak))
+monitor_real_dlopen(const char *path, int flags)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (NULL);
+}
+
+int __attribute__ ((weak))
+monitor_real_dlclose(void *handle)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (FAILURE);
+}
+
 int __attribute__ ((weak))
 monitor_sigaction(int sig, monitor_sighandler_t *handler,
 		  int flags, struct sigaction *act)
