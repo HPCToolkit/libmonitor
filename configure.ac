@@ -34,7 +34,7 @@ dnl
 dnl  $Id$
 dnl
 
-AC_INIT([libmonitor], [0.71])
+AC_INIT([libmonitor], [0.72])
 AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2008, Rice University.
 See the file LICENSE for details.])
 
@@ -120,7 +120,7 @@ fi
 if test "x$enable_dlfcn" = xyes ; then
     AC_DEFINE([MONITOR_USE_DLOPEN], [1],
 	[Include support for dlopen.])
-    wrap_list="${wrap_list} dlopen"
+    wrap_list="${wrap_list} dlopen dlclose"
 fi
 
 AM_CONDITIONAL([MONITOR_TEST_USE_DLOPEN],

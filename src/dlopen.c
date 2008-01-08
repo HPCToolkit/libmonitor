@@ -1,7 +1,7 @@
 /*
  *  Libmonitor dlopen functions.
  *
- *  Copyright (c) 2007, Rice University.
+ *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -50,12 +50,15 @@
  */
 
 typedef void *dlopen_fcn_t(const char *, int);
+typedef int dlclose_fcn_t(void *);
 
 #ifdef MONITOR_STATIC
-extern dlopen_fcn_t  __real_dlopen;
+extern dlopen_fcn_t   __real_dlopen;
+extern dlclose_fcn_t  __real_dlclose;
 #endif
 
-static dlopen_fcn_t  *real_dlopen = NULL;
+static dlopen_fcn_t   *real_dlopen = NULL;
+static dlclose_fcn_t  *real_dlclose = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -68,6 +71,7 @@ monitor_dlopen_init(void)
 {
     MONITOR_RUN_ONCE(dlopen_init);
     MONITOR_GET_REAL_NAME_WRAP(real_dlopen, dlopen);
+    MONITOR_GET_REAL_NAME_WRAP(real_dlclose, dlclose);
 }
 
 /*
@@ -77,7 +81,7 @@ monitor_dlopen_init(void)
  */
 
 /*
- *  Client access to the real dlopen.
+ *  Client access to the real dlopen() and dlclose().
  */
 void *
 monitor_real_dlopen(const char *path, int flags)
@@ -86,8 +90,15 @@ monitor_real_dlopen(const char *path, int flags)
     return (*real_dlopen)(path, flags);
 }
 
+int
+monitor_real_dlclose(void *handle)
+{
+    monitor_dlopen_init();
+    return (*real_dlclose)(handle);
+}
+
 /*
- *  Override dlopen().
+ *  Override dlopen() and dlclose().
  */
 void *
 MONITOR_WRAP_NAME(dlopen)(const char *path, int flags)
@@ -97,7 +108,16 @@ MONITOR_WRAP_NAME(dlopen)(const char *path, int flags)
     monitor_dlopen_init();
     MONITOR_DEBUG("path: %s, flags: %d\n", path, flags);
     handle = (*real_dlopen)(path, flags);
-    monitor_dlopen(path);
+    monitor_dlopen(path, flags, handle);
 
     return (handle);
+}
+
+int
+MONITOR_WRAP_NAME(dlclose)(void *handle)
+{
+    monitor_dlopen_init();
+    MONITOR_DEBUG("handle: %p\n", handle);
+    monitor_dlclose(handle);
+    return (*real_dlclose)(handle);
 }
