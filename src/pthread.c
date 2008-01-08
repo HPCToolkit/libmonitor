@@ -1,7 +1,7 @@
 /*
  *  Libmonitor pthread functions.
  *
- *  Copyright (c) 2007, Rice University.
+ *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -338,14 +338,15 @@ monitor_thread_shootdown(void)
     pthread_t self;
     int num_unfinished;
 
-    if (! monitor_has_used_threads)
+    if (! monitor_has_used_threads) {
+	MONITOR_DEBUG1("(no threads)\n");
 	return;
+    }
 
     MONITOR_THREAD_LOCK;
     monitor_in_exit_cleanup = 1;
     MONITOR_THREAD_UNLOCK;
-
-    MONITOR_DEBUG1("\n");
+    MONITOR_DEBUG1("(threads)\n");
 
     /*
      * Install the signal handler for MONITOR_EXIT_CLEANUP_SIGNAL.

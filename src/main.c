@@ -1,7 +1,7 @@
 /*
  *  Libmonitor core functions: main and exit.
  *
- *  Copyright (c) 2007, Rice University.
+ *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 #ifdef MONITOR_DYNAMIC
 #include <dlfcn.h>
 #endif
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -191,10 +192,7 @@ monitor_begin_process_fcn(void)
     monitor_init_process_called = 1;
     monitor_fini_process_called = 0;
     monitor_fini_library_called = 0;
-
-#ifdef MONITOR_USE_PTHREADS
     monitor_thread_release();
-#endif
 }
 
 void
@@ -203,10 +201,7 @@ monitor_end_process_fcn(void)
     if (monitor_fini_process_called)
 	return;
 
-#ifdef MONITOR_USE_PTHREADS
     monitor_thread_shootdown();
-#endif
-
     MONITOR_DEBUG1("calling monitor_fini_process() ...\n");
     monitor_fini_process();
     monitor_fini_process_called = 1;
@@ -333,3 +328,62 @@ monitor_library_fini_destructor(void)
 }
 
 #endif  /* MONITOR_DYNAMIC */
+
+/*
+ *----------------------------------------------------------------------
+ *  DEFAULT WEAK DEFINITIONS
+ *----------------------------------------------------------------------
+ */
+
+/*
+ *  Default, weak symbol definitions of monitor support functions.
+ *  These definitions are superseded by other monitor modules, when
+ *  those modules are present.  This allows compiling and linking a
+ *  subset of monitor and delaying the choice of subset until link
+ *  time (static case).
+ */
+int __attribute__ ((weak))
+monitor_sigaction(int sig, monitor_sighandler_t *handler,
+		  int flags, struct sigaction *act)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (FAILURE);
+}
+
+int __attribute__ ((weak))
+monitor_unwind_thread_bottom_frame(void *addr)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (FALSE);
+}
+
+int __attribute__ ((weak))
+monitor_mpi_comm_size(void)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (FAILURE);
+}
+
+int __attribute__ ((weak))
+monitor_mpi_comm_rank(void)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (FAILURE);
+}
+
+/*
+ *  Internal monitor functions.
+ */
+void __attribute__ ((weak))
+monitor_thread_release(void)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return;
+}
+
+void __attribute__ ((weak))
+monitor_thread_shootdown(void)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return;
+}
