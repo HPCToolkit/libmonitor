@@ -1,7 +1,7 @@
 ##
 ##  Libmonitor src/Makefile.am.
 ##
-##  Copyright (c) 2007, Rice University.
+##  Copyright (c) 2007-2008, Rice University.
 ##  All rights reserved.
 ##
 ##  Redistribution and use in source and binary forms, with or without
@@ -65,20 +65,24 @@ endif
 endif
 
 if MONITOR_TEST_LINK_STATIC
-    libexec_PROGRAMS = monitor.o
-    monitor_o_SOURCES = $(MONITOR_MAIN_FILES)
-    monitor_o_CPPFLAGS = -DMONITOR_STATIC
+    lib_LIBRARIES = libmonitor_wrap.a
+    libmonitor_wrap_a_SOURCES = $(MONITOR_MAIN_FILES)
+    libmonitor_wrap_a_CPPFLAGS = -DMONITOR_STATIC
     bin_SCRIPTS += monitor-link
 if MONITOR_TEST_USE_DLOPEN
-    monitor_o_SOURCES += dlopen.c
+    libmonitor_wrap_a_SOURCES += dlopen.c
 endif
 if MONITOR_TEST_USE_FORK
-    monitor_o_SOURCES += fork.c
+    libmonitor_wrap_a_SOURCES += fork.c
 endif
 if MONITOR_TEST_USE_PTHREADS
-    monitor_o_SOURCES += queue.h pthread.c
+    libmonitor_wrap_a_SOURCES += queue.h pthread.c
 endif
 if MONITOR_TEST_USE_SIGNALS
-    monitor_o_SOURCES += signal.c
+    libmonitor_wrap_a_SOURCES += signal.c
+endif
+if MONITOR_TEST_USE_MPI
+    libmonitor_wrap_a_SOURCES += mpi.c
+    libmonitor_wrap_a_CPPFLAGS += @mpi_cpp_flags@
 endif
 endif

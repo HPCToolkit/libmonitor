@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-#  Link monitor.o and callback functions into an application statically
-#  by editing the compile line.
+#  Link libmonitor_wrap.a and callback functions into an application
+#  statically by editing the compile line.
 #
 #  Usage: monitor-link [options] compiler file ...
 #
@@ -25,10 +25,9 @@
 
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
-libexecdir="@libexecdir@"
-monitor_file="${libexecdir}/monitor.o"
+libdir="@libdir@"
+libmonitor="${libdir}/libmonitor_wrap.a"
 monitor_wrap_names="@wrap_list@"
-monitor_library_names="@LIBS@"
 
 # Space-separated list of extra object files to add.
 insert_files=
@@ -106,24 +105,33 @@ do
     esac
 done
 
+#
+# Must have a compiler command and at least one argument.
+#
+test "x$2" != x || usage
+command="$1"
+shift
+
+#
+# Duplicate the -l<lib> arguments.
+#
+appl_libs=
+for lib in "$@"
+do
+    case "$lib" in
+	-l?* ) appl_libs="$appl_libs $lib" ;;
+    esac
+done
+
 wrap_args=
 for name in $monitor_wrap_names $wrap_names
 do
     wrap_args="${wrap_args} -Wl,--wrap,${name}"
 done
 
-#
-# Must have a compiler command and at least one argument.
-#
-test "x$2" != x || usage
-
-command="$1"
-shift
-
-library_args="${monitor_library_names} ${library_names}"
-args="${insert_files} ${monitor_file} ${library_args}"
+mon_args="${insert_files} ${libmonitor} ${appl_libs} ${library_names}"
 if test "$verbose" = yes ; then
-    echo "new command line: " $command $wrap_args "$@" $args
+    echo "new command line: " $command $wrap_args "$@" $mon_args
 fi
 
-exec $command $wrap_args "$@" $args
+exec $command $wrap_args "$@" $mon_args

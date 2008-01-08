@@ -1,7 +1,7 @@
 dnl
 dnl  Libmonitor top-level configure.ac.
 dnl
-dnl  Copyright (c) 2007, Rice University.
+dnl  Copyright (c) 2007-2008, Rice University.
 dnl  All rights reserved.
 dnl
 dnl  Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@ dnl
 dnl  $Id$
 dnl
 
-AC_INIT([libmonitor], [0.70])
-AC_COPYRIGHT([libmonitor is Copyright (c) 2007, Rice University.
+AC_INIT([libmonitor], [0.71])
+AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2008, Rice University.
 See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
@@ -75,7 +75,7 @@ fi
 #
 AC_ARG_ENABLE([link-preload],
     [AS_HELP_STRING([--enable-link-preload],
-	[build dynamic shared library to run monitor with LD_PRELOAD
+	[build libmonitor.so shared library to run monitor with LD_PRELOAD
 	[default=yes]])],
     [],
     [enable_link_preload=yes])
@@ -95,7 +95,7 @@ AM_CONDITIONAL([MONITOR_TEST_LINK_PRELOAD],
 #
 AC_ARG_ENABLE([link-static],
     [AS_HELP_STRING([--enable-link-static],
-	[build monitor.o object file to link monitor statically
+	[build libmonitor_wrap.a library to link monitor statically
 	[default=yes]])],
     [],
     [enable_link_static=yes])

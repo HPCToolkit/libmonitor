@@ -1,7 +1,7 @@
 /*
  *  Internal shared declarations.
  *
- *  Copyright (c) 2007, Rice University.
+ *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
  *  
  *  Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,11 @@
 #ifndef RTLD_NEXT
 #define RTLD_NEXT  ((void *) -1l)
 #endif
+
+#define TRUE   1
+#define FALSE  0
+#define SUCCESS   0
+#define FAILURE  -1
 
 /*
  *  Format (fmt) must be string constant in these macros.
