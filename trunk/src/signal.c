@@ -49,11 +49,22 @@
 #include "common.h"
 #include "monitor.h"
 
+/*
+ *----------------------------------------------------------------------
+ *  MACROS
+ *----------------------------------------------------------------------
+ */
+
 #ifdef NSIG
 #define MONITOR_NSIG  (NSIG)
 #else
 #define MONITOR_NSIG  (128)
 #endif
+
+/*  Sa_flags that monitor requires and forbids.
+ */
+#define SAFLAGS_REQUIRED   (SA_SIGINFO | SA_RESTART)
+#define SAFLAGS_FORBIDDEN  (SA_RESETHAND | SA_ONSTACK)
 
 /*
  *----------------------------------------------------------------------
@@ -106,10 +117,6 @@ static int monitor_signal_stop_list[] = {
     SIGTSTP, SIGTTIN, SIGTTOU, -1
 };
 
-/*  Sa_flags that monitor requires and forbids.
- */
-#define SAFLAGS_REQUIRED   (SA_SIGINFO)
-#define SAFLAGS_FORBIDDEN  (SA_RESETHAND | SA_ONSTACK)
 
 /*
  *----------------------------------------------------------------------

@@ -72,6 +72,7 @@ extern int monitor_unwind_process_bottom_frame(void *addr);
 extern int monitor_unwind_thread_bottom_frame(void *addr);
 extern int monitor_mpi_comm_size(void);
 extern int monitor_mpi_comm_rank(void);
+extern void *monitor_real_dlopen(const char *library, int flags);
 
 #ifdef __cplusplus
 }
