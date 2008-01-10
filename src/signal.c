@@ -51,7 +51,7 @@
 
 /*
  *----------------------------------------------------------------------
- *  MACROS
+ *  MACROS and GLOBAL DEFINITIONS
  *----------------------------------------------------------------------
  */
 
@@ -65,12 +65,6 @@
  */
 #define SAFLAGS_REQUIRED   (SA_SIGINFO | SA_RESTART)
 #define SAFLAGS_FORBIDDEN  (SA_RESETHAND | SA_ONSTACK)
-
-/*
- *----------------------------------------------------------------------
- *  GLOBAL VARIABLES
- *----------------------------------------------------------------------
- */
 
 typedef int  sigaction_fcn_t(int, const struct sigaction *,
 			    struct sigaction *);
@@ -116,7 +110,6 @@ static int monitor_signal_noterm_list[] = {
 static int monitor_signal_stop_list[] = {
     SIGTSTP, SIGTTIN, SIGTTOU, -1
 };
-
 
 /*
  *----------------------------------------------------------------------
