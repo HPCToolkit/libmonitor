@@ -61,18 +61,18 @@ __libc_start_main, but BSD and other systems, although they support
 LD_PRELOAD, do not use __libc_start_main.  So, the dynamic case is
 pretty much limited to GNU/Linux systems.
 
-In the static case, monitor uses an object file, monitor.o, which is
-linked into the application statically.  monitor.o contains
-definitions of __wrap_main, __wrap__exit, etc, and is linked into the
-application with the --wrap linker option so that the application's
-use of main is replaced by monitor's definition of __wrap_main, etc.
-See ld(1).
+In the static case, monitor uses an library file, libmonitor_wrap.a,
+which is linked into the application statically.  libmonitor_wrap.a
+contains definitions of __wrap_main, __wrap__exit, etc, and is linked
+into the application with the --wrap linker option so that the
+application's use of main is linked to monitor's definition of
+__wrap_main, etc.  See ld(1).
 
 The static method not require re-compiling the application program
 into .o files, but it does require re-linking the application's object
-files with monitor.o.  However, the static method can be used on BSD
-and other systems that don't use __libc_start_main, and on systems
-such as Catamount that don't run dynamically-linked binaries.
+files with libmonitor_wrap.a.  However, the static method can be used
+on BSD and other systems that don't use __libc_start_main, and on
+systems such as Catamount that don't run dynamically-linked binaries.
 
 In either case, the libmonitor client should write its own versions of
 the callback functions, or a subset of them, which libmonitor will
@@ -107,11 +107,11 @@ following additional options.  See ./configure --help.
 	disabled if they are not available.  Default=yes.
 
     --enable-link-static
-	When enabled, monitor builds monitor.o and the monitor-link
-	script for running monitor statically.  Note: this option is
-	different from --enable-static, a builtin configure option for
-	building the libmonitor.a library (which monitor doesn't even
-	use).  Default=yes.
+	When enabled, monitor builds libmonitor_wrap.a and the
+	monitor-link script for running monitor statically.
+	Note: this option is different from --enable-static, a builtin
+	configure option for building the libmonitor.a library (which
+	monitor doesn't use).  Default=yes.
 
     --enable-dlfcn
     --enable-fork
@@ -124,6 +124,11 @@ following additional options.  See ./configure --help.
 	Note: --enable-dlopen is already used by configure for
 	something else, so we use dlfcn (named after dlfcn.h) to
 	enable support for dlopen.  Default=yes.
+
+    --with-mpi=/path/to/mpi/directory
+	When specified, monitor includes support for MPI functions.
+	The path should be the top-level MPI directory, the one
+	containing the bin, include and lib subdirectories.
 
 =======================
 How to Run Libmonitor
@@ -193,4 +198,21 @@ Then, link the application with the cc script to produce a binary that
 will run on the compute nodes.
 
     monitor-link cc --target=catamount file.o ...
+
+When using MPI, the monitor-link script currently doesn't handle some
+of the MPI libraries correctly.  You may see undefined references to
+some of the monitor wrap functions.  For example:
+
+    monitor-link mpicc main.o 
+    /usr/local/lib64/librapl.so: undefined reference to `__wrap_pthread_create'
+
+The problem is that the mpicc compiler is adding additional libraries,
+in this case librapl.  The monitor-link script doesn't see the
+additional libraries and ends up with the wrong order on the link
+line.
+
+But there is a simple workaround.  In this case, add -lrapl to the
+link line.
+
+    monitor-link mpicc main.o -lrapl
 
