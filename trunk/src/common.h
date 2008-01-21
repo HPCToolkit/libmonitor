@@ -142,5 +142,6 @@ void monitor_begin_process_fcn(void);
 void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 void monitor_remove_client_signals(sigset_t *);
+void *monitor_get_main_stack_bottom(void);
 
 #endif  /* ! _MONITOR_COMMON_H_ */

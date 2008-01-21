@@ -56,7 +56,7 @@ int monitor_debug = 0;
 
 /*
  *----------------------------------------------------------------------
- *  GLOBAL VARIABLES and EXTERNAL FUNCTIONS
+ *  MACROS and GLOBAL VARIABLES
  *----------------------------------------------------------------------
  */
 
@@ -94,6 +94,7 @@ volatile static char monitor_fini_library_called = 0;
 volatile static char monitor_init_process_called = 0;
 volatile static char monitor_fini_process_called = 0;
 
+static void *main_stack_bottom = NULL;
 extern void monitor_unwind_fence1;
 extern void monitor_unwind_fence2;
 
@@ -209,6 +210,32 @@ monitor_end_process_fcn(void)
 
 /*
  *----------------------------------------------------------------------
+ *  SUPPORT FUNCTIONS, internal and external
+ *----------------------------------------------------------------------
+ */
+
+/*
+ *  Returns: 1 if address is within the body of the function at the
+ *  bottom of the application's call stack, else 0.
+ */
+int
+monitor_unwind_process_bottom_frame(void *addr)
+{
+    return (&monitor_unwind_fence1 <= addr && addr <= &monitor_unwind_fence2);
+}
+
+/*
+ *  For internal monitor use only, clients should use
+ *  monitor_stack_bottom().
+ */
+void *
+monitor_get_main_stack_bottom(void)
+{
+    return (main_stack_bottom);
+}
+
+/*
+ *----------------------------------------------------------------------
  *  EXTERNAL OVERRIDES and their helper functions
  *----------------------------------------------------------------------
  */
@@ -234,6 +261,8 @@ __wrap_main(int argc, char **argv, char **envp)
 #endif
 
     MONITOR_ASM_LABEL(monitor_unwind_fence1);
+    main_stack_bottom = alloca(8);
+    strncpy(main_stack_bottom, "stakbot", 8);
     monitor_begin_process_fcn();
 
     if (atexit(&monitor_end_process_fcn) != 0) {
@@ -245,16 +274,6 @@ __wrap_main(int argc, char **argv, char **envp)
     MONITOR_ASM_LABEL(monitor_unwind_fence2);
 
     return (ret);
-}
-
-/*
- *  Returns: 1 if address is at the bottom of the application's call
- *  stack, else 0.
- */
-int
-monitor_unwind_process_bottom_frame(void *addr)
-{
-    return (&monitor_unwind_fence1 <= addr && addr <= &monitor_unwind_fence2);
 }
 
 #ifdef MONITOR_DYNAMIC
@@ -342,6 +361,12 @@ monitor_library_fini_destructor(void)
  *  subset of monitor and delaying the choice of subset until link
  *  time (static case).
  */
+void * __attribute__ ((weak))
+monitor_stack_bottom(void)
+{
+    return (main_stack_bottom);
+}
+
 void * __attribute__ ((weak))
 monitor_real_dlopen(const char *path, int flags)
 {

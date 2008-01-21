@@ -145,12 +145,15 @@ struct monitor_thread_node {
     pthread_t  tn_self;
     pthread_start_fcn_t  *tn_start_routine;
     void  *tn_arg;
+    void  *tn_stack_bottom;
+    char   tn_is_main;
     char   tn_appl_started;
     char   tn_fini_started;
     char   tn_fini_done;
 };
 
 static LIST_HEAD(, monitor_thread_node) monitor_thread_list;
+static struct monitor_thread_node monitor_main_tn;
 
 static pthread_key_t monitor_pthread_key;
 
@@ -209,6 +212,19 @@ monitor_thread_init(void)
     ret = (*real_pthread_key_create)(&monitor_pthread_key, NULL);
     if (ret != 0) {
 	MONITOR_ERROR("pthread_key_create failed (%d)\n", ret);
+    }
+    /*
+     * The main thread's tn struct.
+     */
+    memset(&monitor_main_tn, 0, sizeof(struct monitor_thread_node));
+    monitor_main_tn.tn_magic = MONITOR_TN_MAGIC;
+    monitor_main_tn.tn_is_main = 1;
+    monitor_main_tn.tn_thread_num = 0;
+    monitor_main_tn.tn_self = pthread_self();
+    monitor_main_tn.tn_stack_bottom = monitor_get_main_stack_bottom();
+    ret = (*real_pthread_setspecific)(monitor_pthread_key, &monitor_main_tn);
+    if (ret != 0) {
+	MONITOR_ERROR("pthread_setspecific failed (%d)\n", ret);
     }
     monitor_has_used_threads = 1;
 }
@@ -407,7 +423,44 @@ monitor_thread_shootdown(void)
 
 /*
  *----------------------------------------------------------------------
- *  MONITOR PTHREAD_CREATE OVERRIDE and HELPER FUNCTIONS
+ *  PTHREAD SUPPORT FUNCTIONS
+ *----------------------------------------------------------------------
+ */
+
+/*
+ *  Returns: 1 if address is at the bottom of the thread's call stack,
+ *  else 0.
+ */
+int
+monitor_unwind_thread_bottom_frame(void *addr)
+{
+    return (&monitor_unwind_thread_fence1 <= addr &&
+	    addr <= &monitor_unwind_thread_fence2);
+}
+
+/*
+ *  Returns: an address inside the thread's bottom stack frame,
+ *  or else NULL if an error occurred.
+ */
+void *
+monitor_stack_bottom(void)
+{
+    struct monitor_thread_node *tn;
+
+    if (! monitor_has_used_threads)
+	return monitor_get_main_stack_bottom();
+
+    tn = pthread_getspecific(monitor_pthread_key);
+    if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
+	MONITOR_WARN1("pthread_getspecific failed\n");
+	return (NULL);
+    }
+    return (tn->tn_stack_bottom);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *  PTHREAD_CREATE OVERRIDE and HELPER FUNCTIONS
  *----------------------------------------------------------------------
  */
 
@@ -472,6 +525,8 @@ monitor_pthread_start_routine(void *arg)
     }
 
     MONITOR_ASM_LABEL(monitor_unwind_thread_fence1);
+    tn->tn_stack_bottom = alloca(8);
+    strncpy(tn->tn_stack_bottom, "stakbot", 8);
     MONITOR_DEBUG("calling monitor_init_thread(num = %u) ...\n",
 		  tn->tn_thread_num);
     tn->tn_user_data = monitor_init_thread(tn->tn_thread_num);
@@ -483,17 +538,6 @@ monitor_pthread_start_routine(void *arg)
     MONITOR_ASM_LABEL(monitor_unwind_thread_fence2);
 
     return (ret);
-}
-
-/*
- *  Returns: 1 if address is at the bottom of the thread's call stack,
- *  else 0.
- */
-int
-monitor_unwind_thread_bottom_frame(void *addr)
-{
-    return (&monitor_unwind_thread_fence1 <= addr &&
-	    addr <= &monitor_unwind_thread_fence2);
 }
 
 /*

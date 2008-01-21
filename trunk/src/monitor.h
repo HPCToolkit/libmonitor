@@ -68,6 +68,7 @@ extern void *monitor_real_dlopen(const char *path, int flags);
 extern int monitor_real_dlclose(void *handle);
 extern int monitor_sigaction(int sig, monitor_sighandler_t *handler,
 			     int flags, struct sigaction *act);
+extern void *monitor_stack_bottom(void);
 extern int monitor_unwind_process_bottom_frame(void *addr);
 extern int monitor_unwind_thread_bottom_frame(void *addr);
 extern int monitor_mpi_comm_size(void);
