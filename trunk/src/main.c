@@ -112,8 +112,6 @@ extern void monitor_unwind_fence2;
 void
 monitor_early_init(void)
 {
-    char *options;
-
     MONITOR_RUN_ONCE(early_init);
 
     if (! monitor_debug) {
