@@ -226,6 +226,9 @@ if test "x$with_mpi" != xno ; then
     AC_DEFINE([MONITOR_USE_MPI], [1],
 	[Include support for MPI.])
     mpi_cpp_flags="-I ${with_mpi}/include"
+    wrap_list="${wrap_list} MPI_Init MPI_Finalize"
+    wrap_list="${wrap_list} mpi_init_ mpi_finalize_"
+    wrap_list="${wrap_list} mpi_init__ mpi_finalize__"
 fi
 
 AM_CONDITIONAL([MONITOR_TEST_USE_MPI],
