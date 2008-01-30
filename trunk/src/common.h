@@ -110,20 +110,28 @@
 } while (0)
 
 #ifdef MONITOR_STATIC
-#define MONITOR_WRAP_NAME(name)  __wrap_##name
-#define MONITOR_GET_REAL_NAME(var, name)  do {		\
-    var = &name;					\
-    MONITOR_DEBUG("%s() = %p\n", #name , var);		\
+#define MONITOR_WRAP_NAME_HELP(name)  __wrap_##name
+#define MONITOR_GET_REAL_NAME_HELP(var, name)  do {		\
+    var = &name;						\
+    MONITOR_DEBUG("%s() = %p\n", #name , var);			\
 } while (0)
-#define MONITOR_GET_REAL_NAME_WRAP(var, name)  do {		\
+#define MONITOR_GET_REAL_NAME_WRAP_HELP(var, name)  do {	\
     var = &__real_##name;					\
     MONITOR_DEBUG("%s() = %p\n", "__real_" #name , var);	\
 } while (0)
 #else
-#define MONITOR_WRAP_NAME(name)  name
-#define MONITOR_GET_REAL_NAME(var, name)  MONITOR_REQUIRE_DLSYM(var, #name )
-#define MONITOR_GET_REAL_NAME_WRAP(var, name)  MONITOR_REQUIRE_DLSYM(var, #name )
+#define MONITOR_WRAP_NAME_HELP(name)  name
+#define MONITOR_GET_REAL_NAME_HELP(var, name)  \
+    MONITOR_REQUIRE_DLSYM(var, #name )
+#define MONITOR_GET_REAL_NAME_WRAP_HELP(var, name)  \
+    MONITOR_REQUIRE_DLSYM(var, #name )
 #endif
+
+#define MONITOR_WRAP_NAME(name)  MONITOR_WRAP_NAME_HELP(name)
+#define MONITOR_GET_REAL_NAME(var, name)  \
+    MONITOR_GET_REAL_NAME_HELP(var, name)
+#define MONITOR_GET_REAL_NAME_WRAP(var, name)  \
+    MONITOR_GET_REAL_NAME_WRAP_HELP(var, name)
 
 #define MONITOR_ASM_LABEL(name)		\
     asm volatile (".globl " #name );	\
@@ -142,6 +150,8 @@ void monitor_begin_process_fcn(void);
 void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 void monitor_remove_client_signals(sigset_t *);
+void monitor_get_main_args(int *, char ***, char ***);
 void *monitor_get_main_stack_bottom(void);
+void monitor_set_mpi_size_rank(int, int);
 
 #endif  /* ! _MONITOR_COMMON_H_ */

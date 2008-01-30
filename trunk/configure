@@ -20425,6 +20425,9 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
     mpi_cpp_flags="-I ${with_mpi}/include"
+    wrap_list="${wrap_list} MPI_Init MPI_Finalize"
+    wrap_list="${wrap_list} mpi_init_ mpi_finalize_"
+    wrap_list="${wrap_list} mpi_init__ mpi_finalize__"
 fi
 
  if test x$with_mpi != xno; then

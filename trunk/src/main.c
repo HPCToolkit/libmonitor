@@ -209,6 +209,21 @@ monitor_end_process_fcn(void)
 }
 
 /*
+ *  Let the other modules see the command-line arguments, if needed.
+ *  The Fortran mpi_init() uses this.
+ */
+void
+monitor_get_main_args(int *argc_ptr, char ***argv_ptr, char ***env_ptr)
+{
+    if (argc_ptr != NULL)
+	*argc_ptr = monitor_argc;
+    if (argv_ptr != NULL)
+	*argv_ptr = monitor_argv;
+    if (env_ptr != NULL)
+	*env_ptr = monitor_envp;
+}
+
+/*
  *----------------------------------------------------------------------
  *  SUPPORT FUNCTIONS, internal and external
  *----------------------------------------------------------------------
