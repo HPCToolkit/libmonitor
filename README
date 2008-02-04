@@ -215,4 +215,3 @@ But there is a simple workaround.  In this case, add -lrapl to the
 link line.
 
     monitor-link mpicc main.o -lrapl
-
