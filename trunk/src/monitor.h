@@ -46,16 +46,17 @@ extern "C" {
 #endif
 
 /*
- * Callback functions for the client to override.
+ *  Callback functions for the client to override.
  */
 extern void monitor_init_library(void);
 extern void monitor_fini_library(void);
 extern void monitor_init_process(char *process, int *argc, char **argv,
 				 unsigned pid);
 extern void monitor_fini_process(void);
+extern void *monitor_thread_pre_create(void);
 extern void monitor_init_thread_support(void);
-extern void *monitor_init_thread(unsigned tid);
-extern void monitor_fini_thread(void *user_data);
+extern void *monitor_init_thread(int tid, void *data);
+extern void monitor_fini_thread(void *data);
 extern void monitor_dlopen(const char *path, int flags, void *handle);
 extern void monitor_dlclose(void *handle);
 extern void monitor_init_mpi(int *argc, char ***argv);
