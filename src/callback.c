@@ -43,6 +43,13 @@ monitor_fini_process(void)
     MONITOR_DEBUG1("(default callback)\n");
 }
 
+void * __attribute__ ((weak))
+monitor_thread_pre_create(void)
+{
+    MONITOR_DEBUG1("(default callback)\n");
+    return (NULL);
+}
+
 void __attribute__ ((weak))
 monitor_init_thread_support(void)
 {
@@ -50,16 +57,17 @@ monitor_init_thread_support(void)
 }
 
 void * __attribute__ ((weak))
-monitor_init_thread(unsigned tid)
+monitor_init_thread(int tid, void *data)
 {
-    MONITOR_DEBUG("(default callback) tid = %u\n", tid);
+    MONITOR_DEBUG("(default callback) tid = %d, data = %p\n",
+		  tid, data);
     return (NULL);
 }
 
 void __attribute__ ((weak))
-monitor_fini_thread(void *user_data)
+monitor_fini_thread(void *data)
 {
-    MONITOR_DEBUG("(default callback) data = %p\n", user_data);
+    MONITOR_DEBUG("(default callback) data = %p\n", data);
 }
 
 void __attribute__ ((weak))

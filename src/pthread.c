@@ -140,11 +140,12 @@ static pthread_mutex_t monitor_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct monitor_thread_node {
     LIST_ENTRY(monitor_thread_node) tn_links;
     int    tn_magic;
-    int    tn_thread_num;
-    void  *tn_user_data;
+    int    tn_tid;
     pthread_t  tn_self;
     pthread_start_fcn_t  *tn_start_routine;
     void  *tn_arg;
+    void  *tn_user_data;
+    void  *tn_user_pre_data;
     void  *tn_stack_bottom;
     char   tn_is_main;
     char   tn_appl_started;
@@ -219,7 +220,7 @@ monitor_thread_init(void)
     memset(&monitor_main_tn, 0, sizeof(struct monitor_thread_node));
     monitor_main_tn.tn_magic = MONITOR_TN_MAGIC;
     monitor_main_tn.tn_is_main = 1;
-    monitor_main_tn.tn_thread_num = 0;
+    monitor_main_tn.tn_tid = 0;
     monitor_main_tn.tn_self = pthread_self();
     monitor_main_tn.tn_stack_bottom = monitor_get_main_stack_bottom();
     ret = (*real_pthread_setspecific)(monitor_pthread_key, &monitor_main_tn);
@@ -261,7 +262,7 @@ monitor_link_thread_node(struct monitor_thread_node *tn)
 	return (1);
     }
 
-    tn->tn_thread_num = ++monitor_thread_num;
+    tn->tn_tid = ++monitor_thread_num;
     tn->tn_self= (*real_pthread_self)();
     LIST_INSERT_HEAD(&monitor_thread_list, tn, tn_links);
     ret = (*real_pthread_setspecific)(monitor_pthread_key, tn);
@@ -300,13 +301,13 @@ monitor_thread_signal_handler(int signum)
 
     tn = (*real_pthread_getspecific)(monitor_pthread_key);
     if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
-	MONITOR_WARN1("missing thread specific data -- "
+	MONITOR_WARN1("pthread_getspecific failed: "
 		      "unable to call monitor_fini_thread\n");
 	return;
     }
     if (tn->tn_appl_started && !tn->tn_fini_started) {
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, num = %d) ...\n",
-		      tn->tn_user_data, tn->tn_thread_num);
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, tid = %d) ...\n",
+		      tn->tn_user_data, tn->tn_tid);
 	tn->tn_fini_started = 1;
 	monitor_fini_thread(tn->tn_user_data);
 	tn->tn_fini_done = 1;
@@ -413,8 +414,8 @@ monitor_thread_shootdown(void)
      * See if we need to run fini_thread from this thread.
      */
     if (my_tn != NULL && !my_tn->tn_fini_started) {
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, num = %d) ...\n",
-		      my_tn->tn_user_data, my_tn->tn_thread_num);
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, tid = %d) ...\n",
+		      my_tn->tn_user_data, my_tn->tn_tid);
 	my_tn->tn_fini_started = 1;
 	monitor_fini_thread(my_tn->tn_user_data);
 	my_tn->tn_fini_done = 1;
@@ -450,7 +451,7 @@ monitor_stack_bottom(void)
     if (! monitor_has_used_threads)
 	return monitor_get_main_stack_bottom();
 
-    tn = pthread_getspecific(monitor_pthread_key);
+    tn = (*real_pthread_getspecific)(monitor_pthread_key);
     if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
 	MONITOR_WARN1("pthread_getspecific failed\n");
 	return (NULL);
@@ -482,8 +483,8 @@ monitor_pthread_cleanup_routine(void *arg)
     }
 
     if (! tn->tn_fini_started) {
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), num = %d\n",
-		      tn->tn_user_data, tn->tn_thread_num);
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d\n",
+		      tn->tn_user_data, tn->tn_tid);
 	monitor_fini_thread(tn->tn_user_data);
     }
     monitor_unlink_thread_node(tn);
@@ -527,9 +528,9 @@ monitor_pthread_start_routine(void *arg)
     MONITOR_ASM_LABEL(monitor_unwind_thread_fence1);
     tn->tn_stack_bottom = alloca(8);
     strncpy(tn->tn_stack_bottom, "stakbot", 8);
-    MONITOR_DEBUG("calling monitor_init_thread(num = %u) ...\n",
-		  tn->tn_thread_num);
-    tn->tn_user_data = monitor_init_thread(tn->tn_thread_num);
+    MONITOR_DEBUG("calling monitor_init_thread(tid = %d, pre_data = %p) ...\n",
+		  tn->tn_tid, tn->tn_user_pre_data);
+    tn->tn_user_data = monitor_init_thread(tn->tn_tid, tn->tn_user_pre_data);
 
     PTHREAD_CLEANUP_PUSH(monitor_pthread_cleanup_routine, tn);
     tn->tn_appl_started = 1;
@@ -569,6 +570,8 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
     tn = monitor_make_thread_node();
     tn->tn_start_routine = start_routine;
     tn->tn_arg = arg;
+    MONITOR_DEBUG1("calling monitor_thread_pre_create() ...\n");
+    tn->tn_user_pre_data = monitor_thread_pre_create();
 
     ret = (*real_pthread_create)
 	(thread, attr, monitor_pthread_start_routine, (void *)tn);
