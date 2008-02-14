@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "monitor.h"
@@ -207,8 +208,10 @@ monitor_thread_init(void)
 #endif
 #ifdef MONITOR_USE_SIGNALS
     MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
+    MONITOR_GET_REAL_NAME_WRAP(real_pthread_sigmask, pthread_sigmask);
 #else
     MONITOR_GET_REAL_NAME(real_sigaction, sigaction);
+    MONITOR_GET_REAL_NAME(real_pthread_sigmask, pthread_sigmask);
 #endif
     ret = (*real_pthread_key_create)(&monitor_pthread_key, NULL);
     if (ret != 0) {
@@ -460,6 +463,17 @@ monitor_stack_bottom(void)
 }
 
 /*
+ *  Client access to the real pthread_sigmask().
+ */
+int
+monitor_real_pthread_sigmask(int how, const sigset_t *set,
+			     sigset_t *oldset)
+{
+    monitor_thread_init();
+    return (*real_pthread_sigmask)(how, set, oldset);
+}
+
+/*
  *----------------------------------------------------------------------
  *  PTHREAD_CREATE OVERRIDE and HELPER FUNCTIONS
  *----------------------------------------------------------------------
@@ -575,6 +589,9 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
 
     ret = (*real_pthread_create)
 	(thread, attr, monitor_pthread_start_routine, (void *)tn);
+
+    MONITOR_DEBUG1("calling monitor_thread_post_create() ...\n");
+    monitor_thread_post_create(tn->tn_user_pre_data);
 
     if (first) {
 	/*
