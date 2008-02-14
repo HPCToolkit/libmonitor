@@ -293,7 +293,6 @@ monitor_sigaction(int sig, monitor_sighandler_t *handler,
 		  int flags, struct sigaction *act)
 {
     struct monitor_signal_entry *mse;
-    sigset_t my_set;
 
     monitor_signal_init();
     if (sig <= 0 || sig >= MONITOR_NSIG ||
@@ -375,7 +374,6 @@ sighandler_fcn_t *
 MONITOR_WRAP_NAME(signal)(int sig, sighandler_fcn_t *handler)
 {
     struct sigaction act, oldact;
-    int ret;
 
     act.sa_handler = handler;
     act.sa_flags = 0;

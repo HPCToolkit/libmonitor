@@ -51,6 +51,13 @@ monitor_thread_pre_create(void)
 }
 
 void __attribute__ ((weak))
+monitor_thread_post_create(void *data)
+{
+    MONITOR_DEBUG1("(default callback)\n");
+    return;
+}
+
+void __attribute__ ((weak))
 monitor_init_thread_support(void)
 {
     MONITOR_DEBUG1("(default callback)\n");

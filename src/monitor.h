@@ -54,6 +54,7 @@ extern void monitor_init_process(char *process, int *argc, char **argv,
 				 unsigned pid);
 extern void monitor_fini_process(void);
 extern void *monitor_thread_pre_create(void);
+extern void monitor_thread_post_create(void *);
 extern void monitor_init_thread_support(void);
 extern void *monitor_init_thread(int tid, void *data);
 extern void monitor_fini_thread(void *data);
@@ -67,6 +68,8 @@ extern void monitor_fini_mpi(void);
  */
 extern void *monitor_real_dlopen(const char *path, int flags);
 extern int monitor_real_dlclose(void *handle);
+extern int monitor_real_pthread_sigmask(int how, const sigset_t *set,
+					sigset_t *oldset);
 extern int monitor_sigaction(int sig, monitor_sighandler_t *handler,
 			     int flags, struct sigaction *act);
 extern void *monitor_stack_bottom(void);
