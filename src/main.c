@@ -75,15 +75,20 @@ int monitor_debug = 0;
 typedef int start_main_fcn_t(START_MAIN_PARAM_LIST);
 typedef int main_fcn_t(int, char **, char **);
 typedef void exit_fcn_t(int);
+typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
 
 #ifdef MONITOR_STATIC
 extern main_fcn_t __real_main;
 extern exit_fcn_t __real__exit;
+#ifdef MONITOR_USE_SIGNALS
+extern sigprocmask_fcn_t  __real_sigprocmask;
+#endif
 #endif
 
 static start_main_fcn_t  *real_start_main = NULL;
 static main_fcn_t  *real_main = NULL;
 static exit_fcn_t  *real_u_exit = NULL;
+static sigprocmask_fcn_t *real_sigprocmask = NULL;
 
 static int monitor_argc = 0;
 static char **monitor_argv = NULL;
@@ -146,7 +151,10 @@ monitor_normal_init(void)
 #endif
 
 #ifdef MONITOR_USE_SIGNALS
+    MONITOR_GET_REAL_NAME_WRAP(real_sigprocmask, sigprocmask);
     monitor_signal_init();
+#else
+    MONITOR_GET_REAL_NAME(real_sigprocmask, sigprocmask);
 #endif
 }
 
@@ -245,6 +253,20 @@ void *
 monitor_get_main_stack_bottom(void)
 {
     return (main_stack_bottom);
+}
+
+/*
+ *  Client access to the real sigprocmask().
+ *
+ *  Note: this goes here rather than in signal.c because we need to
+ *  provide this function even when not overriding signals.
+ */
+int
+monitor_real_sigprocmask(int how, const sigset_t *set,
+			 sigset_t *oldset)
+{
+    monitor_normal_init();
+    return (*real_sigprocmask)(how, set, oldset);
 }
 
 /*

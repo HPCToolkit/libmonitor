@@ -68,6 +68,8 @@ extern void monitor_fini_mpi(void);
  */
 extern void *monitor_real_dlopen(const char *path, int flags);
 extern int monitor_real_dlclose(void *handle);
+extern int monitor_real_sigprocmask(int how, const sigset_t *set,
+				    sigset_t *oldset);
 extern int monitor_real_pthread_sigmask(int how, const sigset_t *set,
 					sigset_t *oldset);
 extern int monitor_sigaction(int sig, monitor_sighandler_t *handler,
