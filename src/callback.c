@@ -68,7 +68,7 @@ monitor_init_thread(int tid, void *data)
 {
     MONITOR_DEBUG("(default callback) tid = %d, data = %p\n",
 		  tid, data);
-    return (NULL);
+    return (data);
 }
 
 void __attribute__ ((weak))
