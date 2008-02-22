@@ -66,6 +66,8 @@
 #define SUCCESS   0
 #define FAILURE  -1
 
+#define MONITOR_POLL_USLEEP_TIME  100000
+
 /*
  *  Format (fmt) must be string constant in these macros.
  *  Some compilers don't accept ##__VA_ARGS__ syntax, so split the
@@ -149,6 +151,7 @@ void monitor_signal_init(void);
 void monitor_begin_process_fcn(void);
 void monitor_end_process_fcn(void);
 void monitor_end_library_fcn(void);
+int  monitor_end_process_race(void);
 void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 void monitor_remove_client_signals(sigset_t *);

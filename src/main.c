@@ -97,7 +97,8 @@ static char **monitor_envp = NULL;
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
 volatile static char monitor_init_process_called = 0;
-volatile static char monitor_fini_process_called = 0;
+volatile static char monitor_fini_process_done = 0;
+volatile static char monitor_fini_process_cookie = 0;
 
 static void *main_stack_bottom = NULL;
 extern void monitor_unwind_fence1;
@@ -197,21 +198,29 @@ monitor_begin_process_fcn(void)
     monitor_init_process(monitor_argv[0], &monitor_argc,
 			 monitor_argv, (unsigned)getpid());
     monitor_init_process_called = 1;
-    monitor_fini_process_called = 0;
     monitor_fini_library_called = 0;
+    monitor_fini_process_done = 0;
+    monitor_fini_process_cookie = 0;
     monitor_thread_release();
 }
 
+/*
+ *  Monitor catches process exit in several places, so we synchronize
+ *  them here.  The first thread to get here invokes the callback
+ *  function, and the others wait for that to finish.
+ */
 void
 monitor_end_process_fcn(void)
 {
-    if (monitor_fini_process_called)
-	return;
-
-    monitor_thread_shootdown();
-    MONITOR_DEBUG1("calling monitor_fini_process() ...\n");
-    monitor_fini_process();
-    monitor_fini_process_called = 1;
+    if (monitor_end_process_race()) {
+	monitor_thread_shootdown();
+	MONITOR_DEBUG1("calling monitor_fini_process() ...\n");
+	monitor_fini_process();
+	monitor_fini_process_done = 1;
+    } else {
+	while (! monitor_fini_process_done)
+	    usleep(MONITOR_POLL_USLEEP_TIME);
+    }
 }
 
 /*
@@ -468,4 +477,14 @@ monitor_thread_shootdown(void)
 {
     MONITOR_DEBUG1("(weak)\n");
     return;
+}
+
+int __attribute__ ((weak))
+monitor_end_process_race(void)
+{
+    int ans = !monitor_fini_process_cookie;
+
+    monitor_fini_process_cookie = 1;
+    MONITOR_DEBUG("(weak) ans = %d\n", ans);
+    return (ans);
 }
