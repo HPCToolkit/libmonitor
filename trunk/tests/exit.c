@@ -2,7 +2,9 @@
  *  Test process exit callbacks by having multiple threads all call
  *  process exit() at the same time.
  *
- *  There should be exactly one call to monitor_fini_process().
+ *  There should be one call to monitor_fini_thread() for each thread,
+ *  followed by exactly one call to monitor_fini_process() and no
+ *  segfaults.
  *
  *  $Id$
  */
@@ -16,7 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define PROGRAM_TIME   6
+#define PROGRAM_TIME   3
 #define NUM_THREADS    3
 
 int program_time = PROGRAM_TIME;
@@ -70,7 +72,7 @@ main(int argc, char **argv)
             errx(1, "pthread_create failed");
     }
 
-    wait_for_time(program_time/2);
+    wait_for_time(program_time - 1);
     printf("-------------------------------------------------------\n");
     wait_for_time(program_time);
 
