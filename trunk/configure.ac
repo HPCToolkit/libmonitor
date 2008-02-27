@@ -51,7 +51,7 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
-AC_SUBST([wrap_list], ["main _exit"])
+AC_SUBST([wrap_list], ["main exit _exit"])
 AC_SUBST([mpi_cpp_flags])
 
 #
