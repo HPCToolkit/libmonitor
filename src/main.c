@@ -79,6 +79,7 @@ typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
 
 #ifdef MONITOR_STATIC
 extern main_fcn_t __real_main;
+extern exit_fcn_t __real_exit;
 extern exit_fcn_t __real__exit;
 #ifdef MONITOR_USE_SIGNALS
 extern sigprocmask_fcn_t  __real_sigprocmask;
@@ -87,6 +88,7 @@ extern sigprocmask_fcn_t  __real_sigprocmask;
 
 static start_main_fcn_t  *real_start_main = NULL;
 static main_fcn_t  *real_main = NULL;
+static exit_fcn_t  *real_exit = NULL;
 static exit_fcn_t  *real_u_exit = NULL;
 static sigprocmask_fcn_t *real_sigprocmask = NULL;
 
@@ -145,6 +147,7 @@ monitor_normal_init(void)
      * needed.
      */
     MONITOR_GET_REAL_NAME_WRAP(real_u_exit, _exit);
+    MONITOR_GET_REAL_NAME_WRAP(real_exit, exit);
 #ifdef MONITOR_STATIC
     real_main = &__real_main;
 #else
@@ -207,7 +210,15 @@ monitor_begin_process_fcn(void)
 /*
  *  Monitor catches process exit in several places, so we synchronize
  *  them here.  The first thread to get here invokes the callback
- *  function, and the others wait for that to finish.
+ *  functions, and the others wait for that to finish.
+ *
+ *  Note: there is a race condition in the system exit() between
+ *  _IO_cleanup() and doing output from monitor's library fini
+ *  destructor (in debug mode) that can (rarely) result in a segfault.
+ *  Here, we avoid the race by delaying the losing threads a few extra
+ *  seconds.  But, we can't block them forever because that would
+ *  deadlock if the application calls exit() from its own exit
+ *  handler.  (It shouldn't do that, but it might.)
  */
 void
 monitor_end_process_fcn(void)
@@ -220,7 +231,9 @@ monitor_end_process_fcn(void)
     } else {
 	while (! monitor_fini_process_done)
 	    usleep(MONITOR_POLL_USLEEP_TIME);
+	sleep(5);
     }
+    MONITOR_DEBUG1("resume system exit\n");
 }
 
 /*
@@ -309,9 +322,6 @@ __wrap_main(int argc, char **argv, char **envp)
     strncpy(main_stack_bottom, "stakbot", 8);
     monitor_begin_process_fcn();
 
-    if (atexit(&monitor_end_process_fcn) != 0) {
-	MONITOR_ERROR1("atexit failed\n");
-    }
     ret = (*real_main)(monitor_argc, monitor_argv, monitor_envp);
 
     monitor_end_process_fcn();
@@ -334,6 +344,24 @@ __libc_start_main(START_MAIN_PARAM_LIST)
     return (0);
 }
 #endif  /* MONITOR_DYNAMIC */
+
+/*
+ *  It seems that exit() bypasses the library version of _exit(), plus
+ *  the atexit handlers are only run once.  So, we need to override
+ *  exit() to handle multiple calls to exit().
+ */
+void
+MONITOR_WRAP_NAME(exit)(int status)
+{
+    MONITOR_DEBUG1("\n");
+    monitor_normal_init();
+    monitor_end_process_fcn();
+
+    (*real_exit)(status);
+
+    /* Never reached, but silence a compiler warning. */
+    exit(status);
+}
 
 /*
  *  _exit and _Exit bypass library fini functions, so we need to call

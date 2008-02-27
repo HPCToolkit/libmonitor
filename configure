@@ -19432,7 +19432,7 @@ fi
 
 
 
-wrap_list="main _exit"
+wrap_list="main exit _exit"
 
 
 
