@@ -73,7 +73,7 @@ main(int argc, char **argv)
     }
 
     wait_for_time(program_time - 1);
-    printf("-------------------------------------------------------\n");
+    printf("----------------------------------------\n");
     wait_for_time(program_time);
 
     printf("main exit\n");
