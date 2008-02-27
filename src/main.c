@@ -278,6 +278,18 @@ monitor_get_main_stack_bottom(void)
 }
 
 /*
+ *  Client access to the real _exit().
+ *
+ *  Note: this bypasses the fini callback functions.
+ */
+void
+monitor_real_exit(int status)
+{
+    monitor_normal_init();
+    (*real_u_exit)(status);
+}
+
+/*
  *  Client access to the real sigprocmask().
  *
  *  Note: this goes here rather than in signal.c because we need to
