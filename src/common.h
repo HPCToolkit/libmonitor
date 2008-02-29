@@ -69,30 +69,33 @@
 #define MONITOR_POLL_USLEEP_TIME  100000
 
 /*
- *  Format (fmt) must be string constant in these macros.
- *  Some compilers don't accept ##__VA_ARGS__ syntax, so split the
- *  macros into two.
+ *  Format (fmt) must be a string constant in these macros.  Some
+ *  compilers don't accept the ##__VA_ARGS__ syntax for the case of
+ *  empty args, so split the macros into two.
  */
-#define MONITOR_DEBUG_ARGS(fmt, ...)  do {				\
-    if (monitor_debug) {						\
-	fprintf(stderr, "monitor debug>> %s: " fmt , __VA_ARGS__ );	\
-    }									\
+#define MONITOR_DEBUG_ARGS(fmt, ...)  do {			\
+    if (monitor_debug) {					\
+	fprintf(stderr, "monitor debug [%d] %s: " fmt ,		\
+		getpid(), __VA_ARGS__ );			\
+    }							       	\
+} while (0)
+
+#define MONITOR_WARN_ARGS(fmt, ...)  do {			\
+    fprintf(stderr, "monitor warning [%d] %s: " fmt ,		\
+	    getpid(), __VA_ARGS__ );				\
+} while (0)
+
+#define MONITOR_ERROR_ARGS(fmt, ...)  do {			\
+    fprintf(stderr, "monitor error [%d] %s: " fmt ,		\
+	    getpid(), __VA_ARGS__ );				\
+    errx(1, "%s:" fmt , __VA_ARGS__ );				\
 } while (0)
 
 #define MONITOR_DEBUG1(fmt)      MONITOR_DEBUG_ARGS(fmt, __func__)
 #define MONITOR_DEBUG(fmt, ...)  MONITOR_DEBUG_ARGS(fmt, __func__, __VA_ARGS__)
 
-#define MONITOR_WARN_ARGS(fmt, ...)  do {				\
-    fprintf(stderr, "monitor warning>> %s: " fmt , __VA_ARGS__ );	\
-} while (0)
-
 #define MONITOR_WARN1(fmt)      MONITOR_WARN_ARGS(fmt, __func__)
 #define MONITOR_WARN(fmt, ...)  MONITOR_WARN_ARGS(fmt, __func__, __VA_ARGS__)
-
-#define MONITOR_ERROR_ARGS(fmt, ...)  do {				\
-    fprintf(stderr, "monitor error>> %s: " fmt , __VA_ARGS__ );		\
-    errx(1, "%s:" fmt , __VA_ARGS__ );					\
-} while (0)
 
 #define MONITOR_ERROR1(fmt)      MONITOR_ERROR_ARGS(fmt, __func__)
 #define MONITOR_ERROR(fmt, ...)  MONITOR_ERROR_ARGS(fmt, __func__, __VA_ARGS__)
