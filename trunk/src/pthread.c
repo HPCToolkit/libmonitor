@@ -502,11 +502,11 @@ int
 monitor_real_pthread_sigmask(int how, const sigset_t *set,
 			     sigset_t *oldset)
 {
-    int first = !monitor_has_used_threads;
-    if (first) {
-	monitor_thread_init();
-	monitor_has_used_threads = 1;
-    }
+#ifdef MONITOR_USE_SIGNALS
+    MONITOR_GET_REAL_NAME_WRAP(real_pthread_sigmask, pthread_sigmask);
+#else
+    MONITOR_GET_REAL_NAME(real_pthread_sigmask, pthread_sigmask);
+#endif
 
     return (*real_pthread_sigmask)(how, set, oldset);
 }
