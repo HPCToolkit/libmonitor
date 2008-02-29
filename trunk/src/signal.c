@@ -1,7 +1,7 @@
 /*
  *  Libmonitor signal functions.
  *
- *  Copyright (c) 2007, Rice University.
+ *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -278,7 +278,7 @@ monitor_adjust_saflags(int flags)
 
 /*
  *----------------------------------------------------------------------
- *  SIGACTION OVERRIDES and EXTERNAL FUNCTIONS
+ *  SUPPORT FUNCTIONS
  *----------------------------------------------------------------------
  */
 
@@ -315,6 +315,35 @@ monitor_sigaction(int sig, monitor_sighandler_t *handler,
 
     return (0);
 }
+
+/*
+ *  Client function for generating a core file.  Reset the default
+ *  signal handler, clear the signal mask and raise SIGABRT.
+ */
+void
+monitor_real_abort(void)
+{
+    struct sigaction action;
+
+    MONITOR_DEBUG1("\n");
+    MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
+    MONITOR_GET_REAL_NAME_WRAP(real_sigprocmask, sigprocmask);
+
+    action.sa_handler = SIG_DFL;
+    action.sa_flags = 0;
+    sigemptyset(&action.sa_mask);
+    (*real_sigaction)(SIGABRT, &action, NULL);
+    (*real_sigprocmask)(SIG_SETMASK, &action.sa_mask, NULL);
+    raise(SIGABRT);
+
+    MONITOR_ERROR1("raise failed\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *  EXTERNAL OVERRIDES and their helper functions
+ *----------------------------------------------------------------------
+ */
 
 /*
  *  Override the application's signal(2) and sigaction(2).
