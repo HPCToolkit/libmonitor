@@ -32,6 +32,11 @@
  *  if advised of the possibility of such damage.
  *
  *  $Id$
+ *
+ *  Override functions:
+ *
+ *    pthread_create
+ *    pthread_sigmask
  */
 
 #include "config.h"
@@ -177,23 +182,11 @@ extern void monitor_unwind_thread_fence2;
  *----------------------------------------------------------------------
  */
 
-/*
- *  Run in the main thread on the first call to pthread_create(),
- *  before any new threads are created.
- */
 static void
-monitor_thread_init(void)
+monitor_thread_name_init(void)
 {
-    int ret;
+    MONITOR_RUN_ONCE(thread_name_init);
 
-    /*
-     * Give main.c functions a chance to initialize in the case that
-     * some library calls pthread_create() before main().
-     */
-    monitor_early_init();
-    MONITOR_DEBUG1("\n");
-
-    LIST_INIT(&monitor_thread_list);
     MONITOR_GET_REAL_NAME_WRAP(real_pthread_create, pthread_create);
 #ifdef MONITOR_PTHREAD_EQUAL_IS_FCN
     MONITOR_GET_REAL_NAME(real_pthread_equal, pthread_equal);
@@ -216,6 +209,28 @@ monitor_thread_init(void)
     MONITOR_GET_REAL_NAME(real_sigaction, sigaction);
     MONITOR_GET_REAL_NAME(real_pthread_sigmask, pthread_sigmask);
 #endif
+}
+
+/*
+ *  Run in the main thread on the first call to pthread_create(),
+ *  before any new threads are created.  Only called once from the
+ *  pthread_create() override.
+ */
+static void
+monitor_thread_list_init(void)
+{
+    int ret;
+
+    /*
+     * Give main.c functions a chance to initialize in the case that
+     * some library calls pthread_create() before main().
+     */
+    monitor_early_init();
+    monitor_thread_name_init();
+
+    MONITOR_DEBUG1("\n");
+    LIST_INIT(&monitor_thread_list);
+
     ret = (*real_pthread_key_create)(&monitor_pthread_key, NULL);
     if (ret != 0) {
 	MONITOR_ERROR("pthread_key_create failed (%d)\n", ret);
@@ -233,7 +248,6 @@ monitor_thread_init(void)
     if (ret != 0) {
 	MONITOR_ERROR("pthread_setspecific failed (%d)\n", ret);
     }
-    monitor_has_used_threads = 1;
 }
 
 static struct monitor_thread_node *
@@ -502,12 +516,7 @@ int
 monitor_real_pthread_sigmask(int how, const sigset_t *set,
 			     sigset_t *oldset)
 {
-#ifdef MONITOR_USE_SIGNALS
-    MONITOR_GET_REAL_NAME_WRAP(real_pthread_sigmask, pthread_sigmask);
-#else
-    MONITOR_GET_REAL_NAME(real_pthread_sigmask, pthread_sigmask);
-#endif
-
+    monitor_thread_name_init();
     return (*real_pthread_sigmask)(how, set, oldset);
 }
 
@@ -608,7 +617,7 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
      */
     first = !monitor_has_used_threads;
     if (first) {
-	monitor_thread_init();
+	monitor_thread_list_init();
 	monitor_has_used_threads = 1;
     }
 
@@ -660,7 +669,7 @@ MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
     sigset_t my_set;
 
     monitor_signal_init();
-    MONITOR_GET_REAL_NAME_WRAP(real_pthread_sigmask, pthread_sigmask);
+    monitor_thread_name_init();
 
     if (how == SIG_BLOCK || how == SIG_SETMASK) {
 	my_set = *set;
