@@ -38,12 +38,15 @@
 #define _MONITOR_COMMON_H_
 
 #include "config.h"
+
+#include <sys/types.h>
 #ifdef MONITOR_DYNAMIC
 #include <dlfcn.h>
 #endif
 #include <err.h>
 #include <signal.h>
 #include <stdio.h>
+#include <unistd.h>
 
 /*
  *  Exactly one of MONITOR_STATIC and MONITOR_DYNAMIC must be defined,
