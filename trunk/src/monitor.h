@@ -77,6 +77,8 @@ extern int monitor_real_pthread_sigmask(int how, const sigset_t *set,
 extern int monitor_sigaction(int sig, monitor_sighandler_t *handler,
 			     int flags, struct sigaction *act);
 extern void *monitor_stack_bottom(void);
+extern int monitor_in_start_func_wide(void *addr);
+extern int monitor_in_start_func_narrow(void *addr);
 extern int monitor_unwind_process_bottom_frame(void *addr);
 extern int monitor_unwind_thread_bottom_frame(void *addr);
 extern int monitor_mpi_comm_size(void);

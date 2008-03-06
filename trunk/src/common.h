@@ -163,6 +163,8 @@ void monitor_thread_shootdown(void);
 void monitor_remove_client_signals(sigset_t *);
 void monitor_get_main_args(int *, char ***, char ***);
 void *monitor_get_main_stack_bottom(void);
+int  monitor_in_main_start_func_wide(void *);
+int  monitor_in_main_start_func_narrow(void *);
 void monitor_set_mpi_size_rank(int, int);
 
 #endif  /* ! _MONITOR_COMMON_H_ */
