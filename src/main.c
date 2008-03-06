@@ -103,8 +103,10 @@ volatile static char monitor_fini_process_done = 0;
 volatile static char monitor_fini_process_cookie = 0;
 
 static void *main_stack_bottom = NULL;
-extern void monitor_unwind_fence1;
-extern void monitor_unwind_fence2;
+extern void monitor_main_fence1;
+extern void monitor_main_fence2;
+extern void monitor_main_fence3;
+extern void monitor_main_fence4;
 
 /*
  *----------------------------------------------------------------------
@@ -264,7 +266,7 @@ monitor_get_main_args(int *argc_ptr, char ***argv_ptr, char ***env_ptr)
 int
 monitor_unwind_process_bottom_frame(void *addr)
 {
-    return (&monitor_unwind_fence1 <= addr && addr <= &monitor_unwind_fence2);
+    return (&monitor_main_fence1 <= addr && addr <= &monitor_main_fence4);
 }
 
 /*
@@ -275,6 +277,26 @@ void *
 monitor_get_main_stack_bottom(void)
 {
     return (main_stack_bottom);
+}
+
+/*
+ *  Returns: 1 if address is anywhere within the function body of
+ *  __wrap_main().
+ */
+int
+monitor_in_main_start_func_wide(void *addr)
+{
+    return (&monitor_main_fence1 <= addr && addr <= &monitor_main_fence4);
+}
+
+/*
+ *  Returns: 1 if address is within the function body of __wrap_main()
+ *  at the point where it calls the application.
+ */
+int
+monitor_in_main_start_func_narrow(void *addr)
+{
+    return (&monitor_main_fence2 <= addr && addr <= &monitor_main_fence3);
 }
 
 /*
@@ -321,6 +343,7 @@ __wrap_main(int argc, char **argv, char **envp)
 {
     int ret;
 
+    MONITOR_ASM_LABEL(monitor_main_fence1);
     MONITOR_DEBUG1("\n");
     monitor_argc = argc;
     monitor_argv = argv;
@@ -329,16 +352,17 @@ __wrap_main(int argc, char **argv, char **envp)
     real_main = &__real_main;
 #endif
 
-    MONITOR_ASM_LABEL(monitor_unwind_fence1);
     main_stack_bottom = alloca(8);
     strncpy(main_stack_bottom, "stakbot", 8);
     monitor_begin_process_fcn();
 
+    MONITOR_ASM_LABEL(monitor_main_fence2);
     ret = (*real_main)(monitor_argc, monitor_argv, monitor_envp);
+    MONITOR_ASM_LABEL(monitor_main_fence3);
 
     monitor_end_process_fcn();
-    MONITOR_ASM_LABEL(monitor_unwind_fence2);
 
+    MONITOR_ASM_LABEL(monitor_main_fence4);
     return (ret);
 }
 
@@ -449,6 +473,18 @@ void * __attribute__ ((weak))
 monitor_stack_bottom(void)
 {
     return (main_stack_bottom);
+}
+
+int __attribute__ ((weak))
+monitor_in_start_func_wide(void *addr)
+{
+    return monitor_in_main_start_func_wide(addr);
+}
+
+int __attribute__ ((weak))
+monitor_in_start_func_narrow(void *addr)
+{
+    return monitor_in_main_start_func_narrow(addr);
 }
 
 void * __attribute__ ((weak))

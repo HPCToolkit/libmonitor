@@ -173,8 +173,10 @@ volatile static char monitor_has_used_threads = 0;
 volatile static char monitor_has_reached_main = 0;
 volatile static char monitor_thread_support_done = 0;
 
-extern void monitor_unwind_thread_fence1;
-extern void monitor_unwind_thread_fence2;
+extern void monitor_thread_fence1;
+extern void monitor_thread_fence2;
+extern void monitor_thread_fence3;
+extern void monitor_thread_fence4;
 
 /*
  *----------------------------------------------------------------------
@@ -485,8 +487,7 @@ monitor_end_process_race(void)
 int
 monitor_unwind_thread_bottom_frame(void *addr)
 {
-    return (&monitor_unwind_thread_fence1 <= addr &&
-	    addr <= &monitor_unwind_thread_fence2);
+    return (&monitor_thread_fence1 <= addr && addr <= &monitor_thread_fence4);
 }
 
 /*
@@ -507,6 +508,29 @@ monitor_stack_bottom(void)
 	return (NULL);
     }
     return (tn->tn_stack_bottom);
+}
+
+/*
+ *  Returns: 1 if address is anywhere within the function body of
+ *  __wrap_main() or monitor_pthread_start_routine().
+ */
+int
+monitor_in_start_func_wide(void *addr)
+{
+    return monitor_in_main_start_func_wide(addr) ||
+	(&monitor_thread_fence1 <= addr && addr <= &monitor_thread_fence4);
+}
+
+/*
+ *  Returns: 1 if address is within the function body of __wrap_main()
+ *  or monitor_pthread_start_routine() at the point where it calls the
+ *  application.
+ */
+int
+monitor_in_start_func_narrow(void *addr)
+{
+    return monitor_in_main_start_func_narrow(addr) ||
+	(&monitor_thread_fence2 <= addr && addr <= &monitor_thread_fence3);
 }
 
 /*
@@ -561,6 +585,7 @@ monitor_pthread_start_routine(void *arg)
     struct monitor_thread_node *tn = arg;
     void *ret;
 
+    MONITOR_ASM_LABEL(monitor_thread_fence1);
     /*
      * Wait for monitor_init_thread_support() to finish in the main
      * thread before this thread runs.
@@ -586,7 +611,6 @@ monitor_pthread_start_routine(void *arg)
 	return (NULL);
     }
 
-    MONITOR_ASM_LABEL(monitor_unwind_thread_fence1);
     tn->tn_stack_bottom = alloca(8);
     strncpy(tn->tn_stack_bottom, "stakbot", 8);
     MONITOR_DEBUG("calling monitor_init_thread(tid = %d, pre_data = %p) ...\n",
@@ -595,10 +619,14 @@ monitor_pthread_start_routine(void *arg)
 
     PTHREAD_CLEANUP_PUSH(monitor_pthread_cleanup_routine, tn);
     tn->tn_appl_started = 1;
-    ret = (tn->tn_start_routine)(tn->tn_arg);
-    PTHREAD_CLEANUP_POP(1);
-    MONITOR_ASM_LABEL(monitor_unwind_thread_fence2);
 
+    MONITOR_ASM_LABEL(monitor_thread_fence2);
+    ret = (tn->tn_start_routine)(tn->tn_arg);
+    MONITOR_ASM_LABEL(monitor_thread_fence3);
+
+    PTHREAD_CLEANUP_POP(1);
+
+    MONITOR_ASM_LABEL(monitor_thread_fence4);
     return (ret);
 }
 
