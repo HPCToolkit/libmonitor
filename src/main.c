@@ -281,7 +281,7 @@ monitor_get_main_stack_bottom(void)
 
 /*
  *  Returns: 1 if address is anywhere within the function body of
- *  __wrap_main().
+ *  monitor_main().
  */
 int
 monitor_in_main_start_func_wide(void *addr)
@@ -290,8 +290,8 @@ monitor_in_main_start_func_wide(void *addr)
 }
 
 /*
- *  Returns: 1 if address is within the function body of __wrap_main()
- *  at the point where it calls the application.
+ *  Returns: 1 if address is within the function body of
+ *  monitor_main() at the point where it calls the application.
  */
 int
 monitor_in_main_start_func_narrow(void *addr)
@@ -333,13 +333,13 @@ monitor_real_sigprocmask(int how, const sigset_t *set,
 
 /*
  *  Static case -- we get into __wrap_main() directly, by editing the
- *  link line so that the system call to main() comes here instead.
+ *  link line so that the system call to main() goes there instead.
  *  In this case, there are no library init/fini functions.
  *
  *  Dynamic case -- we get into __libc_start_main() via LD_PRELOAD.
  */
 int
-__wrap_main(int argc, char **argv, char **envp)
+monitor_main(int argc, char **argv, char **envp)
 {
     int ret;
 
@@ -348,9 +348,6 @@ __wrap_main(int argc, char **argv, char **envp)
     monitor_argc = argc;
     monitor_argv = argv;
     monitor_envp = envp;
-#ifdef MONITOR_STATIC
-    real_main = &__real_main;
-#endif
 
     main_stack_bottom = alloca(8);
     strncpy(main_stack_bottom, "stakbot", 8);
@@ -366,20 +363,30 @@ __wrap_main(int argc, char **argv, char **envp)
     return (ret);
 }
 
-#ifdef MONITOR_DYNAMIC
+#ifdef MONITOR_STATIC
+int
+__wrap_main(int argc, char **argv, char **envp)
+{
+    MONITOR_DEBUG1("\n");
+    real_main = &__real_main;
+
+    return monitor_main(argc, argv, envp);
+}
+
+#else  /* MONITOR_DYNAMIC */
 int
 __libc_start_main(START_MAIN_PARAM_LIST)
 {
     MONITOR_DEBUG1("\n");
     real_main = main;
 
-    (*real_start_main)(__wrap_main, argc, argv, init, fini,
+    (*real_start_main)(monitor_main, argc, argv, init, fini,
 		       rtld_fini, stack_end);
 
     /* Never reached. */
     return (0);
 }
-#endif  /* MONITOR_DYNAMIC */
+#endif
 
 /*
  *  It seems that exit() bypasses the library version of _exit(), plus
