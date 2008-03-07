@@ -150,7 +150,6 @@ struct monitor_thread_node {
     pthread_start_fcn_t  *tn_start_routine;
     void  *tn_arg;
     void  *tn_user_data;
-    void  *tn_user_pre_data;
     void  *tn_stack_bottom;
     char   tn_is_main;
     char   tn_appl_started;
@@ -268,30 +267,19 @@ monitor_make_thread_node(void)
 }
 
 /*
- *  Runs in the new thread.
- *
  *  Returns: 0 on success, or 1 if at exit cleanup and thus we don't
  *  allow any new threads.
  */
 static int
 monitor_link_thread_node(struct monitor_thread_node *tn)
 {
-    int ret;
-
     MONITOR_THREAD_LOCK;
     if (monitor_in_exit_cleanup) {
 	MONITOR_THREAD_UNLOCK;
 	return (1);
     }
-
     tn->tn_tid = ++monitor_thread_num;
-    tn->tn_self= (*real_pthread_self)();
     LIST_INSERT_HEAD(&monitor_thread_list, tn, tn_links);
-    ret = (*real_pthread_setspecific)(monitor_pthread_key, tn);
-    if (ret != 0) {
-	MONITOR_ERROR("pthread_setspecific failed (%d)\n", ret);
-    }
-
     MONITOR_THREAD_UNLOCK;
     return (0);
 }
@@ -586,6 +574,23 @@ monitor_pthread_start_routine(void *arg)
     void *ret;
 
     MONITOR_ASM_LABEL(monitor_thread_fence1);
+    MONITOR_DEBUG1("\n");
+
+    /*
+     * Don't create any new threads after someone has called exit().
+     */
+    if (monitor_link_thread_node(tn) != 0) {
+	MONITOR_WARN1("trying to create new thread during exit cleanup: "
+		      "thread not started\n");
+	return (NULL);
+    }
+    tn->tn_self = (*real_pthread_self)();
+    tn->tn_stack_bottom = alloca(8);
+    strncpy(tn->tn_stack_bottom, "stakbot", 8);
+    if ((*real_pthread_setspecific)(monitor_pthread_key, tn) != 0) {
+	MONITOR_ERROR1("pthread_setspecific failed\n");
+    }
+
     /*
      * Wait for monitor_init_thread_support() to finish in the main
      * thread before this thread runs.
@@ -600,26 +605,13 @@ monitor_pthread_start_routine(void *arg)
     while (! monitor_thread_support_done)
 	usleep(MONITOR_POLL_USLEEP_TIME);
 
-    MONITOR_DEBUG1("(start of new thread)\n");
-
-    /*
-     * Don't create any new threads after someone has called exit().
-     */
-    if (monitor_link_thread_node(tn) != 0) {
-	MONITOR_WARN1("trying to create new thread during exit cleanup -- "
-		      "thread not started\n");
-	return (NULL);
-    }
-
-    tn->tn_stack_bottom = alloca(8);
-    strncpy(tn->tn_stack_bottom, "stakbot", 8);
-    MONITOR_DEBUG("calling monitor_init_thread(tid = %d, pre_data = %p) ...\n",
-		  tn->tn_tid, tn->tn_user_pre_data);
-    tn->tn_user_data = monitor_init_thread(tn->tn_tid, tn->tn_user_pre_data);
+    MONITOR_DEBUG("calling monitor_init_thread(tid = %d, data = %p) ...\n",
+		  tn->tn_tid, tn->tn_user_data);
+    tn->tn_user_data = monitor_init_thread(tn->tn_tid, tn->tn_user_data);
 
     PTHREAD_CLEANUP_PUSH(monitor_pthread_cleanup_routine, tn);
-    tn->tn_appl_started = 1;
 
+    tn->tn_appl_started = 1;
     MONITOR_ASM_LABEL(monitor_thread_fence2);
     ret = (tn->tn_start_routine)(tn->tn_arg);
     MONITOR_ASM_LABEL(monitor_thread_fence3);
@@ -637,6 +629,7 @@ int
 MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
 {
     struct monitor_thread_node *tn;
+    void *user_data;
     int first, ret;
 
     /*
@@ -660,13 +653,13 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
     tn->tn_start_routine = start_routine;
     tn->tn_arg = arg;
     MONITOR_DEBUG1("calling monitor_thread_pre_create() ...\n");
-    tn->tn_user_pre_data = monitor_thread_pre_create();
+    user_data = monitor_thread_pre_create();
 
     ret = (*real_pthread_create)
 	(thread, attr, monitor_pthread_start_routine, (void *)tn);
 
     MONITOR_DEBUG1("calling monitor_thread_post_create() ...\n");
-    monitor_thread_post_create(tn->tn_user_pre_data);
+    monitor_thread_post_create(user_data);
 
     if (first) {
 	/*
