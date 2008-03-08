@@ -37,6 +37,15 @@
  *
  *    pthread_create
  *    pthread_sigmask
+ *
+ *  Support functions:
+ *
+ *    monitor_is_threaded
+ *    monitor_get_user_data
+ *    monitor_stack_bottom
+ *    monitor_in_start_func_wide
+ *    monitor_in_start_func_narrow
+ *    monitor_real_pthread_sigmask
  */
 
 #include "config.h"
@@ -57,7 +66,7 @@
 
 /*
  *----------------------------------------------------------------------
- *  GLOBAL VARIABLES and EXTERNAL FUNCTIONS
+ *  GLOBAL VARIABLES and EXTERNAL DECLARATIONS
  *----------------------------------------------------------------------
  */
 
@@ -464,9 +473,46 @@ monitor_end_process_race(void)
 
 /*
  *----------------------------------------------------------------------
- *  PTHREAD SUPPORT FUNCTIONS
+ *  CLIENT SUPPORT FUNCTIONS
  *----------------------------------------------------------------------
  */
+
+/*
+ *  Returns: 1 if the application has called pthread_create().
+ */
+int
+monitor_is_threaded(void)
+{
+    return (monitor_has_used_threads);
+}
+
+/*
+ *  Returns: the client's data pointer from monitor_init_process() or
+ *  monitor_init_thread(), or else NULL on error.
+ *
+ *  Note: there is small window where a thread exists but its thread-
+ *  local data is not yet set, so if getspecific fails, that's only a
+ *  debug message.
+ */
+void *
+monitor_get_user_data(void)
+{
+    struct monitor_thread_node *tn;
+
+    if (! monitor_has_used_threads)
+	return (NULL);
+
+    tn = (*real_pthread_getspecific)(monitor_pthread_key);
+    if (tn == NULL) {
+	MONITOR_DEBUG1("pthread_getspecific failed\n");
+	return (NULL);
+    }
+    if (tn->tn_magic != MONITOR_TN_MAGIC) {
+	MONITOR_WARN1("bad magic\n");
+	return (NULL);
+    }
+    return (tn->tn_user_data);
+}
 
 /*
  *  Returns: 1 if address is at the bottom of the thread's call stack,
@@ -491,8 +537,12 @@ monitor_stack_bottom(void)
 	return monitor_get_main_stack_bottom();
 
     tn = (*real_pthread_getspecific)(monitor_pthread_key);
-    if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
-	MONITOR_WARN1("pthread_getspecific failed\n");
+    if (tn == NULL) {
+	MONITOR_DEBUG1("pthread_getspecific failed\n");
+	return (NULL);
+    }
+    if (tn->tn_magic != MONITOR_TN_MAGIC) {
+	MONITOR_WARN1("bad magic\n");
 	return (NULL);
     }
     return (tn->tn_stack_bottom);

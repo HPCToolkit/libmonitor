@@ -32,6 +32,17 @@
  *  if advised of the possibility of such damage.
  *
  *  $Id$
+ *
+ *  Override functions:
+ *
+ *    main, __libc_start_main
+ *    exit
+ *    _exit, _Exit
+ *
+ *  Client support functions:
+ *
+ *    monitor_real_exit
+ *    monitor_real_sigprocmask
  */
 
 #include "config.h"
@@ -239,6 +250,12 @@ monitor_end_process_fcn(void)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *  INTERNAL MONITOR SUPPORT FUNCTIONS
+ *----------------------------------------------------------------------
+ */
+
+/*
  *  Let the other modules see the command-line arguments, if needed.
  *  The Fortran mpi_init() uses this.
  */
@@ -252,12 +269,6 @@ monitor_get_main_args(int *argc_ptr, char ***argv_ptr, char ***env_ptr)
     if (env_ptr != NULL)
 	*env_ptr = monitor_envp;
 }
-
-/*
- *----------------------------------------------------------------------
- *  SUPPORT FUNCTIONS, internal and external
- *----------------------------------------------------------------------
- */
 
 /*
  *  Returns: 1 if address is within the body of the function at the
@@ -298,6 +309,12 @@ monitor_in_main_start_func_narrow(void *addr)
 {
     return (&monitor_main_fence2 <= addr && addr <= &monitor_main_fence3);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *  CLIENT SUPPORT FUNCTIONS
+ *----------------------------------------------------------------------
+ */
 
 /*
  *  Client access to the real _exit().
@@ -476,6 +493,19 @@ monitor_library_fini_destructor(void)
  *  subset of monitor and delaying the choice of subset until link
  *  time (static case).
  */
+
+int __attribute__ ((weak))
+monitor_is_threaded(void)
+{
+    return (0);
+}
+
+void * __attribute__ ((weak))
+monitor_get_user_data(void)
+{
+    return (NULL);
+}
+
 void * __attribute__ ((weak))
 monitor_stack_bottom(void)
 {
