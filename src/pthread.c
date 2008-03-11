@@ -704,6 +704,7 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
     tn->tn_arg = arg;
     MONITOR_DEBUG1("calling monitor_thread_pre_create() ...\n");
     user_data = monitor_thread_pre_create();
+    tn->tn_user_data = user_data;
 
     ret = (*real_pthread_create)
 	(thread, attr, monitor_pthread_start_routine, (void *)tn);
