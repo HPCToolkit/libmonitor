@@ -9,6 +9,7 @@
  *  $Id$
  */
 
+#include <sys/types.h>
 #include "config.h"
 #include "common.h"
 #include "monitor.h"
@@ -44,6 +45,19 @@ monitor_fini_process(void)
 }
 
 void * __attribute__ ((weak))
+monitor_pre_fork(void)
+{
+    MONITOR_DEBUG1("(default callback)\n");
+    return (NULL);
+}
+
+void __attribute__ ((weak))
+monitor_post_fork(pid_t child, void *data)
+{
+    MONITOR_DEBUG("(default callback) child = %d\n", child);
+}
+
+void * __attribute__ ((weak))
 monitor_thread_pre_create(void)
 {
     MONITOR_DEBUG1("(default callback)\n");
@@ -54,7 +68,6 @@ void __attribute__ ((weak))
 monitor_thread_post_create(void *data)
 {
     MONITOR_DEBUG1("(default callback)\n");
-    return;
 }
 
 void __attribute__ ((weak))

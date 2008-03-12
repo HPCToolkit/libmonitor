@@ -199,16 +199,24 @@ monitor_is_executable(const char *file)
 static pid_t
 monitor_fork(void)
 {
+    void *user_data;
     pid_t ret;
 
     monitor_fork_init();
+    MONITOR_DEBUG1("calling monitor_pre_fork() ...\n");
+    user_data = monitor_pre_fork();
+
     ret = (*real_fork)();
-    if (ret < 0) {
-	/* Failure. */
-	MONITOR_DEBUG("real fork failed (%d): %s\n",
-		      errno, strerror(errno));
+    if (ret != 0) {
+	/* Parent process. */
+	if (ret < 0) {
+	    MONITOR_DEBUG("real fork failed (%d): %s\n",
+			  errno, strerror(errno));
+	}
+	MONITOR_DEBUG1("calling monitor_post_fork() ...\n");
+	monitor_post_fork(ret, user_data);
     }
-    else if (ret == 0) {
+    else {
 	/* Child process. */
 	MONITOR_DEBUG("application forked, new pid = %d\n",
 		      (int)getpid());

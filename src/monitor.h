@@ -37,6 +37,7 @@
 #ifndef  _MONITOR_H_
 #define  _MONITOR_H_
 
+#include <sys/types.h>
 #include <signal.h>
 
 typedef int monitor_sighandler_t(int, siginfo_t *, void *);
@@ -53,6 +54,8 @@ extern void monitor_fini_library(void);
 extern void monitor_init_process(char *process, int *argc, char **argv,
 				 unsigned pid);
 extern void monitor_fini_process(void);
+extern void *monitor_pre_fork(void);
+extern void monitor_post_fork(pid_t child, void *data);
 extern void *monitor_thread_pre_create(void);
 extern void monitor_thread_post_create(void *);
 extern void monitor_init_thread_support(void);
