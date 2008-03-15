@@ -58,6 +58,7 @@
 
 #include "common.h"
 #include "monitor.h"
+#include "pthread_h.h"
 
 #ifdef MONITOR_DEBUG_DEFAULT_ON
 int monitor_debug = 1;
@@ -119,6 +120,8 @@ extern void monitor_main_fence2;
 extern void monitor_main_fence3;
 extern void monitor_main_fence4;
 
+static struct monitor_thread_node monitor_main_tn;
+
 /*
  *----------------------------------------------------------------------
  *  INIT FUNCTIONS
@@ -139,8 +142,12 @@ monitor_early_init(void)
 	if (getenv("MONITOR_DEBUG") != NULL)
 	    monitor_debug = 1;
     }
-
     MONITOR_DEBUG("debug = %d\n", monitor_debug);
+
+    memset(&monitor_main_tn, 0, sizeof(struct monitor_thread_node));
+    monitor_main_tn.tn_magic = MONITOR_TN_MAGIC;
+    monitor_main_tn.tn_tid = 0;
+    monitor_main_tn.tn_is_main = 1;
 }
 
 /*
@@ -311,6 +318,15 @@ monitor_in_main_start_func_narrow(void *addr)
 }
 
 /*
+ *  Allow the thread functions to access main's thread node struct.
+ */
+struct monitor_thread_node *
+monitor_get_main_tn(void)
+{
+    return (&monitor_main_tn);
+}
+
+/*
  *----------------------------------------------------------------------
  *  CLIENT SUPPORT FUNCTIONS
  *----------------------------------------------------------------------
@@ -366,7 +382,8 @@ monitor_main(int argc, char **argv, char **envp)
     monitor_argv = argv;
     monitor_envp = envp;
 
-    main_stack_bottom = alloca(8);
+    monitor_main_tn.tn_stack_bottom = alloca(8);
+    main_stack_bottom = monitor_main_tn.tn_stack_bottom;
     strncpy(main_stack_bottom, "stakbot", 8);
     monitor_begin_process_fcn();
 
