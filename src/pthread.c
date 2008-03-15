@@ -470,28 +470,39 @@ monitor_is_threaded(void)
 }
 
 /*
+ *  Note: there is a tiny window where a thread exists but its thread-
+ *  specific data is not yet set, so it's not really an error for
+ *  getspecific to fail.  But bad magic implies an internal error.
+ */
+static struct monitor_thread_node *
+monitor_get_tn(void)
+{
+    struct monitor_thread_node *tn;
+
+    if (monitor_has_used_threads) {
+	tn = (*real_pthread_getspecific)(monitor_pthread_key);
+	if (tn != NULL && tn->tn_magic != MONITOR_TN_MAGIC) {
+	    MONITOR_WARN("bad magic in thread node: %p\n", tn);
+	    tn = NULL;
+	}
+    } else
+	tn = monitor_get_main_tn();
+
+    return (tn);
+}
+
+/*
  *  Returns: the client's data pointer from monitor_init_process() or
  *  monitor_init_thread(), or else NULL on error.
- *
- *  Note: there is small window where a thread exists but its thread-
- *  local data is not yet set, so if getspecific fails, that's only a
- *  debug message.
  */
 void *
 monitor_get_user_data(void)
 {
     struct monitor_thread_node *tn;
 
-    if (! monitor_has_used_threads)
-	return (NULL);
-
-    tn = (*real_pthread_getspecific)(monitor_pthread_key);
+    tn = monitor_get_tn();
     if (tn == NULL) {
-	MONITOR_DEBUG1("pthread_getspecific failed\n");
-	return (NULL);
-    }
-    if (tn->tn_magic != MONITOR_TN_MAGIC) {
-	MONITOR_WARN1("bad magic\n");
+	MONITOR_DEBUG1("unable to find thread node\n");
 	return (NULL);
     }
     return (tn->tn_user_data);
@@ -516,16 +527,9 @@ monitor_stack_bottom(void)
 {
     struct monitor_thread_node *tn;
 
-    if (! monitor_has_used_threads)
-	return monitor_get_main_stack_bottom();
-
-    tn = (*real_pthread_getspecific)(monitor_pthread_key);
+    tn = monitor_get_tn();
     if (tn == NULL) {
-	MONITOR_DEBUG1("pthread_getspecific failed\n");
-	return (NULL);
-    }
-    if (tn->tn_magic != MONITOR_TN_MAGIC) {
-	MONITOR_WARN1("bad magic\n");
+	MONITOR_DEBUG1("unable to find thread node\n");
 	return (NULL);
     }
     return (tn->tn_stack_bottom);
@@ -662,7 +666,6 @@ int
 MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
 {
     struct monitor_thread_node *tn;
-    void *user_data;
     int first, ret;
 
     /*
@@ -686,14 +689,13 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
     tn->tn_start_routine = start_routine;
     tn->tn_arg = arg;
     MONITOR_DEBUG1("calling monitor_thread_pre_create() ...\n");
-    user_data = monitor_thread_pre_create();
-    tn->tn_user_data = user_data;
+    tn->tn_user_data = monitor_thread_pre_create();
 
     ret = (*real_pthread_create)
 	(thread, attr, monitor_pthread_start_routine, (void *)tn);
 
     MONITOR_DEBUG1("calling monitor_thread_post_create() ...\n");
-    monitor_thread_post_create(user_data);
+    monitor_thread_post_create(tn->tn_user_data);
 
     if (first) {
 	/*
