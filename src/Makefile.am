@@ -36,6 +36,7 @@
 
 MONITOR_MAIN_FILES = common.h monitor.h callback.c main.c
 MONITOR_MPI_FILES =  mpi.c mpi_c.c mpi_fortran.h mpi_f1.c mpi_f2.c
+MONITOR_THREAD_FILES = pthread_h.h queue.h pthread.c
 MONITOR_SCRIPT_FILES = monitor-link monitor-run
 
 include_HEADERS = monitor.h
@@ -54,7 +55,7 @@ if MONITOR_TEST_USE_FORK
     libmonitor_la_SOURCES += fork.c
 endif
 if MONITOR_TEST_USE_PTHREADS
-    libmonitor_la_SOURCES += queue.h pthread.c
+    libmonitor_la_SOURCES += $(MONITOR_THREAD_FILES)
 endif
 if MONITOR_TEST_USE_SIGNALS
     libmonitor_la_SOURCES += signal.c
@@ -77,7 +78,7 @@ if MONITOR_TEST_USE_FORK
     libmonitor_wrap_a_SOURCES += fork.c
 endif
 if MONITOR_TEST_USE_PTHREADS
-    libmonitor_wrap_a_SOURCES += queue.h pthread.c
+    libmonitor_wrap_a_SOURCES += $(MONITOR_THREAD_FILES)
 endif
 if MONITOR_TEST_USE_SIGNALS
     libmonitor_wrap_a_SOURCES += signal.c

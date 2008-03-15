@@ -62,6 +62,7 @@
 
 #include "common.h"
 #include "monitor.h"
+#include "pthread_h.h"
 #include "queue.h"
 
 /*
@@ -71,7 +72,6 @@
  */
 
 #define MONITOR_EXIT_CLEANUP_SIGNAL  SIGUSR2
-#define MONITOR_TN_MAGIC  0x6d746e00
 
 /*
  *  On some systems, pthread_equal() and pthread_cleanup_push/pop()
@@ -99,7 +99,6 @@
     pthread_start_fcn_t *start_routine,		\
     void *arg
 
-typedef void *pthread_start_fcn_t(void *);
 typedef int   pthread_create_fcn_t(PTHREAD_CREATE_PARAM_LIST);
 typedef int   pthread_equal_fcn_t(pthread_t, pthread_t);
 typedef int   pthread_key_create_fcn_t(pthread_key_t *, void (*)(void *));
@@ -151,23 +150,7 @@ static pthread_mutex_t monitor_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define MONITOR_THREAD_LOCK    (*real_pthread_mutex_lock)(&monitor_thread_mutex)
 #define MONITOR_THREAD_UNLOCK  (*real_pthread_mutex_unlock)(&monitor_thread_mutex)
 
-struct monitor_thread_node {
-    LIST_ENTRY(monitor_thread_node) tn_links;
-    int    tn_magic;
-    int    tn_tid;
-    pthread_t  tn_self;
-    pthread_start_fcn_t  *tn_start_routine;
-    void  *tn_arg;
-    void  *tn_user_data;
-    void  *tn_stack_bottom;
-    char   tn_is_main;
-    char   tn_appl_started;
-    char   tn_fini_started;
-    char   tn_fini_done;
-};
-
 static LIST_HEAD(, monitor_thread_node) monitor_thread_list;
-static struct monitor_thread_node monitor_main_tn;
 
 volatile static int  monitor_thread_num = 0;
 volatile static char monitor_end_process_cookie = 0;
@@ -229,6 +212,7 @@ monitor_thread_name_init(void)
 static void
 monitor_thread_list_init(void)
 {
+    struct monitor_thread_node *main_tn;
     int ret;
 
     /*
@@ -246,15 +230,14 @@ monitor_thread_list_init(void)
 	MONITOR_ERROR("pthread_key_create failed (%d)\n", ret);
     }
     /*
-     * The main thread's tn struct.
+     * main_tn's thread-specific data.
      */
-    memset(&monitor_main_tn, 0, sizeof(struct monitor_thread_node));
-    monitor_main_tn.tn_magic = MONITOR_TN_MAGIC;
-    monitor_main_tn.tn_is_main = 1;
-    monitor_main_tn.tn_tid = 0;
-    monitor_main_tn.tn_self = pthread_self();
-    monitor_main_tn.tn_stack_bottom = monitor_get_main_stack_bottom();
-    ret = (*real_pthread_setspecific)(monitor_pthread_key, &monitor_main_tn);
+    main_tn = monitor_get_main_tn();
+    if (main_tn == NULL || main_tn->tn_magic != MONITOR_TN_MAGIC) {
+	MONITOR_ERROR1("monitor_get_main_tn failed\n");
+    }
+    main_tn->tn_self = pthread_self();
+    ret = (*real_pthread_setspecific)(monitor_pthread_key, main_tn);
     if (ret != 0) {
 	MONITOR_ERROR("pthread_setspecific failed (%d)\n", ret);
     }
