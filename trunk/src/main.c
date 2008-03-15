@@ -114,7 +114,6 @@ volatile static char monitor_init_process_called = 0;
 volatile static char monitor_fini_process_done = 0;
 volatile static char monitor_fini_process_cookie = 0;
 
-static void *main_stack_bottom = NULL;
 extern void monitor_main_fence1;
 extern void monitor_main_fence2;
 extern void monitor_main_fence3;
@@ -288,16 +287,6 @@ monitor_unwind_process_bottom_frame(void *addr)
 }
 
 /*
- *  For internal monitor use only, clients should use
- *  monitor_stack_bottom().
- */
-void *
-monitor_get_main_stack_bottom(void)
-{
-    return (main_stack_bottom);
-}
-
-/*
  *  Returns: 1 if address is anywhere within the function body of
  *  monitor_main().
  */
@@ -383,8 +372,7 @@ monitor_main(int argc, char **argv, char **envp)
     monitor_envp = envp;
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
-    main_stack_bottom = monitor_main_tn.tn_stack_bottom;
-    strncpy(main_stack_bottom, "stakbot", 8);
+    strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
     monitor_begin_process_fcn();
 
     MONITOR_ASM_LABEL(monitor_main_fence2);
@@ -520,13 +508,13 @@ monitor_is_threaded(void)
 void * __attribute__ ((weak))
 monitor_get_user_data(void)
 {
-    return (NULL);
+    return (monitor_main_tn.tn_user_data);
 }
 
 void * __attribute__ ((weak))
 monitor_stack_bottom(void)
 {
-    return (main_stack_bottom);
+    return (monitor_main_tn.tn_stack_bottom);
 }
 
 int __attribute__ ((weak))
