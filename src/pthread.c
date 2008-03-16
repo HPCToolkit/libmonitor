@@ -537,7 +537,7 @@ monitor_stack_bottom(void)
 
 /*
  *  Returns: 1 if address is anywhere within the function body of
- *  __wrap_main() or monitor_pthread_start_routine().
+ *  monitor_main() or monitor_begin_thread().
  */
 int
 monitor_in_start_func_wide(void *addr)
@@ -547,8 +547,8 @@ monitor_in_start_func_wide(void *addr)
 }
 
 /*
- *  Returns: 1 if address is within the function body of __wrap_main()
- *  or monitor_pthread_start_routine() at the point where it calls the
+ *  Returns: 1 if address is within the function body of monitor_main()
+ *  or monitor_begin_thread() at the point where it calls the
  *  application.
  */
 int
@@ -605,7 +605,7 @@ monitor_pthread_cleanup_routine(void *arg)
  *  thread begins.
  */
 static void *
-monitor_pthread_start_routine(void *arg)
+monitor_begin_thread(void *arg)
 {
     struct monitor_thread_node *tn = arg;
     void *ret;
@@ -692,7 +692,7 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
     tn->tn_user_data = monitor_thread_pre_create();
 
     ret = (*real_pthread_create)
-	(thread, attr, monitor_pthread_start_routine, (void *)tn);
+	(thread, attr, monitor_begin_thread, (void *)tn);
 
     MONITOR_DEBUG1("calling monitor_thread_post_create() ...\n");
     monitor_thread_post_create(tn->tn_user_data);
