@@ -10,6 +10,7 @@
  */
 
 #include <sys/types.h>
+#include <unistd.h>
 #include "config.h"
 #include "common.h"
 #include "monitor.h"
@@ -26,24 +27,6 @@ monitor_fini_library(void)
     MONITOR_DEBUG1("(default callback)\n");
 }
 
-void __attribute__ ((weak))
-monitor_init_process(char *process, int *argc, char **argv, unsigned pid)
-{
-    int i;
-
-    MONITOR_DEBUG("(default callback) process = %s, argc = %d, pid = %u\n",
-		  process, *argc, pid);
-    for (i = 0; i < *argc; i++) {
-	MONITOR_DEBUG("argv[%d] = %s\n", i, argv[i]);
-    }
-}
-
-void __attribute__ ((weak))
-monitor_fini_process(void)
-{
-    MONITOR_DEBUG1("(default callback)\n");
-}
-
 void * __attribute__ ((weak))
 monitor_pre_fork(void)
 {
@@ -55,6 +38,25 @@ void __attribute__ ((weak))
 monitor_post_fork(pid_t child, void *data)
 {
     MONITOR_DEBUG("(default callback) child = %d\n", child);
+}
+
+void * __attribute__ ((weak))
+monitor_init_process(int *argc, char **argv, void *data)
+{
+    int i;
+
+    MONITOR_DEBUG("(default callback) parent = %d, argc = %d\n",
+		  (int)getppid(), *argc);
+    for (i = 0; i < *argc; i++) {
+	MONITOR_DEBUG("argv[%d] = %s\n", i, argv[i]);
+    }
+    return (data);
+}
+
+void __attribute__ ((weak))
+monitor_fini_process(int how, void *data)
+{
+    MONITOR_DEBUG("(default callback) how = %d\n", how);
 }
 
 void * __attribute__ ((weak))
@@ -79,15 +81,14 @@ monitor_init_thread_support(void)
 void * __attribute__ ((weak))
 monitor_init_thread(int tid, void *data)
 {
-    MONITOR_DEBUG("(default callback) tid = %d, data = %p\n",
-		  tid, data);
+    MONITOR_DEBUG("(default callback) tid = %d\n", tid);
     return (data);
 }
 
 void __attribute__ ((weak))
 monitor_fini_thread(void *data)
 {
-    MONITOR_DEBUG("(default callback) data = %p\n", data);
+    MONITOR_DEBUG1("(default callback)\n");
 }
 
 void __attribute__ ((weak))

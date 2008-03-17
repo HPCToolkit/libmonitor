@@ -1,7 +1,7 @@
 /*
  *  Libmonitor fork and exec functions.
  *
- *  Copyright (c) 2007, Rice University.
+ *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -218,9 +218,8 @@ monitor_fork(void)
     }
     else {
 	/* Child process. */
-	MONITOR_DEBUG("application forked, new pid = %d\n",
-		      (int)getpid());
-	monitor_begin_process_fcn();
+	MONITOR_DEBUG("application forked, parent = %d\n", (int)getppid());
+	monitor_begin_process_fcn(user_data);
     }
 
     return (ret);
