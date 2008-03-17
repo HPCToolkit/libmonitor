@@ -51,9 +51,8 @@ extern "C" {
  */
 extern void monitor_init_library(void);
 extern void monitor_fini_library(void);
-extern void monitor_init_process(char *process, int *argc, char **argv,
-				 unsigned pid);
-extern void monitor_fini_process(void);
+extern void *monitor_init_process(int *argc, char **argv, void *data);
+extern void monitor_fini_process(int how, void *data);
 extern void *monitor_pre_fork(void);
 extern void monitor_post_fork(pid_t child, void *data);
 extern void *monitor_thread_pre_create(void);

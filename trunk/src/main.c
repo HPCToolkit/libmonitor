@@ -212,13 +212,13 @@ monitor_end_library_fcn(void)
 }
 
 void
-monitor_begin_process_fcn(void)
+monitor_begin_process_fcn(void *user_data)
 {
     monitor_normal_init();
+    monitor_main_tn.tn_user_data = user_data;
 
     MONITOR_DEBUG1("calling monitor_init_process() ...\n");
-    monitor_init_process(monitor_argv[0], &monitor_argc,
-			 monitor_argv, (unsigned)getpid());
+    monitor_init_process(&monitor_argc, monitor_argv, user_data);
     monitor_init_process_called = 1;
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
@@ -245,7 +245,7 @@ monitor_end_process_fcn(void)
     if (monitor_end_process_race()) {
 	monitor_thread_shootdown();
 	MONITOR_DEBUG1("calling monitor_fini_process() ...\n");
-	monitor_fini_process();
+	monitor_fini_process(0, monitor_main_tn.tn_user_data);
 	monitor_fini_process_done = 1;
     } else {
 	while (! monitor_fini_process_done)
@@ -373,7 +373,7 @@ monitor_main(int argc, char **argv, char **envp)
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
-    monitor_begin_process_fcn();
+    monitor_begin_process_fcn(NULL);
 
     MONITOR_ASM_LABEL(monitor_main_fence2);
     ret = (*real_main)(monitor_argc, monitor_argv, monitor_envp);
