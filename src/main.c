@@ -240,12 +240,12 @@ monitor_begin_process_fcn(void *user_data)
  *  handler.  (It shouldn't do that, but it might.)
  */
 void
-monitor_end_process_fcn(void)
+monitor_end_process_fcn(int how)
 {
     if (monitor_end_process_race()) {
 	monitor_thread_shootdown();
-	MONITOR_DEBUG1("calling monitor_fini_process() ...\n");
-	monitor_fini_process(0, monitor_main_tn.tn_user_data);
+	MONITOR_DEBUG("calling monitor_fini_process(how = %d) ...\n", how);
+	monitor_fini_process(how, monitor_main_tn.tn_user_data);
 	monitor_fini_process_done = 1;
     } else {
 	while (! monitor_fini_process_done)
@@ -379,7 +379,7 @@ monitor_main(int argc, char **argv, char **envp)
     ret = (*real_main)(monitor_argc, monitor_argv, monitor_envp);
     MONITOR_ASM_LABEL(monitor_main_fence3);
 
-    monitor_end_process_fcn();
+    monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
 
     MONITOR_ASM_LABEL(monitor_main_fence4);
     return (ret);
@@ -420,7 +420,7 @@ MONITOR_WRAP_NAME(exit)(int status)
 {
     MONITOR_DEBUG1("\n");
     monitor_normal_init();
-    monitor_end_process_fcn();
+    monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
 
     (*real_exit)(status);
 
@@ -437,7 +437,7 @@ MONITOR_WRAP_NAME(_exit)(int status)
 {
     MONITOR_DEBUG1("\n");
 
-    monitor_end_process_fcn();
+    monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
 #ifdef MONITOR_DYNAMIC
     monitor_end_library_fcn();
 #endif
@@ -453,7 +453,7 @@ MONITOR_WRAP_NAME(_Exit)(int status)
 {
     MONITOR_DEBUG1("\n");
 
-    monitor_end_process_fcn();
+    monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
 #ifdef MONITOR_DYNAMIC
     monitor_end_library_fcn();
 #endif

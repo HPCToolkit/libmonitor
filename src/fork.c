@@ -256,7 +256,7 @@ monitor_execv(const char *path, char *const argv[])
 		  (is_exec ? "success" : "failure"),
 		  (int)getpid(), path);
     if (is_exec) {
-	monitor_end_process_fcn();
+	monitor_end_process_fcn(MONITOR_EXIT_EXEC);
 #ifdef MONITOR_DYNAMIC
 	monitor_end_library_fcn();
 #endif
@@ -285,7 +285,7 @@ monitor_execvp(const char *file, char *const argv[])
 		  (is_exec ? "success" : "failure"),
 		  (int)getpid(), file);
     if (is_exec) {
-	monitor_end_process_fcn();
+	monitor_end_process_fcn(MONITOR_EXIT_EXEC);
 #ifdef MONITOR_DYNAMIC
 	monitor_end_library_fcn();
 #endif
@@ -314,7 +314,7 @@ monitor_execve(const char *path, char *const argv[], char *const envp[])
 		  (is_exec ? "success" : "failure"),
 		  (int)getpid(), path);
     if (is_exec) {
-	monitor_end_process_fcn();
+	monitor_end_process_fcn(MONITOR_EXIT_EXEC);
 #ifdef MONITOR_DYNAMIC
 	monitor_end_library_fcn();
 #endif
