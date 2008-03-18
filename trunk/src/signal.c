@@ -174,7 +174,7 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
 	    return;
 	}
 
-	monitor_end_process_fcn();
+	monitor_end_process_fcn(MONITOR_EXIT_SIGNAL);
 #ifdef MONITOR_DYNAMIC
 	monitor_end_library_fcn();
 #endif

@@ -42,6 +42,8 @@
 
 typedef int monitor_sighandler_t(int, siginfo_t *, void *);
 
+enum { MONITOR_EXIT_NORMAL = 1, MONITOR_EXIT_SIGNAL, MONITOR_EXIT_EXEC };
+
 #ifdef __cplusplus
 extern "C" {
 #endif
