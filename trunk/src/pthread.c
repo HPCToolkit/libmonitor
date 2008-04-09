@@ -254,6 +254,9 @@ monitor_make_thread_node(void)
     }
     memset(tn, 0, sizeof(struct monitor_thread_node));
     tn->tn_magic = MONITOR_TN_MAGIC;
+    MONITOR_THREAD_LOCK;
+    tn->tn_tid = ++monitor_thread_num;
+    MONITOR_THREAD_UNLOCK;
 
     return (tn);
 }
@@ -270,7 +273,6 @@ monitor_link_thread_node(struct monitor_thread_node *tn)
 	MONITOR_THREAD_UNLOCK;
 	return (1);
     }
-    tn->tn_tid = ++monitor_thread_num;
     LIST_INSERT_HEAD(&monitor_thread_list, tn, tn_links);
     MONITOR_THREAD_UNLOCK;
     return (0);
@@ -509,6 +511,18 @@ monitor_get_user_data(void)
 }
 
 /*
+ *  Returns: the calling thread's tid number, or else -1 on error.
+ */
+int
+monitor_get_thread_num(void)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    return (tn == NULL) ? -1 : tn->tn_tid;
+}
+
+/*
  *  Returns: 1 if address is at the bottom of the thread's call stack,
  *  else 0.
  */
@@ -614,7 +628,7 @@ monitor_begin_thread(void *arg)
     void *ret;
 
     MONITOR_ASM_LABEL(monitor_thread_fence1);
-    MONITOR_DEBUG1("\n");
+    MONITOR_DEBUG("tid = %d\n", tn->tn_tid);
 
     /*
      * Don't create any new threads after someone has called exit().

@@ -511,6 +511,12 @@ monitor_get_user_data(void)
     return (monitor_main_tn.tn_user_data);
 }
 
+int __attribute__ ((weak))
+monitor_get_thread_num(void)
+{
+    return (0);
+}
+
 void * __attribute__ ((weak))
 monitor_stack_bottom(void)
 {

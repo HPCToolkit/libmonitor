@@ -78,19 +78,22 @@
  */
 #define MONITOR_DEBUG_ARGS(fmt, ...)  do {			\
     if (monitor_debug) {					\
-	fprintf(stderr, "monitor debug [%d] %s: " fmt ,		\
-		getpid(), __VA_ARGS__ );			\
+	fprintf(stderr, "monitor debug [%d,%d] %s: " fmt ,	\
+		getpid(), monitor_get_thread_num(),		\
+		__VA_ARGS__ );					\
     }							       	\
 } while (0)
 
 #define MONITOR_WARN_ARGS(fmt, ...)  do {			\
-    fprintf(stderr, "monitor warning [%d] %s: " fmt ,		\
-	    getpid(), __VA_ARGS__ );				\
+    fprintf(stderr, "monitor warning [%d,%d] %s: " fmt ,	\
+	    getpid(), monitor_get_thread_num(),			\
+	    __VA_ARGS__ );					\
 } while (0)
 
 #define MONITOR_ERROR_ARGS(fmt, ...)  do {			\
-    fprintf(stderr, "monitor error [%d] %s: " fmt ,		\
-	    getpid(), __VA_ARGS__ );				\
+    fprintf(stderr, "monitor error [%d,%d] %s: " fmt ,		\
+	    getpid(), monitor_get_thread_num(),			\
+	    __VA_ARGS__ );					\
     errx(1, "%s:" fmt , __VA_ARGS__ );				\
 } while (0)
 
