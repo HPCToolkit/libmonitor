@@ -308,9 +308,9 @@ monitor_thread_signal_handler(int signum)
 	return;
     }
     if (tn->tn_appl_started && !tn->tn_fini_started) {
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, tid = %d) ...\n",
-		      tn->tn_user_data, tn->tn_tid);
 	tn->tn_fini_started = 1;
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
+		      tn->tn_user_data, tn->tn_tid);
 	monitor_fini_thread(tn->tn_user_data);
 	tn->tn_fini_done = 1;
     }
@@ -416,9 +416,9 @@ monitor_thread_shootdown(void)
      * See if we need to run fini_thread from this thread.
      */
     if (my_tn != NULL && !my_tn->tn_fini_started) {
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p, tid = %d) ...\n",
-		      my_tn->tn_user_data, my_tn->tn_tid);
 	my_tn->tn_fini_started = 1;
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
+		      my_tn->tn_user_data, my_tn->tn_tid);
 	monitor_fini_thread(my_tn->tn_user_data);
 	my_tn->tn_fini_done = 1;
     }
@@ -584,7 +584,6 @@ monitor_pthread_cleanup_routine(void *arg)
 {
     struct monitor_thread_node *tn = arg;
 
-    MONITOR_DEBUG1("(pthread cleanup)\n");
     if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
 	MONITOR_WARN1("missing thread-specific data\n");
 	MONITOR_DEBUG1("calling monitor_fini_thread(NULL)\n");
@@ -593,9 +592,13 @@ monitor_pthread_cleanup_routine(void *arg)
     }
 
     if (! tn->tn_fini_started) {
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d\n",
+	tn->tn_fini_started = 1;
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
 		      tn->tn_user_data, tn->tn_tid);
 	monitor_fini_thread(tn->tn_user_data);
+	tn->tn_fini_done = 1;
+    } else {
+	MONITOR_DEBUG("already called fini thread for tid = %d\n", tn->tn_tid);
     }
     monitor_unlink_thread_node(tn);
 }
