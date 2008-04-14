@@ -212,10 +212,12 @@ monitor_end_library_fcn(void)
 }
 
 void
-monitor_begin_process_fcn(void *user_data)
+monitor_begin_process_fcn(void *user_data, int is_fork)
 {
     monitor_normal_init();
     monitor_main_tn.tn_user_data = user_data;
+    if (is_fork)
+	monitor_reset_thread_list(&monitor_main_tn);
 
     MONITOR_DEBUG1("calling monitor_init_process() ...\n");
     monitor_init_process(&monitor_argc, monitor_argv, user_data);
@@ -373,7 +375,7 @@ monitor_main(int argc, char **argv, char **envp)
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
-    monitor_begin_process_fcn(NULL);
+    monitor_begin_process_fcn(NULL, FALSE);
 
     MONITOR_ASM_LABEL(monitor_main_fence2);
     ret = (*real_main)(monitor_argc, monitor_argv, monitor_envp);

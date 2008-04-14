@@ -69,5 +69,6 @@ struct monitor_thread_node {
 };
 
 struct monitor_thread_node *monitor_get_main_tn(void);
+void monitor_reset_thread_list(struct monitor_thread_node *);
 
 #endif  /* ! _MONITOR_THREAD_H_ */
