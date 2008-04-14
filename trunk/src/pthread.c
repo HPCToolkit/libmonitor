@@ -42,6 +42,7 @@
  *
  *    monitor_is_threaded
  *    monitor_get_user_data
+ *    monitor_get_thread_num
  *    monitor_stack_bottom
  *    monitor_in_start_func_wide
  *    monitor_in_start_func_narrow
@@ -102,6 +103,7 @@
 typedef int   pthread_create_fcn_t(PTHREAD_CREATE_PARAM_LIST);
 typedef int   pthread_equal_fcn_t(pthread_t, pthread_t);
 typedef int   pthread_key_create_fcn_t(pthread_key_t *, void (*)(void *));
+typedef int   pthread_key_delete_fcn_t(pthread_key_t);
 typedef int   pthread_kill_fcn_t(pthread_t, int);
 typedef pthread_t pthread_self_fcn_t(void);
 typedef int   pthread_mutex_lock_fcn_t(pthread_mutex_t *);
@@ -124,6 +126,7 @@ extern sigprocmask_fcn_t  __real_pthread_sigmask;
 static pthread_create_fcn_t  *real_pthread_create;
 static pthread_equal_fcn_t   *real_pthread_equal;
 static pthread_key_create_fcn_t   *real_pthread_key_create;
+static pthread_key_delete_fcn_t   *real_pthread_key_delete;
 static pthread_kill_fcn_t  *real_pthread_kill;
 static pthread_self_fcn_t  *real_pthread_self;
 static pthread_mutex_lock_fcn_t  *real_pthread_mutex_lock;
@@ -175,6 +178,28 @@ extern void monitor_thread_fence4;
  *----------------------------------------------------------------------
  */
 
+/*
+ *  Note: there is a tiny window where a thread exists but its thread-
+ *  specific data is not yet set, so it's not really an error for
+ *  getspecific to fail.  But bad magic implies an internal error.
+ */
+static struct monitor_thread_node *
+monitor_get_tn(void)
+{
+    struct monitor_thread_node *tn;
+
+    if (monitor_has_used_threads) {
+	tn = (*real_pthread_getspecific)(monitor_pthread_key);
+	if (tn != NULL && tn->tn_magic != MONITOR_TN_MAGIC) {
+	    MONITOR_WARN("bad magic in thread node: %p\n", tn);
+	    tn = NULL;
+	}
+    } else
+	tn = monitor_get_main_tn();
+
+    return (tn);
+}
+
 static void
 monitor_thread_name_init(void)
 {
@@ -185,6 +210,7 @@ monitor_thread_name_init(void)
     MONITOR_GET_REAL_NAME(real_pthread_equal, pthread_equal);
 #endif
     MONITOR_GET_REAL_NAME(real_pthread_key_create, pthread_key_create);
+    MONITOR_GET_REAL_NAME(real_pthread_key_delete, pthread_key_delete);
     MONITOR_GET_REAL_NAME(real_pthread_kill, pthread_kill);
     MONITOR_GET_REAL_NAME(real_pthread_self, pthread_self);
     MONITOR_GET_REAL_NAME(real_pthread_mutex_lock,   pthread_mutex_lock);
@@ -241,6 +267,52 @@ monitor_thread_list_init(void)
     if (ret != 0) {
 	MONITOR_ERROR("pthread_setspecific failed (%d)\n", ret);
     }
+}
+
+/*
+ *  Reset the thread list in the child after fork().
+ *
+ *  If a threaded program forks, then the child has only one running
+ *  thread.  So, reset the thread node for the main thread, and free
+ *  the thread list and the pthread key.
+ */
+void
+monitor_reset_thread_list(struct monitor_thread_node *main_tn)
+{
+    struct monitor_thread_node *tn, *tn2;
+
+    if (! monitor_has_used_threads)
+	return;
+
+    MONITOR_DEBUG1("\n");
+    /*
+     * The thread that fork()ed is now the main thread.
+     */
+    tn = monitor_get_tn();
+    if (tn == NULL) {
+	MONITOR_WARN1("tn should not be NULL here\n");
+    }
+    else if (tn != main_tn) {
+	memset(main_tn, 0, sizeof(struct monitor_thread_node));
+	main_tn->tn_magic = MONITOR_TN_MAGIC;
+	main_tn->tn_tid = 0;
+	main_tn->tn_user_data = tn->tn_user_data;
+	main_tn->tn_stack_bottom = tn->tn_stack_bottom;
+	main_tn->tn_is_main = 1;
+    }
+    /*
+     * Free the thread list and the pthread key.
+     */
+    tn = LIST_FIRST(&monitor_thread_list);
+    while (tn != NULL) {
+	tn2 = LIST_NEXT(tn, tn_links);
+	free(tn);
+	tn = tn2;
+    }
+    if ((*real_pthread_key_delete)(monitor_pthread_key) != 0) {
+	MONITOR_WARN1("pthread_key_delete failed\n");
+    }	
+    monitor_has_used_threads = 0;
 }
 
 static struct monitor_thread_node *
@@ -469,28 +541,6 @@ int
 monitor_is_threaded(void)
 {
     return (monitor_has_used_threads);
-}
-
-/*
- *  Note: there is a tiny window where a thread exists but its thread-
- *  specific data is not yet set, so it's not really an error for
- *  getspecific to fail.  But bad magic implies an internal error.
- */
-static struct monitor_thread_node *
-monitor_get_tn(void)
-{
-    struct monitor_thread_node *tn;
-
-    if (monitor_has_used_threads) {
-	tn = (*real_pthread_getspecific)(monitor_pthread_key);
-	if (tn != NULL && tn->tn_magic != MONITOR_TN_MAGIC) {
-	    MONITOR_WARN("bad magic in thread node: %p\n", tn);
-	    tn = NULL;
-	}
-    } else
-	tn = monitor_get_main_tn();
-
-    return (tn);
 }
 
 /*

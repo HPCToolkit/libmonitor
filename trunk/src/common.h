@@ -157,7 +157,7 @@ extern int monitor_debug;
 
 void monitor_early_init(void);
 void monitor_signal_init(void);
-void monitor_begin_process_fcn(void *);
+void monitor_begin_process_fcn(void *, int);
 void monitor_end_process_fcn(int);
 void monitor_end_library_fcn(void);
 int  monitor_end_process_race(void);

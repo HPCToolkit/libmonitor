@@ -32,6 +32,11 @@
  *  if advised of the possibility of such damage.
  *
  *  $Id$
+ *
+ *  Override functions:
+ *
+ *    fork, vfork
+ *    execl, execlp, execle, execv, execvp, execve
  */
 
 #include "config.h"
@@ -219,7 +224,7 @@ monitor_fork(void)
     else {
 	/* Child process. */
 	MONITOR_DEBUG("application forked, parent = %d\n", (int)getppid());
-	monitor_begin_process_fcn(user_data);
+	monitor_begin_process_fcn(user_data, TRUE);
     }
 
     return (ret);
