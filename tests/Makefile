@@ -11,11 +11,14 @@
 CC = gcc
 CFLAGS = -g -O -Wall
 
-PROGRAMS = exit
+PROGRAMS = exit thread_fork
 
 all: $(PROGRAMS)
 
 exit: exit.c
+	$(CC) -o $@ $(CFLAGS) $< -lpthread
+
+thread_fork: thread_fork.c
 	$(CC) -o $@ $(CFLAGS) $< -lpthread
 
 clean:
