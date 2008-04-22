@@ -795,7 +795,7 @@ MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
     monitor_signal_init();
     monitor_thread_name_init();
 
-    if (how == SIG_BLOCK || how == SIG_SETMASK) {
+    if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
 	my_set = *set;
 	monitor_remove_client_signals(&my_set);
 	set = &my_set;
