@@ -37,16 +37,19 @@
  *
  *    fork, vfork
  *    execl, execlp, execle, execv, execvp, execve
+ *    system
  */
 
 #include "config.h"
 #include <sys/types.h>
+#include <sys/wait.h>
 #ifdef MONITOR_DYNAMIC
 #include <dlfcn.h>
 #endif
 #include <err.h>
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -66,18 +69,25 @@ typedef pid_t fork_fcn_t(void);
 typedef int execv_fcn_t(const char *path, char *const argv[]);
 typedef int execve_fcn_t(const char *path, char *const argv[],
 			 char *const envp[]);
+typedef int sigaction_fcn_t(int, const struct sigaction *,
+			    struct sigaction *);
+typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
 
 #ifdef MONITOR_STATIC
 extern fork_fcn_t    __real_fork;
 extern execv_fcn_t   __real_execv;
 extern execv_fcn_t   __real_execvp;
 extern execve_fcn_t  __real_execve;
+extern sigaction_fcn_t    __real_sigaction;
+extern sigprocmask_fcn_t  __real_sigprocmask;
 #endif
 
 static fork_fcn_t    *real_fork = NULL;
 static execv_fcn_t   *real_execv = NULL;
 static execv_fcn_t   *real_execvp = NULL;
 static execve_fcn_t  *real_execve = NULL;
+static sigaction_fcn_t    *real_sigaction = NULL;
+static sigprocmask_fcn_t  *real_sigprocmask = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -95,6 +105,8 @@ monitor_fork_init(void)
     MONITOR_GET_REAL_NAME_WRAP(real_execv, execv);
     MONITOR_GET_REAL_NAME_WRAP(real_execvp, execvp);
     MONITOR_GET_REAL_NAME_WRAP(real_execve, execve);
+    MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
+    MONITOR_GET_REAL_NAME_WRAP(real_sigprocmask, sigprocmask);
 }
 
 /*
@@ -401,4 +413,91 @@ MONITOR_WRAP_NAME(execve)(const char *path, char *const argv[],
 			  char *const envp[])
 {
     return monitor_execve(path, argv, envp);
+}
+
+/*
+ *  Reimplement and override system().  Stevens describes the issues
+ *  with signals and how to do this.
+ *
+ *  This allows us to do three things: (1) replace vfork() with fork,
+ *  (2) provide pre/post_fork() callbacks, and (3) selectively monitor
+ *  or not the child process.  Note: the libc system() does a direct
+ *  syscall for fork, thus bypassing our override.
+ *
+ *  For now, always un-monitor the child by just unsetting LD_PRELOAD.
+ */
+#define SHELL  "/bin/sh"
+int
+MONITOR_WRAP_NAME(system)(const char *command)
+{
+    struct sigaction ign_act, old_int, old_quit;
+    sigset_t sigchld_set, old_set;
+    char *arglist[4];
+    void *user_data;
+    pid_t pid;
+    int status;
+
+    monitor_fork_init();
+    MONITOR_DEBUG("command = %s\n", command);
+    /*
+     * command == NULL tests if the shell is available and returns
+     * non-zero if yes.
+     */
+    if (command == NULL) {
+	status = !access(SHELL, X_OK);
+	MONITOR_DEBUG("status = %d\n", status);
+	return (status);
+    }
+    /*
+     * Ignore SIGINT and SIGQUIT, and block SIGCHLD.
+     */
+    memset(&ign_act, 0, sizeof(struct sigaction));
+    ign_act.sa_handler = SIG_IGN;
+    sigemptyset(&sigchld_set);
+    sigaddset(&sigchld_set, SIGCHLD);
+
+    MONITOR_DEBUG1("calling monitor_pre_fork() ...\n");
+    user_data = monitor_pre_fork();
+    (*real_sigaction)(SIGINT, &ign_act, &old_int);
+    (*real_sigaction)(SIGQUIT, &ign_act, &old_quit);
+    (*real_sigprocmask)(SIG_BLOCK, &sigchld_set, &old_set);
+
+    pid = (*real_fork)();
+    if (pid < 0) {
+	/* Fork failed. */
+	MONITOR_DEBUG1("real fork failed\n");
+	status = -1;
+    }
+    else if (pid == 0) {
+	/* Child process. */
+	(*real_sigaction)(SIGINT, &old_int, NULL);
+	(*real_sigaction)(SIGQUIT, &old_quit, NULL);
+	(*real_sigprocmask)(SIG_SETMASK, &old_set, NULL);
+	arglist[0] = SHELL;
+	arglist[1] = "-c";
+	arglist[2] = (char *)command;
+	arglist[3] = NULL;
+	unsetenv("LD_PRELOAD");
+	(*real_execv)("/bin/sh", arglist);
+	monitor_real_exit(127);
+    }
+    else {
+	/* Parent process. */
+	while (waitpid(pid, &status, 0) < 0) {
+	    if (errno != EINTR) {
+		status = -1;
+		break;
+	    }
+	}
+    }
+
+    (*real_sigaction)(SIGINT, &old_int, NULL);
+    (*real_sigaction)(SIGQUIT, &old_quit, NULL);
+    (*real_sigprocmask)(SIG_SETMASK, &old_set, NULL);
+
+    MONITOR_DEBUG1("calling monitor_post_fork() ...\n");
+    monitor_post_fork(pid, user_data);
+
+    MONITOR_DEBUG("status = %d\n", status);
+    return (status);
 }
