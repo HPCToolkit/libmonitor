@@ -47,6 +47,13 @@ AC_CONFIG_FILES([Makefile src/Makefile])
 AC_CONFIG_FILES([src/monitor-link], [chmod +x src/monitor-link])
 AC_CONFIG_FILES([src/monitor-run],  [chmod +x src/monitor-run])
 
+#
+# Disable building libmonitor.a, since nothing uses it.  The static
+# case uses libmonitor_wrap.a, not libmonitor.a.  This needs to come
+# before PROG_LIBTOOL.
+#
+enable_static=no
+
 AC_PROG_CC
 AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
