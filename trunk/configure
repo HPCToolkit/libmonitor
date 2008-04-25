@@ -19986,7 +19986,7 @@ cat >>confdefs.h <<\_ACEOF
 #define MONITOR_USE_FORK 1
 _ACEOF
 
-    wrap_list="${wrap_list} fork vfork"
+    wrap_list="${wrap_list} fork vfork system"
     wrap_list="${wrap_list} execl execlp execle execv execvp execve"
 fi
 
