@@ -592,6 +592,13 @@ monitor_mpi_comm_rank(void)
  *  Internal monitor functions.
  */
 void __attribute__ ((weak))
+monitor_reset_thread_list(struct monitor_thread_node *main_tn)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return;
+}
+
+void __attribute__ ((weak))
 monitor_thread_release(void)
 {
     MONITOR_DEBUG1("(weak)\n");

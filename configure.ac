@@ -145,7 +145,7 @@ fi
 if test "x$enable_fork" = xyes ; then
     AC_DEFINE([MONITOR_USE_FORK], [1],
 	[Include support for fork and exec families.])
-    wrap_list="${wrap_list} fork vfork"
+    wrap_list="${wrap_list} fork vfork system"
     wrap_list="${wrap_list} execl execlp execle execv execvp execve"
 fi
 
