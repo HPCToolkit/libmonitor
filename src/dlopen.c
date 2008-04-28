@@ -32,6 +32,16 @@
  *  if advised of the possibility of such damage.
  *
  *  $Id$
+ *
+ *  Override functions:
+ *
+ *    dlopen
+ *    dlclose
+ *
+ *  Support functions:
+ *
+ *    monitor_real_dlopen
+ *    monitor_real_dlclose
  */
 
 #include "config.h"
@@ -106,9 +116,11 @@ MONITOR_WRAP_NAME(dlopen)(const char *path, int flags)
     void *handle;
 
     monitor_dlopen_init();
-    MONITOR_DEBUG("path: %s, flags: %d\n", path, flags);
+    MONITOR_DEBUG("(pre) path: %s, flags: %d\n", path, flags);
+    monitor_pre_dlopen(path, flags);
     handle = (*real_dlopen)(path, flags);
     monitor_dlopen(path, flags, handle);
+    MONITOR_DEBUG("(post) path: %s, handle: %p\n", path, handle);
 
     return (handle);
 }
@@ -116,8 +128,14 @@ MONITOR_WRAP_NAME(dlopen)(const char *path, int flags)
 int
 MONITOR_WRAP_NAME(dlclose)(void *handle)
 {
+    int ret;
+
     monitor_dlopen_init();
-    MONITOR_DEBUG("handle: %p\n", handle);
+    MONITOR_DEBUG("(pre) handle: %p\n", handle);
     monitor_dlclose(handle);
-    return (*real_dlclose)(handle);
+    ret = (*real_dlclose)(handle);
+    monitor_post_dlclose(handle, ret);
+    MONITOR_DEBUG("(post) handle: %p, ret: %d\n", handle, ret);
+
+    return (ret);
 }

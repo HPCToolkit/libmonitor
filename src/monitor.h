@@ -62,8 +62,10 @@ extern void monitor_thread_post_create(void *);
 extern void monitor_init_thread_support(void);
 extern void *monitor_init_thread(int tid, void *data);
 extern void monitor_fini_thread(void *data);
+extern void monitor_pre_dlopen(const char *path, int flags);
 extern void monitor_dlopen(const char *path, int flags, void *handle);
 extern void monitor_dlclose(void *handle);
+extern void monitor_post_dlclose(void *handle, int ret);
 extern void monitor_init_mpi(int *argc, char ***argv);
 extern void monitor_fini_mpi(void);
 
