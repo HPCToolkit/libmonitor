@@ -92,6 +92,11 @@ monitor_fini_thread(void *data)
 }
 
 void __attribute__ ((weak))
+monitor_pre_dlopen(const char *path, int flags)
+{
+}
+
+void __attribute__ ((weak))
 monitor_dlopen(const char *path, int flags, void *handle)
 {
     MONITOR_DEBUG("(default callback) path = %s, flags = %d, handle = %p\n",
@@ -102,6 +107,11 @@ void __attribute__ ((weak))
 monitor_dlclose(void *handle)
 {
     MONITOR_DEBUG("(default callback) handle = %p\n", handle);
+}
+
+void __attribute__ ((weak))
+monitor_post_dlclose(void *handle, int ret)
+{
 }
 
 void __attribute__ ((weak))
