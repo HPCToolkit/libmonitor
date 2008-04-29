@@ -537,6 +537,13 @@ monitor_in_start_func_narrow(void *addr)
     return monitor_in_main_start_func_narrow(addr);
 }
 
+pid_t __attribute__ ((weak))
+monitor_real_fork(void)
+{
+    MONITOR_DEBUG1("(weak)\n");
+    return (-1);
+}
+
 void * __attribute__ ((weak))
 monitor_real_dlopen(const char *path, int flags)
 {
