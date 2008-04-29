@@ -38,10 +38,6 @@
  *    fork, vfork
  *    execl, execlp, execle, execv, execvp, execve
  *    system
- *
- *  Support functions:
- *
- *    monitor_real_fork
  */
 
 #include "config.h"
@@ -202,20 +198,6 @@ monitor_is_executable(const char *file)
     }
 
     return (0);
-}
-
-/*
- *----------------------------------------------------------------------
- *  CLIENT SUPPORT FUNCTIONS
- *----------------------------------------------------------------------
- */
-
-pid_t
-monitor_real_fork(void)
-{
-    monitor_fork_init();
-    MONITOR_DEBUG1("\n");
-    return (*real_fork)();
 }
 
 /*

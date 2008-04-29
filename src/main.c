@@ -43,6 +43,7 @@
  *
  *    monitor_real_exit
  *    monitor_real_sigprocmask
+ *    monitor_real_fork
  */
 
 #include "config.h"
@@ -88,6 +89,7 @@ typedef int start_main_fcn_t(START_MAIN_PARAM_LIST);
 typedef int main_fcn_t(int, char **, char **);
 typedef void exit_fcn_t(int);
 typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
+typedef pid_t fork_fcn_t(void);
 
 #ifdef MONITOR_STATIC
 extern main_fcn_t __real_main;
@@ -96,6 +98,9 @@ extern exit_fcn_t __real__exit;
 #ifdef MONITOR_USE_SIGNALS
 extern sigprocmask_fcn_t  __real_sigprocmask;
 #endif
+#ifdef MONITOR_USE_FORK
+extern fork_fcn_t  __real_fork;
+#endif
 #endif
 
 static start_main_fcn_t  *real_start_main = NULL;
@@ -103,6 +108,7 @@ static main_fcn_t  *real_main = NULL;
 static exit_fcn_t  *real_exit = NULL;
 static exit_fcn_t  *real_u_exit = NULL;
 static sigprocmask_fcn_t *real_sigprocmask = NULL;
+static fork_fcn_t  *real_fork = NULL;
 
 static int monitor_argc = 0;
 static char **monitor_argv = NULL;
@@ -350,6 +356,27 @@ monitor_real_sigprocmask(int how, const sigset_t *set,
 }
 
 /*
+ *  Client access to the real fork().  Use with caution because the
+ *  child will also be moniored.
+ *
+ *  Again, this also needs to be here rather than in fork.c so it
+ *  doesn't depend on the application calling fork() to be pulled in
+ *  (static case).
+ */
+pid_t
+monitor_real_fork(void)
+{
+#ifdef MONITOR_USE_FORK
+    MONITOR_GET_REAL_NAME_WRAP(real_fork, fork);
+    MONITOR_DEBUG1("(real)\n");
+    return (*real_fork)();
+#else
+    MONITOR_DEBUG1("(unavailable)\n");
+    return (-1);
+#endif
+}
+
+/*
  *----------------------------------------------------------------------
  *  EXTERNAL OVERRIDES and their helper functions
  *----------------------------------------------------------------------
@@ -535,13 +562,6 @@ int __attribute__ ((weak))
 monitor_in_start_func_narrow(void *addr)
 {
     return monitor_in_main_start_func_narrow(addr);
-}
-
-pid_t __attribute__ ((weak))
-monitor_real_fork(void)
-{
-    MONITOR_DEBUG1("(weak)\n");
-    return (-1);
 }
 
 void * __attribute__ ((weak))
