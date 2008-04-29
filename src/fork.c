@@ -214,6 +214,7 @@ pid_t
 monitor_real_fork(void)
 {
     monitor_fork_init();
+    MONITOR_DEBUG1("\n");
     return (*real_fork)();
 }
 
