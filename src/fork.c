@@ -38,6 +38,10 @@
  *    fork, vfork
  *    execl, execlp, execle, execv, execvp, execve
  *    system
+ *
+ *  Support functions:
+ *
+ *    monitor_real_system
  */
 
 #include "config.h"
@@ -416,8 +420,9 @@ MONITOR_WRAP_NAME(execve)(const char *path, char *const argv[],
 }
 
 /*
- *  Reimplement and override system().  Stevens describes the issues
- *  with signals and how to do this.
+ *  Reimplement system() for application override (with callback
+ *  functions) and client support (without callbacks).  Stevens
+ *  describes the issues with signals and how to do this.
  *
  *  This allows us to do three things: (1) replace vfork() with fork,
  *  (2) provide pre/post_fork() callbacks, and (3) selectively monitor
@@ -427,18 +432,19 @@ MONITOR_WRAP_NAME(execve)(const char *path, char *const argv[],
  *  For now, always un-monitor the child by just unsetting LD_PRELOAD.
  */
 #define SHELL  "/bin/sh"
-int
-MONITOR_WRAP_NAME(system)(const char *command)
+static int
+monitor_system(const char *command, int callback)
 {
     struct sigaction ign_act, old_int, old_quit;
     sigset_t sigchld_set, old_set;
+    void *user_data = NULL;
     char *arglist[4];
-    void *user_data;
     pid_t pid;
     int status;
 
     monitor_fork_init();
-    MONITOR_DEBUG("command = %s\n", command);
+    MONITOR_DEBUG("(%s) command = %s\n",
+		  (callback ? "appl" : "client"), command);
     /*
      * command == NULL tests if the shell is available and returns
      * non-zero if yes.
@@ -456,8 +462,10 @@ MONITOR_WRAP_NAME(system)(const char *command)
     sigemptyset(&sigchld_set);
     sigaddset(&sigchld_set, SIGCHLD);
 
-    MONITOR_DEBUG1("calling monitor_pre_fork() ...\n");
-    user_data = monitor_pre_fork();
+    if (callback) {
+	MONITOR_DEBUG1("calling monitor_pre_fork() ...\n");
+	user_data = monitor_pre_fork();
+    }
     (*real_sigaction)(SIGINT, &ign_act, &old_int);
     (*real_sigaction)(SIGQUIT, &ign_act, &old_quit);
     (*real_sigprocmask)(SIG_BLOCK, &sigchld_set, &old_set);
@@ -490,14 +498,33 @@ MONITOR_WRAP_NAME(system)(const char *command)
 	    }
 	}
     }
-
     (*real_sigaction)(SIGINT, &old_int, NULL);
     (*real_sigaction)(SIGQUIT, &old_quit, NULL);
     (*real_sigprocmask)(SIG_SETMASK, &old_set, NULL);
 
-    MONITOR_DEBUG1("calling monitor_post_fork() ...\n");
-    monitor_post_fork(pid, user_data);
+    if (callback) {
+	MONITOR_DEBUG1("calling monitor_post_fork() ...\n");
+	monitor_post_fork(pid, user_data);
+    }
 
     MONITOR_DEBUG("status = %d\n", status);
     return (status);
+}
+
+int
+MONITOR_WRAP_NAME(system)(const char *command)
+{
+    return monitor_system(command, TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *  CLIENT SUPPORT FUNCTIONS
+ *----------------------------------------------------------------------
+ */
+
+int
+monitor_real_system(const char *command)
+{
+    return monitor_system(command, FALSE);
 }
