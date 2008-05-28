@@ -170,6 +170,10 @@ and the resulting program can be fully-static or dynamically-linked,
 as long as libmonitor and the callback functions are linked in
 statically.
 
+Note: sometimes monitor-link will fail with undefined references to
+some of monitor's wrapped symbols.  See the "Known Issues" section
+below for a workaround.
+
 Note: the callback.c file and the monitor-run and monitor-link scripts
 are in the public domain.  These files may be useful as a starting
 point for writing and linking the client's callback functions.
@@ -199,21 +203,31 @@ will run on the compute nodes.
 
     monitor-link cc --target=catamount file.o ...
 
-When using MPI, the monitor-link script currently doesn't handle some
-of the MPI libraries correctly.  You may see undefined references to
-some of the monitor wrap functions.  For example:
+==============
+Known Issues
+==============
 
-    monitor-link mpicc main.o 
-    /usr/local/lib64/librapl.so: undefined reference to `__wrap_pthread_create'
+When linking monitor statically, sometimes there will be undefined
+references to some of the wrapped symbols.  For example, on Compute
+Node Linux:
 
-The problem is that the mpicc compiler is adding additional libraries,
-in this case librapl.  The monitor-link script doesn't see the
-additional libraries and ends up with the wrong order on the link
-line.
+    ./monitor-link cc hello.c
+    /opt/xt-asyncpe/1.0/bin/cc: INFO: linux target is being used
+    hello.c:
+    /opt/pgi/7.1.6/linux86-64/7.1-6/lib/libpgc.a(trace.o)(.text+0xfe):
+    In function `__pgi_abort': undefined reference to `__wrap_system'
 
-But there is a simple workaround.  In this case, add -lrapl to the
-link line.
+The problem is that the PGI compiler is adding libpgc.a (with
+undefined references to system) on the link line.  In this case,
+hello.c does not reference system itself and libpgc.a comes after
+libmonitor_wrap.a.  Thus, the linker fails to pull in the necessary
+objects from libmonitor's archive and reports that __wrap_system is
+undefined.
 
-    monitor-link mpicc main.o -lrapl
+This problem is very difficult for monitor to fix, but there is a work
+around.  Use the -u option to monitor-link to add an undefined
+reference to 'system' early on the link line, thus forcing the linker
+to pull in the necessary object.
 
+    ./monitor-link -u system cc hello.c
 

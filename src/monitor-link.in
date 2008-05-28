@@ -7,6 +7,7 @@
 #
 #     -h, --help
 #     -i, --insert  <file.o>
+#     -u, --undefined  <symbol>
 #     -v, --verbose
 #     -w, --wrap  <symbol>
 #
@@ -29,11 +30,14 @@ libdir="@libdir@"
 libmonitor="${libdir}/libmonitor_wrap.a"
 monitor_wrap_names="@wrap_list@"
 
-# Space-separated list of extra object files to add.
+# Space-separated list of object files to add.
 insert_files=
 
 # Space-separated list of extra symbol names to wrap.
 wrap_names=
+
+# Space-separated list of symbol names to force undefined.
+undef_names=
 
 # Space-separated list of extra library names, eg: "-ldl -lm".
 library_names=
@@ -51,6 +55,7 @@ Usage: $0 [options] compiler file ...
 
    -h, --help
    -i, --insert  <file.o>
+   -u, --undefined  <symbol>
    -v, --verbose
    -w, --wrap  <symbol>
 
@@ -76,6 +81,12 @@ do
 	-i | --insert )
 	    test "x$2" != x || die "missing argument: $*"
 	    insert_files="${insert_files} $2"
+	    shift ; shift
+	    ;;
+
+	-u | --undefined )
+	    test "x$2" != x || die "missing argument: $*"
+	    undef_names="${undef_names} $2"
 	    shift ; shift
 	    ;;
 
@@ -129,9 +140,15 @@ do
     wrap_args="${wrap_args} -Wl,--wrap,${name}"
 done
 
+undef_args=
+for name in $undef_names
+do
+    undef_args="${undef_args} -Wl,-u,__wrap_${name}"
+done
+
 mon_args="${insert_files} ${libmonitor} ${appl_libs} ${library_names}"
 if test "$verbose" = yes ; then
-    echo "new command line: " $command $wrap_args "$@" $mon_args
+    echo "new command line: " $command $wrap_args $undef_args "$@" $mon_args
 fi
 
-exec $command $wrap_args "$@" $mon_args
+exec $command $wrap_args $undef_args "$@" $mon_args
