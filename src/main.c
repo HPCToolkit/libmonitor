@@ -221,12 +221,12 @@ void
 monitor_begin_process_fcn(void *user_data, int is_fork)
 {
     monitor_normal_init();
-    monitor_main_tn.tn_user_data = user_data;
     if (is_fork)
 	monitor_reset_thread_list(&monitor_main_tn);
 
     MONITOR_DEBUG1("calling monitor_init_process() ...\n");
-    monitor_init_process(&monitor_argc, monitor_argv, user_data);
+    monitor_main_tn.tn_user_data =
+	monitor_init_process(&monitor_argc, monitor_argv, user_data);
     monitor_init_process_called = 1;
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
