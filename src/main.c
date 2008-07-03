@@ -258,7 +258,7 @@ monitor_end_process_fcn(int how)
     } else {
 	while (! monitor_fini_process_done)
 	    usleep(MONITOR_POLL_USLEEP_TIME);
-	sleep(5);
+	sleep(2);
     }
     MONITOR_DEBUG1("resume system exit\n");
 }
@@ -395,6 +395,7 @@ monitor_main(int argc, char **argv, char **envp)
     int ret;
 
     MONITOR_ASM_LABEL(monitor_main_fence1);
+    monitor_normal_init();
     MONITOR_DEBUG1("\n");
     monitor_argc = argc;
     monitor_argv = argv;
