@@ -47,6 +47,7 @@
  *    monitor_in_start_func_wide
  *    monitor_in_start_func_narrow
  *    monitor_real_pthread_sigmask
+ *    monitor_broadcast_signal
  */
 
 #include "config.h"
@@ -130,6 +131,7 @@ static pthread_key_delete_fcn_t   *real_pthread_key_delete;
 static pthread_kill_fcn_t  *real_pthread_kill;
 static pthread_self_fcn_t  *real_pthread_self;
 static pthread_mutex_lock_fcn_t  *real_pthread_mutex_lock;
+static pthread_mutex_lock_fcn_t  *real_pthread_mutex_trylock;
 static pthread_mutex_lock_fcn_t  *real_pthread_mutex_unlock;
 static pthread_getspecific_fcn_t  *real_pthread_getspecific;
 static pthread_setspecific_fcn_t  *real_pthread_setspecific;
@@ -151,6 +153,7 @@ static sigprocmask_fcn_t  *real_pthread_sigmask;
 static pthread_mutex_t monitor_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define MONITOR_THREAD_LOCK    (*real_pthread_mutex_lock)(&monitor_thread_mutex)
+#define MONITOR_THREAD_TRYLOCK (*real_pthread_mutex_trylock)(&monitor_thread_mutex)
 #define MONITOR_THREAD_UNLOCK  (*real_pthread_mutex_unlock)(&monitor_thread_mutex)
 
 static LIST_HEAD(, monitor_thread_node) monitor_thread_list;
@@ -214,6 +217,7 @@ monitor_thread_name_init(void)
     MONITOR_GET_REAL_NAME(real_pthread_kill, pthread_kill);
     MONITOR_GET_REAL_NAME(real_pthread_self, pthread_self);
     MONITOR_GET_REAL_NAME(real_pthread_mutex_lock,   pthread_mutex_lock);
+    MONITOR_GET_REAL_NAME(real_pthread_mutex_trylock, pthread_mutex_trylock);
     MONITOR_GET_REAL_NAME(real_pthread_mutex_unlock, pthread_mutex_unlock);
     MONITOR_GET_REAL_NAME(real_pthread_getspecific,  pthread_getspecific);
     MONITOR_GET_REAL_NAME(real_pthread_setspecific,  pthread_setspecific);
@@ -631,6 +635,45 @@ monitor_real_pthread_sigmask(int how, const sigset_t *set,
 {
     monitor_thread_name_init();
     return (*real_pthread_sigmask)(how, set, oldset);
+}
+
+/*
+ *  Send signal 'sig' to every thread except ourself.  Note: we call
+ *  this function from a signal handler, so to avoid deadlock, we
+ *  can't wait on a lock.  Instead, we can only try the lock and fail
+ *  if the trylock fails.
+ *
+ *  Returns: 0 on success, or -1 if trylock failed.
+ */
+int
+monitor_broadcast_signal(int sig)
+{
+    struct monitor_thread_node *tn;
+    pthread_t self;
+
+    if (! monitor_has_used_threads)
+	return (SUCCESS);
+
+    if (MONITOR_THREAD_TRYLOCK != 0)
+	return (FAILURE);
+
+    self = (*real_pthread_self)();
+    for (tn = LIST_FIRST(&monitor_thread_list);
+	 tn != NULL;
+	 tn = LIST_NEXT(tn, tn_links)) {
+
+	if (!PTHREAD_EQUAL(self, tn->tn_self) &&
+	    tn->tn_appl_started && !tn->tn_fini_started) {
+	    (*real_pthread_kill)(tn->tn_self, sig);
+	}
+    }
+
+    tn = monitor_get_main_tn();
+    if (tn != NULL && !PTHREAD_EQUAL(self, tn->tn_self))
+	(*real_pthread_kill)(tn->tn_self, sig);
+
+    MONITOR_THREAD_UNLOCK;
+    return (SUCCESS);
 }
 
 /*
