@@ -34,7 +34,7 @@ dnl
 dnl  $Id$
 dnl
 
-AC_INIT([libmonitor], [0.72])
+AC_INIT([libmonitor], [0.x])
 AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2008, Rice University.
 See the file LICENSE for details.])
 
@@ -59,7 +59,6 @@ AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
 AC_SUBST([wrap_list], ["main exit _exit"])
-AC_SUBST([mpi_cpp_flags])
 
 #
 # Option: --enable-debug=no
@@ -218,48 +217,72 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
 fi
 
 #
-# Option: --with-mpi=/path/to/MPI/install/dir
+# Option: --with-mpi=PATH
 #
 AC_ARG_WITH([mpi],
     [AS_HELP_STRING([--with-mpi=PATH],
-	[path to MPI install directory [default=no]])],
+	[path to MPI install directory (default check)])],
     [],
-    [with_mpi=no])
+    [with_mpi=check])
+
+mpi_user_path=no
+case "$with_mpi" in
+    /* )
+	mpi_user_path=yes
+	mpi_prefix="$with_mpi"
+	mpi_cpp_flags="-I ${with_mpi}/include"
+	;;
+    yes | check | test )
+	with_mpi=yes
+	;;
+    no )
+	;;
+    * )
+	AC_MSG_ERROR([mpi directory must be absolute path: $with_mpi])
+	;;
+esac
+
+if test "$with_mpi" != no ; then
+    OLD_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS $mpi_cpp_flags"
+    AC_CHECK_HEADER([mpi.h], [], [with_mpi=no])
+    CFLAGS="$OLD_CFLAGS"
+fi
+
+if test "$mpi_user_path" = yes && test "$with_mpi" = no ; then
+    AC_MSG_ERROR([invalid mpi directory: $mpi_prefix])
+fi
 
 if test "x$with_mpi" != xno ; then
-    AC_CHECK_FILE(["${with_mpi}/include/mpi.h"], [], [with_mpi=no])
-fi
-if test "x$with_mpi" != xno ; then
-    AC_DEFINE([MONITOR_USE_MPI], [1],
-	[Include support for MPI.])
-    mpi_cpp_flags="-I ${with_mpi}/include"
+    AC_DEFINE([MONITOR_USE_MPI], [1], [Include support for MPI.])
     wrap_list="${wrap_list} MPI_Init MPI_Finalize"
     wrap_list="${wrap_list} mpi_init_ mpi_finalize_"
     wrap_list="${wrap_list} mpi_init__ mpi_finalize__"
 fi
 
-AM_CONDITIONAL([MONITOR_TEST_USE_MPI],
-    [test x$with_mpi != xno])
+AM_CONDITIONAL([MONITOR_TEST_USE_MPI], [test x$with_mpi != xno])
+
+AC_SUBST([mpi_cpp_flags])
 
 AC_OUTPUT
 
 #
 # Display a summary of the config options.
 #
-AC_MSG_NOTICE([monitor prefix: $prefix])
-AC_MSG_NOTICE([monitor build: $build])
+AC_MSG_NOTICE([-------------------])
+AC_MSG_NOTICE([Libmonitor summary])
+AC_MSG_NOTICE([-------------------])
+AC_MSG_NOTICE([prefix: $prefix])
 if test "x$host" != "x$build" ; then
-    AC_MSG_NOTICE([monitor host: $host])
+    AC_MSG_NOTICE([build: $build])
 fi
-if test "x$target" != x && test "x$target" != "x$build" ; then
-    AC_MSG_NOTICE([monitor target: $target])
-fi
-AC_MSG_NOTICE([monitor CC CFLAGS: $CC $CFLAGS])
-AC_MSG_NOTICE([monitor debug mode: $enable_debug])
-AC_MSG_NOTICE([monitor link preload: $enable_link_preload])
-AC_MSG_NOTICE([monitor link static: $enable_link_static])
-AC_MSG_NOTICE([monitor use dlfcn: $enable_dlfcn])
-AC_MSG_NOTICE([monitor use fork: $enable_fork])
-AC_MSG_NOTICE([monitor use pthreads: $enable_pthreads])
-AC_MSG_NOTICE([monitor use signals: $enable_signals])
-AC_MSG_NOTICE([monitor with mpi: $with_mpi])
+AC_MSG_NOTICE([host: $host])
+AC_MSG_NOTICE([CC CFLAGS: $CC $CFLAGS])
+AC_MSG_NOTICE([enable debug: $enable_debug])
+AC_MSG_NOTICE([enable link preload: $enable_link_preload])
+AC_MSG_NOTICE([enable link static: $enable_link_static])
+AC_MSG_NOTICE([enable dlfcn: $enable_dlfcn])
+AC_MSG_NOTICE([enable fork: $enable_fork])
+AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
+AC_MSG_NOTICE([enable signals: $enable_signals])
+AC_MSG_NOTICE([with mpi: $with_mpi])
