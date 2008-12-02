@@ -1,5 +1,5 @@
 /*
- *  Libmonitor MPI C override functions.
+ *  Libmonitor MPI C/C++ override functions.
  *
  *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
@@ -32,6 +32,19 @@
  *  if advised of the possibility of such damage.
  *
  *  $Id$
+ *
+ *  Override functions:
+ *
+ *    MPI_Init
+ *    MPI_Init_thread
+ *    MPI_Finalize
+ *    MPI_Comm_rank
+ *
+ *  Note: we want a single libmonitor to work with multiple MPI
+ *  libraries, but each library defines its own MPI_Comm and
+ *  MPI_COMM_WORLD.  So, we avoid including <mpi.h>, we assume a
+ *  uniform type for MPI_Comm (void *), and we wait for the
+ *  application to call MPI_Comm_rank() and use its comm value.
  */
 
 #include "config.h"
@@ -40,7 +53,6 @@
 #endif
 #include <err.h>
 #include <errno.h>
-#include <mpi.h>
 #include <stdio.h>
 
 #include "common.h"
@@ -53,20 +65,23 @@
  */
 
 typedef int mpi_init_fcn_t(int *, char ***);
+typedef int mpi_init_thread_fcn_t(int *, char ***, int, int *);
 typedef int mpi_finalize_fcn_t(void);
-typedef int mpi_comm_fcn_t(MPI_Comm, int *);
+typedef int mpi_comm_fcn_t(void *, int *);
 
 #ifdef MONITOR_STATIC
 extern mpi_init_fcn_t      __real_MPI_Init;
+extern mpi_init_thread_fcn_t  __real_MPI_Init_thread;
 extern mpi_finalize_fcn_t  __real_MPI_Finalize;
-extern mpi_comm_fcn_t      __real_MPI_Comm_size;
 extern mpi_comm_fcn_t      __real_MPI_Comm_rank;
+extern mpi_comm_fcn_t      MPI_Comm_size;
 #endif
 
 static mpi_init_fcn_t      *real_mpi_init = NULL;
+static mpi_init_thread_fcn_t  *real_mpi_init_thread = NULL;
 static mpi_finalize_fcn_t  *real_mpi_finalize = NULL;
-static mpi_comm_fcn_t      *real_mpi_comm_size = NULL;
 static mpi_comm_fcn_t      *real_mpi_comm_rank = NULL;
+static mpi_comm_fcn_t      *real_mpi_comm_size = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -80,9 +95,10 @@ monitor_mpi_init(void)
     MONITOR_RUN_ONCE(mpi_init);
     monitor_early_init();
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_init, MPI_Init);
+    MONITOR_GET_REAL_NAME_WRAP(real_mpi_init_thread, MPI_Init_thread);
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_finalize, MPI_Finalize);
+    MONITOR_GET_REAL_NAME_WRAP(real_mpi_comm_rank, MPI_Comm_rank);
     MONITOR_GET_REAL_NAME(real_mpi_comm_size, MPI_Comm_size);
-    MONITOR_GET_REAL_NAME(real_mpi_comm_rank, MPI_Comm_rank);
 }
 
 /*
@@ -91,23 +107,29 @@ monitor_mpi_init(void)
  *----------------------------------------------------------------------
  */
 
-/*
- *  Override MPI_Init() and MPI_Finalize() in C.
- */
 int
 MONITOR_WRAP_NAME(MPI_Init)(int *argc, char ***argv)
 {
-    int size = -1, rank = -1;
     int ret;
 
     MONITOR_DEBUG1("\n");
     monitor_mpi_init();
     ret = (*real_mpi_init)(argc, argv);
-    if ((*real_mpi_comm_size)(MPI_COMM_WORLD, &size) == MPI_SUCCESS &&
-	(*real_mpi_comm_rank)(MPI_COMM_WORLD, &rank) == MPI_SUCCESS) {
-	monitor_set_mpi_size_rank(size, rank);
-    }
-    MONITOR_DEBUG("size = %d, rank = %d\n", size, rank);
+    MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
+    monitor_init_mpi(argc, argv);
+
+    return (ret);
+}
+
+int
+MONITOR_WRAP_NAME(MPI_Init_thread)(int *argc, char ***argv,
+				   int required, int *provided)
+{
+    int ret;
+
+    MONITOR_DEBUG1("\n");
+    monitor_mpi_init();
+    ret = (*real_mpi_init_thread)(argc, argv, required, provided);
     MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
     monitor_init_mpi(argc, argv);
 
@@ -124,4 +146,18 @@ MONITOR_WRAP_NAME(MPI_Finalize)(void)
     monitor_fini_mpi();
 
     return (*real_mpi_finalize)();
+}
+
+int
+MONITOR_WRAP_NAME(MPI_Comm_rank)(void *comm, int *rank)
+{
+    int size = -1, ret;
+
+    monitor_mpi_init();
+    ret = (*real_mpi_comm_size)(comm, &size);
+    ret = (*real_mpi_comm_rank)(comm, rank);
+    MONITOR_DEBUG("setting size = %d, rank = %d\n", size, *rank);
+    monitor_set_mpi_size_rank(size, *rank);
+
+    return (ret);
 }

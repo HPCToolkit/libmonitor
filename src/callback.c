@@ -45,10 +45,12 @@ monitor_init_process(int *argc, char **argv, void *data)
 {
     int i;
 
-    MONITOR_DEBUG("(default callback) parent = %d, argc = %d\n",
-		  (int)getppid(), *argc);
-    for (i = 0; i < *argc; i++) {
-	MONITOR_DEBUG("argv[%d] = %s\n", i, argv[i]);
+    MONITOR_DEBUG("(default callback) parent = %d, argc = %p, argv = %p\n",
+		  (int)getppid(), argc, argv);
+    if (monitor_debug && argc != NULL && argv != NULL && *argc > 0) {
+	for (i = 0; i < *argc; i++) {
+	    MONITOR_DEBUG("argv[%d] = %s\n", i, argv[i]);
+	}
     }
     return (data);
 }
@@ -94,6 +96,7 @@ monitor_fini_thread(void *data)
 void __attribute__ ((weak))
 monitor_pre_dlopen(const char *path, int flags)
 {
+    MONITOR_DEBUG1("(default callback)\n");
 }
 
 void __attribute__ ((weak))
@@ -112,6 +115,7 @@ monitor_dlclose(void *handle)
 void __attribute__ ((weak))
 monitor_post_dlclose(void *handle, int ret)
 {
+    MONITOR_DEBUG1("(default callback)\n");
 }
 
 void __attribute__ ((weak))
@@ -119,15 +123,17 @@ monitor_init_mpi(int *argc, char ***argv)
 {
     int i;
 
-    MONITOR_DEBUG("(default callback) size = %d, rank = %d, argc = %d\n",
-		  monitor_mpi_comm_size(), monitor_mpi_comm_rank(), *argc);
-    for (i = 0; i < *argc; i++) {
-	MONITOR_DEBUG("argv[%d] = %s\n", i, (*argv)[i]);
+    MONITOR_DEBUG("(default callback) argc = %p, argv = %p\n", argc, argv);
+    if (monitor_debug && argc != NULL && argv != NULL && *argc > 0) {
+	for (i = 0; i < *argc; i++) {
+	    MONITOR_DEBUG("argv[%d] = %s\n", i, (*argv)[i]);
+	}
     }
 }
 
 void __attribute__ ((weak))
 monitor_fini_mpi(void)
 {
-    MONITOR_DEBUG1("(default callback)\n");
+    MONITOR_DEBUG("(default callback) size = %d, rank = %d\n",
+		  monitor_mpi_comm_size(), monitor_mpi_comm_rank());
 }

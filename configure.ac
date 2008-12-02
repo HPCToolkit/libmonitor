@@ -34,7 +34,7 @@ dnl
 dnl  $Id$
 dnl
 
-AC_INIT([libmonitor], [0.x])
+AC_INIT([libmonitor], [0.x], [hpc@cs.rice.edu])
 AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2008, Rice University.
 See the file LICENSE for details.])
 
@@ -63,7 +63,7 @@ AC_SUBST([wrap_list], ["main exit _exit"])
 #
 # Option: --enable-debug=no
 #
-AC_ARG_ENABLE([dummy-blank-line], [AS_HELP_STRING([ ], [ ])])
+AC_ARG_ENABLE([dummy-blank-line], [AS_HELP_STRING([], [])])
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
 	[debug mode is always on [default=no]])],
@@ -159,12 +159,35 @@ AM_CONDITIONAL([MONITOR_TEST_USE_FORK],
     [test x$enable_fork = xyes])
 
 #
+# Option: --enable-mpi=yes
+#
+# Note: we try to support MPI in a generic way that is independent of
+# the MPI implementation, so this option is just yes/no and doesn't
+# require the <mpi.h> header.
+#
+AC_ARG_ENABLE([mpi],
+    [AS_HELP_STRING([--enable-mpi],
+        [include support for MPI [default=no]])],
+    [],
+    [enable_mpi=no])
+
+if test "x$enable_mpi" = xyes ; then
+    AC_DEFINE([MONITOR_USE_MPI], [1], [Include support for MPI.])
+    mpi_c="MPI_Init MPI_Init_thread MPI_Finalize MPI_Comm_rank"
+    mpi_f1="mpi_init_ mpi_init_thread_ mpi_finalize_ mpi_comm_rank_"
+    mpi_f2="mpi_init__ mpi_init_thread__ mpi_finalize__ mpi_comm_rank__"
+    wrap_list="${wrap_list} ${mpi_c} ${mpi_f1} ${mpi_f2}"
+fi
+
+AM_CONDITIONAL([MONITOR_TEST_USE_MPI], [test x$enable_mpi = xyes])
+
+#
 # Option: --enable-pthreads=yes
 # Requires libpthread.
 #
 AC_ARG_ENABLE([pthreads],
     [AS_HELP_STRING([--enable-pthreads],
-	[include pthread support [default=yes]])],
+	[include support for pthreads [default=yes]])],
     [],
     [enable_pthreads=yes])
 
@@ -216,54 +239,6 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
     wrap_list="${wrap_list} pthread_sigmask"
 fi
 
-#
-# Option: --with-mpi=PATH
-#
-AC_ARG_WITH([mpi],
-    [AS_HELP_STRING([--with-mpi=PATH],
-	[path to MPI install directory (default check)])],
-    [],
-    [with_mpi=check])
-
-mpi_user_path=no
-case "$with_mpi" in
-    /* )
-	mpi_user_path=yes
-	mpi_prefix="$with_mpi"
-	mpi_cpp_flags="-I ${with_mpi}/include"
-	;;
-    yes | check | test )
-	with_mpi=yes
-	;;
-    no )
-	;;
-    * )
-	AC_MSG_ERROR([mpi directory must be absolute path: $with_mpi])
-	;;
-esac
-
-if test "$with_mpi" != no ; then
-    OLD_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS $mpi_cpp_flags"
-    AC_CHECK_HEADER([mpi.h], [], [with_mpi=no])
-    CFLAGS="$OLD_CFLAGS"
-fi
-
-if test "$mpi_user_path" = yes && test "$with_mpi" = no ; then
-    AC_MSG_ERROR([invalid mpi directory: $mpi_prefix])
-fi
-
-if test "x$with_mpi" != xno ; then
-    AC_DEFINE([MONITOR_USE_MPI], [1], [Include support for MPI.])
-    wrap_list="${wrap_list} MPI_Init MPI_Finalize"
-    wrap_list="${wrap_list} mpi_init_ mpi_finalize_"
-    wrap_list="${wrap_list} mpi_init__ mpi_finalize__"
-fi
-
-AM_CONDITIONAL([MONITOR_TEST_USE_MPI], [test x$with_mpi != xno])
-
-AC_SUBST([mpi_cpp_flags])
-
 AC_OUTPUT
 
 #
@@ -283,6 +258,6 @@ AC_MSG_NOTICE([enable link preload: $enable_link_preload])
 AC_MSG_NOTICE([enable link static: $enable_link_static])
 AC_MSG_NOTICE([enable dlfcn: $enable_dlfcn])
 AC_MSG_NOTICE([enable fork: $enable_fork])
+AC_MSG_NOTICE([enable mpi: $enable_mpi])
 AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
 AC_MSG_NOTICE([enable signals: $enable_signals])
-AC_MSG_NOTICE([with mpi: $with_mpi])

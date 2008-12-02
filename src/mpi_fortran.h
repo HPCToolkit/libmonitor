@@ -32,6 +32,22 @@
  *  if advised of the possibility of such damage.
  *
  *  $Id$
+ *
+ *  Override functions:
+ *
+ *    mpi_init_
+ *    mpi_init_thread_
+ *    mpi_finalize_
+ *    mpi_comm_rank_
+ *
+ *  Note: we want a single libmonitor to work with multiple MPI
+ *  libraries.  This is a bit easier in Fortran than in C because
+ *  MPI_Comm will always be int.  But, MPI_COMM_WORLD can still vary
+ *  by implementation, so we wait for the application to call
+ *  MPI_Comm_rank() and use its comm value.
+ *
+ *  Note: this file needs to be .h and not .c, or else Automake would
+ *  try to compile it separately.
  */
 
 #include "config.h"
@@ -40,7 +56,6 @@
 #endif
 #include <err.h>
 #include <errno.h>
-#include <mpi.h>
 #include <stdio.h>
 
 #include "common.h"
@@ -52,21 +67,24 @@
  *----------------------------------------------------------------------
  */
 
-typedef int  mpi_init_fcn_t(int *, char ***);
+typedef void mpi_init_fcn_t(int *);
+typedef void mpi_init_thread_fcn_t(int *, int *, int *);
 typedef void mpi_finalize_fcn_t(int *);
 typedef void mpi_comm_fcn_t(int *, int *, int *);
 
 #ifdef MONITOR_STATIC
-extern mpi_init_fcn_t      __real_MPI_Init;
+extern mpi_init_fcn_t      FORTRAN_REAL_NAME(mpi_init);
+extern mpi_init_thread_fcn_t  FORTRAN_REAL_NAME(mpi_init_thread);
 extern mpi_finalize_fcn_t  FORTRAN_REAL_NAME(mpi_finalize);
+extern mpi_comm_fcn_t      FORTRAN_REAL_NAME(mpi_comm_rank);
 extern mpi_comm_fcn_t      FORTRAN_NAME(mpi_comm_size);
-extern mpi_comm_fcn_t      FORTRAN_NAME(mpi_comm_rank);
 #endif
 
 static mpi_init_fcn_t      *real_mpi_init = NULL;
+static mpi_init_thread_fcn_t  *real_mpi_init_thread = NULL;
 static mpi_finalize_fcn_t  *real_mpi_finalize = NULL;
-static mpi_comm_fcn_t      *real_mpi_comm_size = NULL;
 static mpi_comm_fcn_t      *real_mpi_comm_rank = NULL;
+static mpi_comm_fcn_t      *real_mpi_comm_size = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -79,10 +97,11 @@ monitor_mpi_init(void)
 {
     MONITOR_RUN_ONCE(mpi_init);
     monitor_early_init();
-    MONITOR_GET_REAL_NAME_WRAP(real_mpi_init, MPI_Init);
+    MONITOR_GET_REAL_NAME_WRAP(real_mpi_init, FORTRAN_NAME(mpi_init));
+    MONITOR_GET_REAL_NAME_WRAP(real_mpi_init_thread, FORTRAN_NAME(mpi_init_thread));
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_finalize, FORTRAN_NAME(mpi_finalize));
+    MONITOR_GET_REAL_NAME_WRAP(real_mpi_comm_rank, FORTRAN_NAME(mpi_comm_rank));
     MONITOR_GET_REAL_NAME(real_mpi_comm_size, FORTRAN_NAME(mpi_comm_size));
-    MONITOR_GET_REAL_NAME(real_mpi_comm_rank, FORTRAN_NAME(mpi_comm_rank));
 }
 
 /*
@@ -91,31 +110,32 @@ monitor_mpi_init(void)
  *----------------------------------------------------------------------
  */
 
-/*
- *  Override MPI_INIT() and MPI_FINALIZE() in Fortran.
- *
- *  FIXME: This uses the C MPI_Init but the Fortran mpi_finalize and
- *  mpi_comm_size and rank, which is what mpif90 does on ada.  Other
- *  systems will likely treat this differently.
- */
 void
 MONITOR_WRAP_NAME(FORTRAN_NAME(mpi_init))(int *ierror)
 {
-    int comm_world = MPI_COMM_WORLD;
-    int size = -1, rank = -1;
-    int argc, ret_size, ret_rank;
+    int argc;
     char **argv;
 
     MONITOR_DEBUG1("\n");
     monitor_mpi_init();
-    monitor_get_main_args(&argc, &argv, NULL);
-    *ierror = (*real_mpi_init)(&argc, &argv);
-    (*real_mpi_comm_size)(&comm_world, &size, &ret_size);
-    (*real_mpi_comm_rank)(&comm_world, &rank, &ret_rank);
-    if (ret_size == MPI_SUCCESS && ret_rank == MPI_SUCCESS)
-	monitor_set_mpi_size_rank(size, rank);
-    MONITOR_DEBUG("size = %d, rank = %d\n", size, rank);
+    (*real_mpi_init)(ierror);
     MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
+    monitor_get_main_args(&argc, &argv, NULL);
+    monitor_init_mpi(&argc, &argv);
+}
+
+void
+MONITOR_WRAP_NAME(FORTRAN_NAME(mpi_init_thread))
+		 (int *required, int *provided, int *ierror)
+{
+    int argc;
+    char **argv;
+
+    MONITOR_DEBUG1("\n");
+    monitor_mpi_init();
+    (*real_mpi_init_thread)(required, provided, ierror);
+    MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
+    monitor_get_main_args(&argc, &argv, NULL);
     monitor_init_mpi(&argc, &argv);
 }
 
@@ -128,4 +148,17 @@ MONITOR_WRAP_NAME(FORTRAN_NAME(mpi_finalize))(int *ierror)
     MONITOR_DEBUG1("calling monitor_fini_mpi() ...\n");
     monitor_fini_mpi();
     (*real_mpi_finalize)(ierror);
+}
+
+void
+MONITOR_WRAP_NAME(FORTRAN_NAME(mpi_comm_rank))
+		 (int *comm, int *rank, int *ierror)
+{
+    int size = -1, ret;
+
+    monitor_mpi_init();
+    (*real_mpi_comm_size)(comm, &size, &ret);
+    (*real_mpi_comm_rank)(comm, rank, ierror);
+    MONITOR_DEBUG("setting size = %d, rank = %d\n", size, *rank);
+    monitor_set_mpi_size_rank(size, *rank);
 }

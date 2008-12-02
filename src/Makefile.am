@@ -62,7 +62,6 @@ if MONITOR_TEST_USE_SIGNALS
 endif
 if MONITOR_TEST_USE_MPI
     libmonitor_la_SOURCES += $(MONITOR_MPI_FILES)
-    libmonitor_la_CPPFLAGS += @mpi_cpp_flags@
 endif
 endif
 
@@ -85,6 +84,5 @@ if MONITOR_TEST_USE_SIGNALS
 endif
 if MONITOR_TEST_USE_MPI
     libmonitor_wrap_a_SOURCES += $(MONITOR_MPI_FILES)
-    libmonitor_wrap_a_CPPFLAGS += @mpi_cpp_flags@
 endif
 endif
