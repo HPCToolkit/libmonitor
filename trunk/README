@@ -36,10 +36,12 @@ Libmonitor is part of HPCToolkit and is supported by the Center for
 Scalable Application Development Software (CScADS) and the Performance
 Engineering Research Institute (PERI).
 
-    http://hipersoft.rice.edu/hpctoolkit/
+    http://hpctoolkit.org/
 
-Libmonitor is Copyright (c) 2007, Rice University and is licensed
+Libmonitor is Copyright (c) 2007-2008, Rice University and is licensed
 under a 3-clause BSD license.  See the file LICENSE for details.
+
+Send bug reports to: hpc@cs.rice.edu
 
 ======================
 How Libmonitor Works
@@ -115,20 +117,25 @@ following additional options.  See ./configure --help.
 
     --enable-dlfcn
     --enable-fork
+    --enable-mpi
     --enable-pthreads
     --enable-signals
 	These options include support for monitoring dlopen, fork and
-	exec, pthreads and signals.  Even when enabled, configure will
-	search for the relevant libraries and functions and will
-	disable them if they are not found.
+	exec, MPI, pthreads and signals.  Even when enabled, configure
+	will search for the relevant libraries and functions and will
+	disable them if they are not found.  Default=yes.
 	Note: --enable-dlopen is already used by configure for
 	something else, so we use dlfcn (named after dlfcn.h) to
-	enable support for dlopen.  Default=yes.
+	enable support for dlopen.
 
-    --with-mpi=/path/to/mpi/directory
-	When specified, monitor includes support for MPI functions.
-	The path should be the top-level MPI directory, the one
-	containing the bin, include and lib subdirectories.
+Note: the MPI support is now generic and attempts to work with any MPI
+library for C, C++ or Fortran programs.  Since each MPI library
+defines its own MPI_Comm and MPI_COMM_WORLD, monitor waits for the
+application program to call MPI_Comm_rank() and uses its comm value to
+determine size/rank.  The advantage of this approach is that monitor
+should work with any MPI library.  The disadvantage of this approach
+is that monitor depends on the application program calling
+MPI_Comm_rank() and won't know the size/rank until that happens.
 
 =======================
 How to Run Libmonitor

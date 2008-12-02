@@ -1,5 +1,5 @@
 /*
- *  Libmonitor base MPI functions.
+ *  Libmonitor common MPI functions.
  *
  *  Copyright (c) 2007-2008, Rice University.
  *  All rights reserved.
@@ -71,11 +71,20 @@ monitor_mpi_comm_rank(void)
 }
 
 /*
- *  Set in the C or Fortran MPI_Init() overrride function.
+ *  Set in the C or Fortran MPI_Comm_rank() override function.
+ *
+ *  Note: we depend on the application using MPI_COMM_WORLD before any
+ *  other communicator, so we only want to set size/rank on the first
+ *  use of MPI_Comm_rank().
  */
 void
 monitor_set_mpi_size_rank(int size, int rank)
 {
-    mpi_size = size;
-    mpi_rank = rank;
+    static int first = 1;
+
+    if (first) {
+	mpi_size = size;
+	mpi_rank = rank;
+	first = 0;
+    }
 }
