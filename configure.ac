@@ -167,9 +167,9 @@ AM_CONDITIONAL([MONITOR_TEST_USE_FORK],
 #
 AC_ARG_ENABLE([mpi],
     [AS_HELP_STRING([--enable-mpi],
-        [include support for MPI [default=no]])],
+        [include support for MPI [default=yes]])],
     [],
-    [enable_mpi=no])
+    [enable_mpi=yes])
 
 if test "x$enable_mpi" = xyes ; then
     AC_DEFINE([MONITOR_USE_MPI], [1], [Include support for MPI.])

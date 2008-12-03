@@ -73,7 +73,10 @@ libmonitor_wrap_a_AR = $(AR) $(ARFLAGS)
 libmonitor_wrap_a_LIBADD =
 am__libmonitor_wrap_a_SOURCES_DIST = common.h monitor.h callback.c \
 	main.c dlopen.c fork.c pthread_h.h queue.h pthread.c signal.c \
-	mpi.c mpi_c.c mpi_fortran.h mpi_f1.c mpi_f2.c
+	mpi_init_c.c mpi_init_thread_c.c mpi_final_c.c mpi_comm_c.c \
+	mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c \
+	mpi_comm_f1.c mpi_init_f2.c mpi_init_thread_f2.c \
+	mpi_final_f2.c mpi_comm_f2.c
 am__objects_1 = libmonitor_wrap_a-callback.$(OBJEXT) \
 	libmonitor_wrap_a-main.$(OBJEXT)
 @MONITOR_TEST_LINK_STATIC_TRUE@@MONITOR_TEST_USE_DLOPEN_TRUE@am__objects_2 = libmonitor_wrap_a-dlopen.$(OBJEXT)
@@ -81,10 +84,18 @@ am__objects_1 = libmonitor_wrap_a-callback.$(OBJEXT) \
 am__objects_4 = libmonitor_wrap_a-pthread.$(OBJEXT)
 @MONITOR_TEST_LINK_STATIC_TRUE@@MONITOR_TEST_USE_PTHREADS_TRUE@am__objects_5 = $(am__objects_4)
 @MONITOR_TEST_LINK_STATIC_TRUE@@MONITOR_TEST_USE_SIGNALS_TRUE@am__objects_6 = libmonitor_wrap_a-signal.$(OBJEXT)
-am__objects_7 = libmonitor_wrap_a-mpi.$(OBJEXT) \
-	libmonitor_wrap_a-mpi_c.$(OBJEXT) \
-	libmonitor_wrap_a-mpi_f1.$(OBJEXT) \
-	libmonitor_wrap_a-mpi_f2.$(OBJEXT)
+am__objects_7 = libmonitor_wrap_a-mpi_init_c.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_init_thread_c.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_final_c.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_comm_c.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_init_f1.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_init_thread_f1.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_final_f1.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_comm_f1.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_init_f2.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_init_thread_f2.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_final_f2.$(OBJEXT) \
+	libmonitor_wrap_a-mpi_comm_f2.$(OBJEXT)
 @MONITOR_TEST_LINK_STATIC_TRUE@@MONITOR_TEST_USE_MPI_TRUE@am__objects_8 = $(am__objects_7)
 @MONITOR_TEST_LINK_STATIC_TRUE@am_libmonitor_wrap_a_OBJECTS =  \
 @MONITOR_TEST_LINK_STATIC_TRUE@	$(am__objects_1) \
@@ -98,16 +109,26 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libmonitor_la_LIBADD =
 am__libmonitor_la_SOURCES_DIST = common.h monitor.h callback.c main.c \
-	dlopen.c fork.c pthread_h.h queue.h pthread.c signal.c mpi.c \
-	mpi_c.c mpi_fortran.h mpi_f1.c mpi_f2.c
+	dlopen.c fork.c pthread_h.h queue.h pthread.c signal.c \
+	mpi_init_c.c mpi_init_thread_c.c mpi_final_c.c mpi_comm_c.c \
+	mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c \
+	mpi_comm_f1.c mpi_init_f2.c mpi_init_thread_f2.c \
+	mpi_final_f2.c mpi_comm_f2.c
 am__objects_9 = libmonitor_la-callback.lo libmonitor_la-main.lo
 @MONITOR_TEST_LINK_PRELOAD_TRUE@@MONITOR_TEST_USE_DLOPEN_TRUE@am__objects_10 = libmonitor_la-dlopen.lo
 @MONITOR_TEST_LINK_PRELOAD_TRUE@@MONITOR_TEST_USE_FORK_TRUE@am__objects_11 = libmonitor_la-fork.lo
 am__objects_12 = libmonitor_la-pthread.lo
 @MONITOR_TEST_LINK_PRELOAD_TRUE@@MONITOR_TEST_USE_PTHREADS_TRUE@am__objects_13 = $(am__objects_12)
 @MONITOR_TEST_LINK_PRELOAD_TRUE@@MONITOR_TEST_USE_SIGNALS_TRUE@am__objects_14 = libmonitor_la-signal.lo
-am__objects_15 = libmonitor_la-mpi.lo libmonitor_la-mpi_c.lo \
-	libmonitor_la-mpi_f1.lo libmonitor_la-mpi_f2.lo
+am__objects_15 = libmonitor_la-mpi_init_c.lo \
+	libmonitor_la-mpi_init_thread_c.lo \
+	libmonitor_la-mpi_final_c.lo libmonitor_la-mpi_comm_c.lo \
+	libmonitor_la-mpi_init_f1.lo \
+	libmonitor_la-mpi_init_thread_f1.lo \
+	libmonitor_la-mpi_final_f1.lo libmonitor_la-mpi_comm_f1.lo \
+	libmonitor_la-mpi_init_f2.lo \
+	libmonitor_la-mpi_init_thread_f2.lo \
+	libmonitor_la-mpi_final_f2.lo libmonitor_la-mpi_comm_f2.lo
 @MONITOR_TEST_LINK_PRELOAD_TRUE@@MONITOR_TEST_USE_MPI_TRUE@am__objects_16 = $(am__objects_15)
 @MONITOR_TEST_LINK_PRELOAD_TRUE@am_libmonitor_la_OBJECTS =  \
 @MONITOR_TEST_LINK_PRELOAD_TRUE@	$(am__objects_9) \
@@ -252,9 +273,13 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 wrap_list = @wrap_list@
 MONITOR_MAIN_FILES = common.h monitor.h callback.c main.c
-MONITOR_MPI_FILES = mpi.c mpi_c.c mpi_fortran.h mpi_f1.c mpi_f2.c
 MONITOR_THREAD_FILES = pthread_h.h queue.h pthread.c
 MONITOR_SCRIPT_FILES = monitor-link monitor-run
+MONITOR_MPI_FILES = \
+	mpi_init_c.c  mpi_init_thread_c.c  mpi_final_c.c  mpi_comm_c.c   \
+	mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c mpi_comm_f1.c  \
+	mpi_init_f2.c mpi_init_thread_f2.c mpi_final_f2.c mpi_comm_f2.c
+
 include_HEADERS = monitor.h
 bin_SCRIPTS = $(am__append_1) $(am__append_7)
 CLEANFILES = $(MONITOR_SCRIPT_FILES)
@@ -404,20 +429,36 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-dlopen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-fork.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-main.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_c.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_f1.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_f2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_comm_c.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_comm_f1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_comm_f2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_final_c.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_final_f1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_final_f2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_init_c.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_init_f1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_init_f2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_init_thread_c.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_init_thread_f1.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-mpi_init_thread_f2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-pthread.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_la-signal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-callback.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-dlopen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-fork.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_c.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_f1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_f2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-pthread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonitor_wrap_a-signal.Po@am__quote@
 
@@ -526,61 +567,173 @@ libmonitor_wrap_a-signal.obj: signal.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-signal.obj `if test -f 'signal.c'; then $(CYGPATH_W) 'signal.c'; else $(CYGPATH_W) '$(srcdir)/signal.c'; fi`
 
-libmonitor_wrap_a-mpi.o: mpi.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi.Tpo -c -o libmonitor_wrap_a-mpi.o `test -f 'mpi.c' || echo '$(srcdir)/'`mpi.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi.c' object='libmonitor_wrap_a-mpi.o' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_init_c.o: mpi_init_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_c.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Tpo -c -o libmonitor_wrap_a-mpi_init_c.o `test -f 'mpi_init_c.c' || echo '$(srcdir)/'`mpi_init_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_c.c' object='libmonitor_wrap_a-mpi_init_c.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi.o `test -f 'mpi.c' || echo '$(srcdir)/'`mpi.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_c.o `test -f 'mpi_init_c.c' || echo '$(srcdir)/'`mpi_init_c.c
 
-libmonitor_wrap_a-mpi.obj: mpi.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi.Tpo -c -o libmonitor_wrap_a-mpi.obj `if test -f 'mpi.c'; then $(CYGPATH_W) 'mpi.c'; else $(CYGPATH_W) '$(srcdir)/mpi.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi.c' object='libmonitor_wrap_a-mpi.obj' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_init_c.obj: mpi_init_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_c.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Tpo -c -o libmonitor_wrap_a-mpi_init_c.obj `if test -f 'mpi_init_c.c'; then $(CYGPATH_W) 'mpi_init_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_c.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_c.c' object='libmonitor_wrap_a-mpi_init_c.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi.obj `if test -f 'mpi.c'; then $(CYGPATH_W) 'mpi.c'; else $(CYGPATH_W) '$(srcdir)/mpi.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_c.obj `if test -f 'mpi_init_c.c'; then $(CYGPATH_W) 'mpi_init_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_c.c'; fi`
 
-libmonitor_wrap_a-mpi_c.o: mpi_c.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_c.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_c.Tpo -c -o libmonitor_wrap_a-mpi_c.o `test -f 'mpi_c.c' || echo '$(srcdir)/'`mpi_c.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_c.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_c.c' object='libmonitor_wrap_a-mpi_c.o' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_init_thread_c.o: mpi_init_thread_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_thread_c.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Tpo -c -o libmonitor_wrap_a-mpi_init_thread_c.o `test -f 'mpi_init_thread_c.c' || echo '$(srcdir)/'`mpi_init_thread_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_c.c' object='libmonitor_wrap_a-mpi_init_thread_c.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_c.o `test -f 'mpi_c.c' || echo '$(srcdir)/'`mpi_c.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_thread_c.o `test -f 'mpi_init_thread_c.c' || echo '$(srcdir)/'`mpi_init_thread_c.c
 
-libmonitor_wrap_a-mpi_c.obj: mpi_c.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_c.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_c.Tpo -c -o libmonitor_wrap_a-mpi_c.obj `if test -f 'mpi_c.c'; then $(CYGPATH_W) 'mpi_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_c.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_c.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_c.c' object='libmonitor_wrap_a-mpi_c.obj' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_init_thread_c.obj: mpi_init_thread_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_thread_c.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Tpo -c -o libmonitor_wrap_a-mpi_init_thread_c.obj `if test -f 'mpi_init_thread_c.c'; then $(CYGPATH_W) 'mpi_init_thread_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_thread_c.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_c.c' object='libmonitor_wrap_a-mpi_init_thread_c.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_c.obj `if test -f 'mpi_c.c'; then $(CYGPATH_W) 'mpi_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_c.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_thread_c.obj `if test -f 'mpi_init_thread_c.c'; then $(CYGPATH_W) 'mpi_init_thread_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_thread_c.c'; fi`
 
-libmonitor_wrap_a-mpi_f1.o: mpi_f1.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_f1.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_f1.Tpo -c -o libmonitor_wrap_a-mpi_f1.o `test -f 'mpi_f1.c' || echo '$(srcdir)/'`mpi_f1.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_f1.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_f1.c' object='libmonitor_wrap_a-mpi_f1.o' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_final_c.o: mpi_final_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_final_c.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Tpo -c -o libmonitor_wrap_a-mpi_final_c.o `test -f 'mpi_final_c.c' || echo '$(srcdir)/'`mpi_final_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_c.c' object='libmonitor_wrap_a-mpi_final_c.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_f1.o `test -f 'mpi_f1.c' || echo '$(srcdir)/'`mpi_f1.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_final_c.o `test -f 'mpi_final_c.c' || echo '$(srcdir)/'`mpi_final_c.c
 
-libmonitor_wrap_a-mpi_f1.obj: mpi_f1.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_f1.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_f1.Tpo -c -o libmonitor_wrap_a-mpi_f1.obj `if test -f 'mpi_f1.c'; then $(CYGPATH_W) 'mpi_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_f1.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_f1.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_f1.c' object='libmonitor_wrap_a-mpi_f1.obj' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_final_c.obj: mpi_final_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_final_c.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Tpo -c -o libmonitor_wrap_a-mpi_final_c.obj `if test -f 'mpi_final_c.c'; then $(CYGPATH_W) 'mpi_final_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_final_c.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_final_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_c.c' object='libmonitor_wrap_a-mpi_final_c.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_f1.obj `if test -f 'mpi_f1.c'; then $(CYGPATH_W) 'mpi_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_f1.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_final_c.obj `if test -f 'mpi_final_c.c'; then $(CYGPATH_W) 'mpi_final_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_final_c.c'; fi`
 
-libmonitor_wrap_a-mpi_f2.o: mpi_f2.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_f2.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_f2.Tpo -c -o libmonitor_wrap_a-mpi_f2.o `test -f 'mpi_f2.c' || echo '$(srcdir)/'`mpi_f2.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_f2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_f2.c' object='libmonitor_wrap_a-mpi_f2.o' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_comm_c.o: mpi_comm_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_comm_c.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Tpo -c -o libmonitor_wrap_a-mpi_comm_c.o `test -f 'mpi_comm_c.c' || echo '$(srcdir)/'`mpi_comm_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_c.c' object='libmonitor_wrap_a-mpi_comm_c.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_f2.o `test -f 'mpi_f2.c' || echo '$(srcdir)/'`mpi_f2.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_comm_c.o `test -f 'mpi_comm_c.c' || echo '$(srcdir)/'`mpi_comm_c.c
 
-libmonitor_wrap_a-mpi_f2.obj: mpi_f2.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_f2.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_f2.Tpo -c -o libmonitor_wrap_a-mpi_f2.obj `if test -f 'mpi_f2.c'; then $(CYGPATH_W) 'mpi_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_f2.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_f2.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_f2.c' object='libmonitor_wrap_a-mpi_f2.obj' libtool=no @AMDEPBACKSLASH@
+libmonitor_wrap_a-mpi_comm_c.obj: mpi_comm_c.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_comm_c.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Tpo -c -o libmonitor_wrap_a-mpi_comm_c.obj `if test -f 'mpi_comm_c.c'; then $(CYGPATH_W) 'mpi_comm_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_comm_c.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_comm_c.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_c.c' object='libmonitor_wrap_a-mpi_comm_c.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_f2.obj `if test -f 'mpi_f2.c'; then $(CYGPATH_W) 'mpi_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_f2.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_comm_c.obj `if test -f 'mpi_comm_c.c'; then $(CYGPATH_W) 'mpi_comm_c.c'; else $(CYGPATH_W) '$(srcdir)/mpi_comm_c.c'; fi`
+
+libmonitor_wrap_a-mpi_init_f1.o: mpi_init_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_f1.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Tpo -c -o libmonitor_wrap_a-mpi_init_f1.o `test -f 'mpi_init_f1.c' || echo '$(srcdir)/'`mpi_init_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_f1.c' object='libmonitor_wrap_a-mpi_init_f1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_f1.o `test -f 'mpi_init_f1.c' || echo '$(srcdir)/'`mpi_init_f1.c
+
+libmonitor_wrap_a-mpi_init_f1.obj: mpi_init_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_f1.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Tpo -c -o libmonitor_wrap_a-mpi_init_f1.obj `if test -f 'mpi_init_f1.c'; then $(CYGPATH_W) 'mpi_init_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_f1.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_f1.c' object='libmonitor_wrap_a-mpi_init_f1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_f1.obj `if test -f 'mpi_init_f1.c'; then $(CYGPATH_W) 'mpi_init_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_f1.c'; fi`
+
+libmonitor_wrap_a-mpi_init_thread_f1.o: mpi_init_thread_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_thread_f1.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Tpo -c -o libmonitor_wrap_a-mpi_init_thread_f1.o `test -f 'mpi_init_thread_f1.c' || echo '$(srcdir)/'`mpi_init_thread_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_f1.c' object='libmonitor_wrap_a-mpi_init_thread_f1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_thread_f1.o `test -f 'mpi_init_thread_f1.c' || echo '$(srcdir)/'`mpi_init_thread_f1.c
+
+libmonitor_wrap_a-mpi_init_thread_f1.obj: mpi_init_thread_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_thread_f1.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Tpo -c -o libmonitor_wrap_a-mpi_init_thread_f1.obj `if test -f 'mpi_init_thread_f1.c'; then $(CYGPATH_W) 'mpi_init_thread_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_thread_f1.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_f1.c' object='libmonitor_wrap_a-mpi_init_thread_f1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_thread_f1.obj `if test -f 'mpi_init_thread_f1.c'; then $(CYGPATH_W) 'mpi_init_thread_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_thread_f1.c'; fi`
+
+libmonitor_wrap_a-mpi_final_f1.o: mpi_final_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_final_f1.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Tpo -c -o libmonitor_wrap_a-mpi_final_f1.o `test -f 'mpi_final_f1.c' || echo '$(srcdir)/'`mpi_final_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_f1.c' object='libmonitor_wrap_a-mpi_final_f1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_final_f1.o `test -f 'mpi_final_f1.c' || echo '$(srcdir)/'`mpi_final_f1.c
+
+libmonitor_wrap_a-mpi_final_f1.obj: mpi_final_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_final_f1.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Tpo -c -o libmonitor_wrap_a-mpi_final_f1.obj `if test -f 'mpi_final_f1.c'; then $(CYGPATH_W) 'mpi_final_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_final_f1.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_final_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_f1.c' object='libmonitor_wrap_a-mpi_final_f1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_final_f1.obj `if test -f 'mpi_final_f1.c'; then $(CYGPATH_W) 'mpi_final_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_final_f1.c'; fi`
+
+libmonitor_wrap_a-mpi_comm_f1.o: mpi_comm_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_comm_f1.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Tpo -c -o libmonitor_wrap_a-mpi_comm_f1.o `test -f 'mpi_comm_f1.c' || echo '$(srcdir)/'`mpi_comm_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_f1.c' object='libmonitor_wrap_a-mpi_comm_f1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_comm_f1.o `test -f 'mpi_comm_f1.c' || echo '$(srcdir)/'`mpi_comm_f1.c
+
+libmonitor_wrap_a-mpi_comm_f1.obj: mpi_comm_f1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_comm_f1.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Tpo -c -o libmonitor_wrap_a-mpi_comm_f1.obj `if test -f 'mpi_comm_f1.c'; then $(CYGPATH_W) 'mpi_comm_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_comm_f1.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_f1.c' object='libmonitor_wrap_a-mpi_comm_f1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_comm_f1.obj `if test -f 'mpi_comm_f1.c'; then $(CYGPATH_W) 'mpi_comm_f1.c'; else $(CYGPATH_W) '$(srcdir)/mpi_comm_f1.c'; fi`
+
+libmonitor_wrap_a-mpi_init_f2.o: mpi_init_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_f2.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Tpo -c -o libmonitor_wrap_a-mpi_init_f2.o `test -f 'mpi_init_f2.c' || echo '$(srcdir)/'`mpi_init_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_f2.c' object='libmonitor_wrap_a-mpi_init_f2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_f2.o `test -f 'mpi_init_f2.c' || echo '$(srcdir)/'`mpi_init_f2.c
+
+libmonitor_wrap_a-mpi_init_f2.obj: mpi_init_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_f2.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Tpo -c -o libmonitor_wrap_a-mpi_init_f2.obj `if test -f 'mpi_init_f2.c'; then $(CYGPATH_W) 'mpi_init_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_f2.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_f2.c' object='libmonitor_wrap_a-mpi_init_f2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_f2.obj `if test -f 'mpi_init_f2.c'; then $(CYGPATH_W) 'mpi_init_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_f2.c'; fi`
+
+libmonitor_wrap_a-mpi_init_thread_f2.o: mpi_init_thread_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_thread_f2.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Tpo -c -o libmonitor_wrap_a-mpi_init_thread_f2.o `test -f 'mpi_init_thread_f2.c' || echo '$(srcdir)/'`mpi_init_thread_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_f2.c' object='libmonitor_wrap_a-mpi_init_thread_f2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_thread_f2.o `test -f 'mpi_init_thread_f2.c' || echo '$(srcdir)/'`mpi_init_thread_f2.c
+
+libmonitor_wrap_a-mpi_init_thread_f2.obj: mpi_init_thread_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_init_thread_f2.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Tpo -c -o libmonitor_wrap_a-mpi_init_thread_f2.obj `if test -f 'mpi_init_thread_f2.c'; then $(CYGPATH_W) 'mpi_init_thread_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_thread_f2.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_init_thread_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_f2.c' object='libmonitor_wrap_a-mpi_init_thread_f2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_init_thread_f2.obj `if test -f 'mpi_init_thread_f2.c'; then $(CYGPATH_W) 'mpi_init_thread_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_init_thread_f2.c'; fi`
+
+libmonitor_wrap_a-mpi_final_f2.o: mpi_final_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_final_f2.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Tpo -c -o libmonitor_wrap_a-mpi_final_f2.o `test -f 'mpi_final_f2.c' || echo '$(srcdir)/'`mpi_final_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_f2.c' object='libmonitor_wrap_a-mpi_final_f2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_final_f2.o `test -f 'mpi_final_f2.c' || echo '$(srcdir)/'`mpi_final_f2.c
+
+libmonitor_wrap_a-mpi_final_f2.obj: mpi_final_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_final_f2.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Tpo -c -o libmonitor_wrap_a-mpi_final_f2.obj `if test -f 'mpi_final_f2.c'; then $(CYGPATH_W) 'mpi_final_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_final_f2.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_final_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_f2.c' object='libmonitor_wrap_a-mpi_final_f2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_final_f2.obj `if test -f 'mpi_final_f2.c'; then $(CYGPATH_W) 'mpi_final_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_final_f2.c'; fi`
+
+libmonitor_wrap_a-mpi_comm_f2.o: mpi_comm_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_comm_f2.o -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Tpo -c -o libmonitor_wrap_a-mpi_comm_f2.o `test -f 'mpi_comm_f2.c' || echo '$(srcdir)/'`mpi_comm_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_f2.c' object='libmonitor_wrap_a-mpi_comm_f2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_comm_f2.o `test -f 'mpi_comm_f2.c' || echo '$(srcdir)/'`mpi_comm_f2.c
+
+libmonitor_wrap_a-mpi_comm_f2.obj: mpi_comm_f2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_wrap_a-mpi_comm_f2.obj -MD -MP -MF $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Tpo -c -o libmonitor_wrap_a-mpi_comm_f2.obj `if test -f 'mpi_comm_f2.c'; then $(CYGPATH_W) 'mpi_comm_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_comm_f2.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Tpo $(DEPDIR)/libmonitor_wrap_a-mpi_comm_f2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_f2.c' object='libmonitor_wrap_a-mpi_comm_f2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_wrap_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_wrap_a-mpi_comm_f2.obj `if test -f 'mpi_comm_f2.c'; then $(CYGPATH_W) 'mpi_comm_f2.c'; else $(CYGPATH_W) '$(srcdir)/mpi_comm_f2.c'; fi`
 
 libmonitor_la-callback.lo: callback.c
 @am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-callback.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-callback.Tpo -c -o libmonitor_la-callback.lo `test -f 'callback.c' || echo '$(srcdir)/'`callback.c
@@ -624,33 +777,89 @@ libmonitor_la-signal.lo: signal.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-signal.lo `test -f 'signal.c' || echo '$(srcdir)/'`signal.c
 
-libmonitor_la-mpi.lo: mpi.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi.Tpo -c -o libmonitor_la-mpi.lo `test -f 'mpi.c' || echo '$(srcdir)/'`mpi.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi.Tpo $(DEPDIR)/libmonitor_la-mpi.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi.c' object='libmonitor_la-mpi.lo' libtool=yes @AMDEPBACKSLASH@
+libmonitor_la-mpi_init_c.lo: mpi_init_c.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_init_c.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_init_c.Tpo -c -o libmonitor_la-mpi_init_c.lo `test -f 'mpi_init_c.c' || echo '$(srcdir)/'`mpi_init_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_init_c.Tpo $(DEPDIR)/libmonitor_la-mpi_init_c.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_c.c' object='libmonitor_la-mpi_init_c.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi.lo `test -f 'mpi.c' || echo '$(srcdir)/'`mpi.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_init_c.lo `test -f 'mpi_init_c.c' || echo '$(srcdir)/'`mpi_init_c.c
 
-libmonitor_la-mpi_c.lo: mpi_c.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_c.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_c.Tpo -c -o libmonitor_la-mpi_c.lo `test -f 'mpi_c.c' || echo '$(srcdir)/'`mpi_c.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_c.Tpo $(DEPDIR)/libmonitor_la-mpi_c.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_c.c' object='libmonitor_la-mpi_c.lo' libtool=yes @AMDEPBACKSLASH@
+libmonitor_la-mpi_init_thread_c.lo: mpi_init_thread_c.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_init_thread_c.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_init_thread_c.Tpo -c -o libmonitor_la-mpi_init_thread_c.lo `test -f 'mpi_init_thread_c.c' || echo '$(srcdir)/'`mpi_init_thread_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_init_thread_c.Tpo $(DEPDIR)/libmonitor_la-mpi_init_thread_c.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_c.c' object='libmonitor_la-mpi_init_thread_c.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_c.lo `test -f 'mpi_c.c' || echo '$(srcdir)/'`mpi_c.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_init_thread_c.lo `test -f 'mpi_init_thread_c.c' || echo '$(srcdir)/'`mpi_init_thread_c.c
 
-libmonitor_la-mpi_f1.lo: mpi_f1.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_f1.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_f1.Tpo -c -o libmonitor_la-mpi_f1.lo `test -f 'mpi_f1.c' || echo '$(srcdir)/'`mpi_f1.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_f1.Tpo $(DEPDIR)/libmonitor_la-mpi_f1.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_f1.c' object='libmonitor_la-mpi_f1.lo' libtool=yes @AMDEPBACKSLASH@
+libmonitor_la-mpi_final_c.lo: mpi_final_c.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_final_c.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_final_c.Tpo -c -o libmonitor_la-mpi_final_c.lo `test -f 'mpi_final_c.c' || echo '$(srcdir)/'`mpi_final_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_final_c.Tpo $(DEPDIR)/libmonitor_la-mpi_final_c.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_c.c' object='libmonitor_la-mpi_final_c.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_f1.lo `test -f 'mpi_f1.c' || echo '$(srcdir)/'`mpi_f1.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_final_c.lo `test -f 'mpi_final_c.c' || echo '$(srcdir)/'`mpi_final_c.c
 
-libmonitor_la-mpi_f2.lo: mpi_f2.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_f2.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_f2.Tpo -c -o libmonitor_la-mpi_f2.lo `test -f 'mpi_f2.c' || echo '$(srcdir)/'`mpi_f2.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_f2.Tpo $(DEPDIR)/libmonitor_la-mpi_f2.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_f2.c' object='libmonitor_la-mpi_f2.lo' libtool=yes @AMDEPBACKSLASH@
+libmonitor_la-mpi_comm_c.lo: mpi_comm_c.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_comm_c.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_comm_c.Tpo -c -o libmonitor_la-mpi_comm_c.lo `test -f 'mpi_comm_c.c' || echo '$(srcdir)/'`mpi_comm_c.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_comm_c.Tpo $(DEPDIR)/libmonitor_la-mpi_comm_c.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_c.c' object='libmonitor_la-mpi_comm_c.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_f2.lo `test -f 'mpi_f2.c' || echo '$(srcdir)/'`mpi_f2.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_comm_c.lo `test -f 'mpi_comm_c.c' || echo '$(srcdir)/'`mpi_comm_c.c
+
+libmonitor_la-mpi_init_f1.lo: mpi_init_f1.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_init_f1.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_init_f1.Tpo -c -o libmonitor_la-mpi_init_f1.lo `test -f 'mpi_init_f1.c' || echo '$(srcdir)/'`mpi_init_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_init_f1.Tpo $(DEPDIR)/libmonitor_la-mpi_init_f1.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_f1.c' object='libmonitor_la-mpi_init_f1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_init_f1.lo `test -f 'mpi_init_f1.c' || echo '$(srcdir)/'`mpi_init_f1.c
+
+libmonitor_la-mpi_init_thread_f1.lo: mpi_init_thread_f1.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_init_thread_f1.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_init_thread_f1.Tpo -c -o libmonitor_la-mpi_init_thread_f1.lo `test -f 'mpi_init_thread_f1.c' || echo '$(srcdir)/'`mpi_init_thread_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_init_thread_f1.Tpo $(DEPDIR)/libmonitor_la-mpi_init_thread_f1.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_f1.c' object='libmonitor_la-mpi_init_thread_f1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_init_thread_f1.lo `test -f 'mpi_init_thread_f1.c' || echo '$(srcdir)/'`mpi_init_thread_f1.c
+
+libmonitor_la-mpi_final_f1.lo: mpi_final_f1.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_final_f1.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_final_f1.Tpo -c -o libmonitor_la-mpi_final_f1.lo `test -f 'mpi_final_f1.c' || echo '$(srcdir)/'`mpi_final_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_final_f1.Tpo $(DEPDIR)/libmonitor_la-mpi_final_f1.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_f1.c' object='libmonitor_la-mpi_final_f1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_final_f1.lo `test -f 'mpi_final_f1.c' || echo '$(srcdir)/'`mpi_final_f1.c
+
+libmonitor_la-mpi_comm_f1.lo: mpi_comm_f1.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_comm_f1.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_comm_f1.Tpo -c -o libmonitor_la-mpi_comm_f1.lo `test -f 'mpi_comm_f1.c' || echo '$(srcdir)/'`mpi_comm_f1.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_comm_f1.Tpo $(DEPDIR)/libmonitor_la-mpi_comm_f1.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_f1.c' object='libmonitor_la-mpi_comm_f1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_comm_f1.lo `test -f 'mpi_comm_f1.c' || echo '$(srcdir)/'`mpi_comm_f1.c
+
+libmonitor_la-mpi_init_f2.lo: mpi_init_f2.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_init_f2.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_init_f2.Tpo -c -o libmonitor_la-mpi_init_f2.lo `test -f 'mpi_init_f2.c' || echo '$(srcdir)/'`mpi_init_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_init_f2.Tpo $(DEPDIR)/libmonitor_la-mpi_init_f2.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_f2.c' object='libmonitor_la-mpi_init_f2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_init_f2.lo `test -f 'mpi_init_f2.c' || echo '$(srcdir)/'`mpi_init_f2.c
+
+libmonitor_la-mpi_init_thread_f2.lo: mpi_init_thread_f2.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_init_thread_f2.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_init_thread_f2.Tpo -c -o libmonitor_la-mpi_init_thread_f2.lo `test -f 'mpi_init_thread_f2.c' || echo '$(srcdir)/'`mpi_init_thread_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_init_thread_f2.Tpo $(DEPDIR)/libmonitor_la-mpi_init_thread_f2.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_init_thread_f2.c' object='libmonitor_la-mpi_init_thread_f2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_init_thread_f2.lo `test -f 'mpi_init_thread_f2.c' || echo '$(srcdir)/'`mpi_init_thread_f2.c
+
+libmonitor_la-mpi_final_f2.lo: mpi_final_f2.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_final_f2.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_final_f2.Tpo -c -o libmonitor_la-mpi_final_f2.lo `test -f 'mpi_final_f2.c' || echo '$(srcdir)/'`mpi_final_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_final_f2.Tpo $(DEPDIR)/libmonitor_la-mpi_final_f2.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_final_f2.c' object='libmonitor_la-mpi_final_f2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_final_f2.lo `test -f 'mpi_final_f2.c' || echo '$(srcdir)/'`mpi_final_f2.c
+
+libmonitor_la-mpi_comm_f2.lo: mpi_comm_f2.c
+@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmonitor_la-mpi_comm_f2.lo -MD -MP -MF $(DEPDIR)/libmonitor_la-mpi_comm_f2.Tpo -c -o libmonitor_la-mpi_comm_f2.lo `test -f 'mpi_comm_f2.c' || echo '$(srcdir)/'`mpi_comm_f2.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmonitor_la-mpi_comm_f2.Tpo $(DEPDIR)/libmonitor_la-mpi_comm_f2.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mpi_comm_f2.c' object='libmonitor_la-mpi_comm_f2.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmonitor_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmonitor_la-mpi_comm_f2.lo `test -f 'mpi_comm_f2.c' || echo '$(srcdir)/'`mpi_comm_f2.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

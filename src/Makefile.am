@@ -35,9 +35,12 @@
 ##
 
 MONITOR_MAIN_FILES = common.h monitor.h callback.c main.c
-MONITOR_MPI_FILES =  mpi.c mpi_c.c mpi_fortran.h mpi_f1.c mpi_f2.c
 MONITOR_THREAD_FILES = pthread_h.h queue.h pthread.c
 MONITOR_SCRIPT_FILES = monitor-link monitor-run
+MONITOR_MPI_FILES =  \
+	mpi_init_c.c  mpi_init_thread_c.c  mpi_final_c.c  mpi_comm_c.c   \
+	mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c mpi_comm_f1.c  \
+	mpi_init_f2.c mpi_init_thread_f2.c mpi_final_f2.c mpi_comm_f2.c
 
 include_HEADERS = monitor.h
 bin_SCRIPTS =

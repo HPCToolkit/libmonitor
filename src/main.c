@@ -127,6 +127,9 @@ extern void monitor_main_fence4;
 
 static struct monitor_thread_node monitor_main_tn;
 
+static int mpi_size = -1;
+static int mpi_rank = -1;
+
 /*
  *----------------------------------------------------------------------
  *  INIT FUNCTIONS
@@ -377,6 +380,37 @@ monitor_real_fork(void)
 }
 
 /*
+ *  Set in the C or Fortran MPI_Comm_rank() override function.
+ *
+ *  Note: we depend on the application using MPI_COMM_WORLD before any
+ *  other communicator, so we only want to set size/rank on the first
+ *  use of MPI_Comm_rank().
+ */
+void
+monitor_set_mpi_size_rank(int size, int rank)
+{
+    static int first = 1;
+
+    if (first) {
+	mpi_size = size;
+	mpi_rank = rank;
+	first = 0;
+    }
+}
+
+int
+monitor_mpi_comm_size(void)
+{
+    return (mpi_size);
+}
+
+int
+monitor_mpi_comm_rank(void)
+{
+    return (mpi_rank);
+}
+
+/*
  *----------------------------------------------------------------------
  *  EXTERNAL OVERRIDES and their helper functions
  *----------------------------------------------------------------------
@@ -600,20 +634,6 @@ monitor_unwind_thread_bottom_frame(void *addr)
 {
     MONITOR_DEBUG1("(weak)\n");
     return (FALSE);
-}
-
-int __attribute__ ((weak))
-monitor_mpi_comm_size(void)
-{
-    MONITOR_DEBUG1("(weak)\n");
-    return (FAILURE);
-}
-
-int __attribute__ ((weak))
-monitor_mpi_comm_rank(void)
-{
-    MONITOR_DEBUG1("(weak)\n");
-    return (FAILURE);
 }
 
 /*
