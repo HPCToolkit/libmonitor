@@ -1508,7 +1508,7 @@ Optional Features:
   --enable-dlfcn          include support for dlopen [default=yes]
   --enable-fork           include support for fork and exec families
                           [default=yes]
-  --enable-mpi            include support for MPI [default=no]
+  --enable-mpi            include support for MPI [default=yes]
   --enable-pthreads       include support for pthreads [default=yes]
   --enable-signals        include support for signals [default=yes]
 
@@ -20479,7 +20479,7 @@ fi
 if test "${enable_mpi+set}" = set; then
   enableval=$enable_mpi;
 else
-  enable_mpi=no
+  enable_mpi=yes
 fi
 
 
