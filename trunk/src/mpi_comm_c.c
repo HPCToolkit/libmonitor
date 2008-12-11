@@ -25,11 +25,11 @@ MONITOR_WRAP_NAME(MPI_Comm_rank)(void *comm, int *rank)
 {
     int size = -1, ret;
 
+    MONITOR_DEBUG("comm = %p\n", comm);
     MONITOR_GET_REAL_NAME(real_mpi_comm_size, MPI_Comm_size);
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_comm_rank, MPI_Comm_rank);
     ret = (*real_mpi_comm_size)(comm, &size);
     ret = (*real_mpi_comm_rank)(comm, rank);
-    MONITOR_DEBUG("setting size = %d, rank = %d\n", size, *rank);
     monitor_set_mpi_size_rank(size, *rank);
 
     return (ret);

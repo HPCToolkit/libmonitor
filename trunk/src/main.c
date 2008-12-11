@@ -127,9 +127,6 @@ extern void monitor_main_fence4;
 
 static struct monitor_thread_node monitor_main_tn;
 
-static int mpi_size = -1;
-static int mpi_rank = -1;
-
 /*
  *----------------------------------------------------------------------
  *  INIT FUNCTIONS
@@ -377,37 +374,6 @@ monitor_real_fork(void)
     MONITOR_DEBUG1("(unavailable)\n");
     return (-1);
 #endif
-}
-
-/*
- *  Set in the C or Fortran MPI_Comm_rank() override function.
- *
- *  Note: we depend on the application using MPI_COMM_WORLD before any
- *  other communicator, so we only want to set size/rank on the first
- *  use of MPI_Comm_rank().
- */
-void
-monitor_set_mpi_size_rank(int size, int rank)
-{
-    static int first = 1;
-
-    if (first) {
-	mpi_size = size;
-	mpi_rank = rank;
-	first = 0;
-    }
-}
-
-int
-monitor_mpi_comm_size(void)
-{
-    return (mpi_size);
-}
-
-int
-monitor_mpi_comm_rank(void)
-{
-    return (mpi_rank);
 }
 
 /*
