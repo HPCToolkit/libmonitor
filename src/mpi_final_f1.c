@@ -17,10 +17,13 @@ static mpi_finalize_fcn_t  *real_mpi_finalize = NULL;
 void
 MONITOR_WRAP_NAME(mpi_finalize_)(int *ierror)
 {
+    MONITOR_DEBUG1("\n");
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_finalize, mpi_finalize_);
-    MONITOR_DEBUG("size = %d, rank = %d\n",
-		  monitor_mpi_comm_size(), monitor_mpi_comm_rank());
-    MONITOR_DEBUG1("calling monitor_fini_mpi() ...\n");
-    monitor_fini_mpi();
+    if (monitor_mpi_fini_count(1) == 1) {
+	MONITOR_DEBUG("calling monitor_fini_mpi(), size = %d, rank = %d, ...\n",
+		      monitor_mpi_comm_size(), monitor_mpi_comm_rank());
+	monitor_fini_mpi();
+    }
     (*real_mpi_finalize)(ierror);
+    monitor_mpi_fini_count(-1);
 }

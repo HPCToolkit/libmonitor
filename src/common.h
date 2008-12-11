@@ -168,5 +168,7 @@ void monitor_get_main_args(int *, char ***, char ***);
 int  monitor_in_main_start_func_wide(void *);
 int  monitor_in_main_start_func_narrow(void *);
 void monitor_set_mpi_size_rank(int, int);
+int  monitor_mpi_init_count(int);
+int  monitor_mpi_fini_count(int);
 
 #endif  /* ! _MONITOR_COMMON_H_ */

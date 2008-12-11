@@ -17,13 +17,17 @@ static mpi_init_fcn_t  *real_mpi_init = NULL;
 void
 MONITOR_WRAP_NAME(mpi_init_)(int *ierror)
 {
-    int argc;
+    int argc, count;
     char **argv;
 
     MONITOR_DEBUG1("\n");
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_init, mpi_init_);
+    count = monitor_mpi_init_count(1);
     (*real_mpi_init)(ierror);
-    MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
-    monitor_get_main_args(&argc, &argv, NULL);
-    monitor_init_mpi(&argc, &argv);
+    if (count == 1) {
+	MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
+	monitor_get_main_args(&argc, &argv, NULL);
+	monitor_init_mpi(&argc, &argv);
+    }
+    monitor_mpi_init_count(-1);
 }
