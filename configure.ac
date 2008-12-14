@@ -39,7 +39,7 @@ AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2008, Rice University.
 See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist])
 AM_MAINTAINER_MODE
 
 AC_CONFIG_HEADERS([config.h])
@@ -58,7 +58,41 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
 
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+
 AC_SUBST([wrap_list], ["main exit _exit"])
+
+#
+# Find the svn revision.
+#
+# If this directory is an svn sandbox, then use svn info (and store
+# the result in a file), else expect the answer to be in the file.
+# Note: svn update changes the revision number, so svn info must take
+# precedence over the file.
+#
+version_file="${srcdir}/.svn-revision"
+
+AC_MSG_CHECKING([for svn revision])
+
+svn_revision=`svn info $srcdir 2>/dev/null | grep -e '^Revision' | awk '{ print $2 }'`
+if test "x$svn_revision" != x ; then
+    rm -f "$version_file"
+    echo "$svn_revision" > "$version_file"
+elif test -f "$version_file" ; then
+    svn_revision=`cat $version_file`
+else
+    svn_revision=0
+fi
+
+AC_MSG_RESULT([$svn_revision])
+
+if test "$svn_revision" = 0 ; then
+    AC_MSG_WARN([unable to find svn revision])
+fi
+
+AC_SUBST([svn_revision])
+AC_DEFINE_UNQUOTED([SVN_REVISION], [$svn_revision], [SVN rev number.])
 
 #
 # Option: --enable-debug=no
@@ -248,6 +282,7 @@ AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([Libmonitor summary])
 AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([prefix: $prefix])
+AC_MSG_NOTICE([svn revision: $svn_revision])
 if test "x$host" != "x$build" ; then
     AC_MSG_NOTICE([build: $build])
 fi

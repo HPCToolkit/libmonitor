@@ -147,7 +147,7 @@ monitor_early_init(void)
 	if (getenv("MONITOR_DEBUG") != NULL)
 	    monitor_debug = 1;
     }
-    MONITOR_DEBUG("debug = %d\n", monitor_debug);
+    MONITOR_DEBUG1("\n");
 
     memset(&monitor_main_tn, 0, sizeof(struct monitor_thread_node));
     monitor_main_tn.tn_magic = MONITOR_TN_MAGIC;
@@ -165,7 +165,7 @@ monitor_normal_init(void)
     MONITOR_RUN_ONCE(normal_init);
 
     monitor_early_init();
-    MONITOR_DEBUG1("\n");
+    MONITOR_DEBUG("%s rev %d\n", PACKAGE_STRING, SVN_REVISION);
 
     /*
      * Always get _exit() first so that we have a way to exit if
