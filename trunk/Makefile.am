@@ -35,3 +35,32 @@
 ##
 
 SUBDIRS = src
+
+SVN_REVISION = @svn_revision@
+
+#
+# Our custom dist target adds the svn rev number to the tar file and
+# its directory.  None of this would be necessary if Automake just let
+# us compute a value for PACKAGE_VERSION instead of requiring a fixed
+# literal.
+#
+MY_DIST_FILES = LICENSE Makefile.am Makefile.in README  \
+	aclocal.m4 config.h.in configure configure.ac .svn-revision  \
+	src/Makefile.am src/*.in src/*.h src/*.c  \
+	config tests
+
+MY_DIST_DIR = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-r$(SVN_REVISION)
+MY_TAR_FILE = $(MY_DIST_DIR).tar
+
+dist:
+	rm -f "$(MY_DIST_DIR)" "$(MY_TAR_FILE)" "$(MY_TAR_FILE).gz"
+	ln -s . "$(MY_DIST_DIR)"
+	tar cf "$(MY_TAR_FILE)"  \
+		--exclude .svn  \
+		$(addprefix $(MY_DIST_DIR)/,$(MY_DIST_FILES))
+	rm -f "$(MY_DIST_DIR)"
+	gzip "$(MY_TAR_FILE)"
+	@ls -l "$(MY_TAR_FILE).gz"
+
+.PHONY: dist
+

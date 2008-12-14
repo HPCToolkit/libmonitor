@@ -48,9 +48,9 @@ host_triplet = @host@
 @MONITOR_TEST_LINK_STATIC_TRUE@@MONITOR_TEST_USE_SIGNALS_TRUE@am__append_11 = signal.c
 @MONITOR_TEST_LINK_STATIC_TRUE@@MONITOR_TEST_USE_MPI_TRUE@am__append_12 = $(MONITOR_MPI_FILES)
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/monitor-link.in \
-	$(srcdir)/monitor-run.in
+DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
+	$(srcdir)/monitor-link.in $(srcdir)/monitor-run.in \
+	$(include_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -71,12 +71,6 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 libmonitor_wrap_a_AR = $(AR) $(ARFLAGS)
 libmonitor_wrap_a_LIBADD =
-am__libmonitor_wrap_a_SOURCES_DIST = common.h monitor.h callback.c \
-	main.c mpi.c dlopen.c fork.c pthread_h.h queue.h pthread.c \
-	signal.c mpi_init_c.c mpi_init_thread_c.c mpi_final_c.c \
-	mpi_comm_c.c mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c \
-	mpi_comm_f1.c mpi_init_f2.c mpi_init_thread_f2.c \
-	mpi_final_f2.c mpi_comm_f2.c
 am__objects_1 = libmonitor_wrap_a-callback.$(OBJEXT) \
 	libmonitor_wrap_a-main.$(OBJEXT) \
 	libmonitor_wrap_a-mpi.$(OBJEXT)
@@ -109,12 +103,6 @@ libmonitor_wrap_a_OBJECTS = $(am_libmonitor_wrap_a_OBJECTS)
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libmonitor_la_LIBADD =
-am__libmonitor_la_SOURCES_DIST = common.h monitor.h callback.c main.c \
-	mpi.c dlopen.c fork.c pthread_h.h queue.h pthread.c signal.c \
-	mpi_init_c.c mpi_init_thread_c.c mpi_final_c.c mpi_comm_c.c \
-	mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c \
-	mpi_comm_f1.c mpi_init_f2.c mpi_init_thread_f2.c \
-	mpi_final_f2.c mpi_comm_f2.c
 am__objects_9 = libmonitor_la-callback.lo libmonitor_la-main.lo \
 	libmonitor_la-mpi.lo
 @MONITOR_TEST_LINK_PRELOAD_TRUE@@MONITOR_TEST_USE_DLOPEN_TRUE@am__objects_10 = libmonitor_la-dlopen.lo
@@ -157,13 +145,10 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libmonitor_wrap_a_SOURCES) $(libmonitor_la_SOURCES)
-DIST_SOURCES = $(am__libmonitor_wrap_a_SOURCES_DIST) \
-	$(am__libmonitor_la_SOURCES_DIST)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
-DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AR = @AR@
@@ -269,6 +254,7 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
+svn_revision = @svn_revision@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
@@ -955,33 +941,6 @@ GTAGS:
 
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
-
-distdir: $(DISTFILES)
-	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
-	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
-	list='$(DISTFILES)'; \
-	  dist_files=`for file in $$list; do echo $$file; done | \
-	  sed -e "s|^$$srcdirstrip/||;t" \
-	      -e "s|^$$topsrcdirstrip/|$(top_builddir)/|;t"`; \
-	case $$dist_files in \
-	  */*) $(MKDIR_P) `echo "$$dist_files" | \
-			   sed '/\//!d;s|^|$(distdir)/|;s,/[^/]*$$,,' | \
-			   sort -u` ;; \
-	esac; \
-	for file in $$dist_files; do \
-	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
-	  if test -d $$d/$$file; then \
-	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
-	    fi; \
-	    cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
-	  else \
-	    test -f $(distdir)/$$file \
-	    || cp -p $$d/$$file $(distdir)/$$file \
-	    || exit 1; \
-	  fi; \
-	done
 check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(LTLIBRARIES) $(SCRIPTS) $(HEADERS)
@@ -1080,10 +1039,10 @@ uninstall-am: uninstall-binSCRIPTS uninstall-includeHEADERS \
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES clean-libLTLIBRARIES clean-libtool ctags \
 	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-binSCRIPTS \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
+	distclean-libtool distclean-tags dvi dvi-am html html-am info \
+	info-am install install-am install-binSCRIPTS install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLIBRARIES install-libLTLIBRARIES install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
