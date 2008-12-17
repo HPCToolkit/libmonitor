@@ -62,6 +62,7 @@ extern void monitor_thread_post_create(void *);
 extern void monitor_init_thread_support(void);
 extern void *monitor_init_thread(int tid, void *data);
 extern void monitor_fini_thread(void *data);
+extern size_t monitor_reset_stacksize(size_t old_size);
 extern void monitor_pre_dlopen(const char *path, int flags);
 extern void monitor_dlopen(const char *path, int flags, void *handle);
 extern void monitor_dlclose(void *handle);

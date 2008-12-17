@@ -102,6 +102,9 @@
     void *arg
 
 typedef int   pthread_create_fcn_t(PTHREAD_CREATE_PARAM_LIST);
+typedef int   pthread_attr_init_fcn_t(pthread_attr_t *);
+typedef int   pthread_attr_getstacksize_fcn_t(const pthread_attr_t *, size_t *);
+typedef int   pthread_attr_setstacksize_fcn_t(pthread_attr_t *, size_t);
 typedef int   pthread_equal_fcn_t(pthread_t, pthread_t);
 typedef int   pthread_key_create_fcn_t(pthread_key_t *, void (*)(void *));
 typedef int   pthread_key_delete_fcn_t(pthread_key_t);
@@ -125,6 +128,10 @@ extern sigprocmask_fcn_t  __real_pthread_sigmask;
 #endif
 
 static pthread_create_fcn_t  *real_pthread_create;
+static pthread_attr_init_fcn_t  *real_pthread_attr_init;
+static pthread_attr_init_fcn_t  *real_pthread_attr_destroy;
+static pthread_attr_getstacksize_fcn_t  *real_pthread_attr_getstacksize;
+static pthread_attr_setstacksize_fcn_t  *real_pthread_attr_setstacksize;
 static pthread_equal_fcn_t   *real_pthread_equal;
 static pthread_key_create_fcn_t   *real_pthread_key_create;
 static pthread_key_delete_fcn_t   *real_pthread_key_delete;
@@ -209,6 +216,10 @@ monitor_thread_name_init(void)
     MONITOR_RUN_ONCE(thread_name_init);
 
     MONITOR_GET_REAL_NAME_WRAP(real_pthread_create, pthread_create);
+    MONITOR_GET_REAL_NAME(real_pthread_attr_init, pthread_attr_init);
+    MONITOR_GET_REAL_NAME(real_pthread_attr_destroy, pthread_attr_destroy);
+    MONITOR_GET_REAL_NAME(real_pthread_attr_getstacksize, pthread_attr_getstacksize);
+    MONITOR_GET_REAL_NAME(real_pthread_attr_setstacksize, pthread_attr_setstacksize);
 #ifdef MONITOR_PTHREAD_EQUAL_IS_FCN
     MONITOR_GET_REAL_NAME(real_pthread_equal, pthread_equal);
 #endif
@@ -770,13 +781,70 @@ monitor_begin_thread(void *arg)
 }
 
 /*
+ *  Allow the client to change the thread stack size, if needed.  This
+ *  is useful for profilers, in case the application's stack is too
+ *  small.  This would be easier if we could copy the attribute object
+ *  and modify the copy, but that violates the pthread spec (not
+ *  allowed to copy).
+ *
+ *  Returns: pointer to attr object that pthread_create() should use,
+ *  also sets the old size, whether we need to restore the old size,
+ *  and whether we need to destroy the attr object.  If anything goes
+ *  wrong, use the original attributes and hope for the best.
+ */
+static pthread_attr_t *
+monitor_adjust_stack_size(pthread_attr_t *orig_attr,
+			  pthread_attr_t *default_attr,
+			  int *restore, int *destroy, size_t *old_size)
+{
+    pthread_attr_t *attr;
+    size_t new_size;
+
+    *restore = 0;
+    *destroy = 0;
+    if (orig_attr != NULL)
+	attr = orig_attr;
+    else {
+	if ((*real_pthread_attr_init)(default_attr) != 0) {
+	    MONITOR_WARN1("pthread_attr_init failed\n");
+	    return (orig_attr);
+	}
+	*destroy = 1;
+	attr = default_attr;
+    }
+
+    if ((*real_pthread_attr_getstacksize)(attr, old_size) != 0) {
+	MONITOR_WARN1("pthread_attr_getstacksize failed\n");
+	return (orig_attr);
+    }
+
+    new_size = monitor_reset_stacksize(*old_size);
+    if (new_size == *old_size)
+	return (orig_attr);
+
+    if ((*real_pthread_attr_setstacksize)(attr, new_size) != 0) {
+	MONITOR_WARN1("pthread_attr_setstacksize failed\n");
+	return (orig_attr);
+    }
+    if (attr == orig_attr)
+	*restore = 1;
+
+    MONITOR_DEBUG("old size = %ld, new size = %ld\n",
+		  (long)*old_size, (long)new_size);
+
+    return (attr);
+}
+
+/*
  *  Override pthread_create().
  */
 int
-MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
+MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
 {
     struct monitor_thread_node *tn;
-    int first, ret;
+    pthread_attr_t default_attr;
+    int first, ret, restore, destroy;
+    size_t old_size;
 
     /*
      * There is no race condition to get here first because until now,
@@ -801,8 +869,22 @@ MONITOR_WRAP_NAME(pthread_create) (PTHREAD_CREATE_PARAM_LIST)
     MONITOR_DEBUG1("calling monitor_thread_pre_create() ...\n");
     tn->tn_user_data = monitor_thread_pre_create();
 
-    ret = (*real_pthread_create)
-	(thread, attr, monitor_begin_thread, (void *)tn);
+    /*
+     * Allow the client to change the thread stack size.  Note: we
+     * need to restore the original size in case the application uses
+     * one attribute struct for several threads (so we don't keep
+     * increasing its size).
+     */
+    attr = monitor_adjust_stack_size((pthread_attr_t *)attr, &default_attr,
+				     &restore, &destroy, &old_size);
+    ret = (*real_pthread_create)(thread, attr, monitor_begin_thread,
+				 (void *)tn);
+    if (restore) {
+	(*real_pthread_attr_setstacksize)((pthread_attr_t *)attr, old_size);
+    }
+    if (destroy) {
+	(*real_pthread_attr_destroy)(&default_attr);
+    }
 
     MONITOR_DEBUG1("calling monitor_thread_post_create() ...\n");
     monitor_thread_post_create(tn->tn_user_data);
