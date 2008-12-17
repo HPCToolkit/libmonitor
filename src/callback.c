@@ -93,6 +93,13 @@ monitor_fini_thread(void *data)
     MONITOR_DEBUG1("(default callback)\n");
 }
 
+size_t __attribute__ ((weak))
+monitor_reset_stacksize(size_t old_size)
+{
+    MONITOR_DEBUG("(default callback) stack size = %ld\n", (long)old_size);
+    return (old_size);
+}
+
 void __attribute__ ((weak))
 monitor_pre_dlopen(const char *path, int flags)
 {
