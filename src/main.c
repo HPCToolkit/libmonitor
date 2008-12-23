@@ -448,10 +448,10 @@ __libc_start_main(START_MAIN_PARAM_LIST)
 void
 MONITOR_WRAP_NAME(exit)(int status)
 {
-    MONITOR_DEBUG1("\n");
     monitor_normal_init();
-    monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
+    MONITOR_DEBUG1("\n");
 
+    monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
     (*real_exit)(status);
 
     /* Never reached, but silence a compiler warning. */
@@ -465,13 +465,13 @@ MONITOR_WRAP_NAME(exit)(int status)
 void
 MONITOR_WRAP_NAME(_exit)(int status)
 {
+    monitor_normal_init();
     MONITOR_DEBUG1("\n");
 
     monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
 #ifdef MONITOR_DYNAMIC
     monitor_end_library_fcn();
 #endif
-
     (*real_u_exit)(status);
 
     /* Never reached, but silence a compiler warning. */
@@ -481,13 +481,13 @@ MONITOR_WRAP_NAME(_exit)(int status)
 void
 MONITOR_WRAP_NAME(_Exit)(int status)
 {
+    monitor_normal_init();
     MONITOR_DEBUG1("\n");
 
     monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
 #ifdef MONITOR_DYNAMIC
     monitor_end_library_fcn();
 #endif
-
     (*real_u_exit)(status);
 
     /* Never reached, but silence a compiler warning. */
