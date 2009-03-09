@@ -1,7 +1,7 @@
 ##
 ##  Libmonitor src/Makefile.am.
 ##
-##  Copyright (c) 2007-2008, Rice University.
+##  Copyright (c) 2007-2009, Rice University.
 ##  All rights reserved.
 ##
 ##  Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@ MONITOR_THREAD_FILES = pthread_h.h queue.h pthread.c
 MONITOR_SCRIPT_FILES = monitor-link monitor-run
 MONITOR_MPI_FILES =  \
 	mpi_init_c.c  mpi_init_thread_c.c  mpi_final_c.c  mpi_comm_c.c   \
+	mpi_init_f0.c mpi_init_thread_f0.c mpi_final_f0.c mpi_comm_f0.c  \
 	mpi_init_f1.c mpi_init_thread_f1.c mpi_final_f1.c mpi_comm_f1.c  \
 	mpi_init_f2.c mpi_init_thread_f2.c mpi_final_f2.c mpi_comm_f2.c
 

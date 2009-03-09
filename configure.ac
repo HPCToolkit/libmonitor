@@ -1,7 +1,7 @@
 dnl
 dnl  Libmonitor top-level configure.ac.
 dnl
-dnl  Copyright (c) 2007-2008, Rice University.
+dnl  Copyright (c) 2007-2009, Rice University.
 dnl  All rights reserved.
 dnl
 dnl  Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,14 @@ dnl  $Id$
 dnl
 
 AC_INIT([libmonitor], [0.x], [hpc@cs.rice.edu])
-AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2008, Rice University.
+AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2009, Rice University.
 See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist])
 AM_MAINTAINER_MODE
+AC_PREREQ(2.63)
+AM_INIT_AUTOMAKE(1.10.2)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
@@ -208,9 +210,10 @@ AC_ARG_ENABLE([mpi],
 if test "x$enable_mpi" = xyes ; then
     AC_DEFINE([MONITOR_USE_MPI], [1], [Include support for MPI.])
     mpi_c="MPI_Init MPI_Init_thread MPI_Finalize MPI_Comm_rank"
+    mpi_f0="mpi_init mpi_init_thread mpi_finalize mpi_comm_rank"
     mpi_f1="mpi_init_ mpi_init_thread_ mpi_finalize_ mpi_comm_rank_"
     mpi_f2="mpi_init__ mpi_init_thread__ mpi_finalize__ mpi_comm_rank__"
-    wrap_list="${wrap_list} ${mpi_c} ${mpi_f1} ${mpi_f2}"
+    wrap_list="${wrap_list} ${mpi_c} ${mpi_f0} ${mpi_f1} ${mpi_f2}"
 fi
 
 AM_CONDITIONAL([MONITOR_TEST_USE_MPI], [test x$enable_mpi = xyes])
@@ -283,10 +286,8 @@ AC_MSG_NOTICE([Libmonitor summary])
 AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([prefix: $prefix])
 AC_MSG_NOTICE([svn revision: $svn_revision])
-if test "x$host" != "x$build" ; then
-    AC_MSG_NOTICE([build: $build])
-fi
-AC_MSG_NOTICE([host: $host])
+AC_MSG_NOTICE([build: $build])
+AC_MSG_NOTICE([host:  $host])
 AC_MSG_NOTICE([CC CFLAGS: $CC $CFLAGS])
 AC_MSG_NOTICE([enable debug: $enable_debug])
 AC_MSG_NOTICE([enable link preload: $enable_link_preload])
