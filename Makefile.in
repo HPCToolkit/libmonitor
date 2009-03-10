@@ -182,7 +182,7 @@ SVN_REVISION = @svn_revision@
 MY_DIST_FILES = LICENSE Makefile.am Makefile.in README  \
 	aclocal.m4 config.h.in configure configure.ac .svn-revision  \
 	src/Makefile.am src/*.in src/*.h src/*.c  \
-	config tests
+	config tests/Makefile tests/*.c
 
 MY_DIST_DIR = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-r$(SVN_REVISION)
 MY_TAR_FILE = $(MY_DIST_DIR).tar
@@ -486,7 +486,7 @@ uninstall-am:
 
 dist:
 	rm -f "$(MY_DIST_DIR)" "$(MY_TAR_FILE)" "$(MY_TAR_FILE).gz"
-	ln -s . "$(MY_DIST_DIR)"
+	ln -s "$(srcdir)" "$(MY_DIST_DIR)"
 	tar cf "$(MY_TAR_FILE)"  \
 		--exclude .svn  \
 		$(addprefix $(MY_DIST_DIR)/,$(MY_DIST_FILES))
