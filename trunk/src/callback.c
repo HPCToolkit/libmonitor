@@ -126,6 +126,12 @@ monitor_post_dlclose(void *handle, int ret)
 }
 
 void __attribute__ ((weak))
+monitor_mpi_pre_init(void)
+{
+    MONITOR_DEBUG1("(default callback)\n");
+}
+
+void __attribute__ ((weak))
 monitor_init_mpi(int *argc, char ***argv)
 {
     int i;
@@ -143,4 +149,10 @@ monitor_fini_mpi(void)
 {
     MONITOR_DEBUG("(default callback) size = %d, rank = %d\n",
 		  monitor_mpi_comm_size(), monitor_mpi_comm_rank());
+}
+
+void __attribute__ ((weak))
+monitor_mpi_post_fini(void)
+{
+    MONITOR_DEBUG1("(default callback)\n");
 }
