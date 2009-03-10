@@ -45,11 +45,15 @@ monitor_init_process(int *argc, char **argv, void *data)
 {
     int i;
 
-    MONITOR_DEBUG("(default callback) parent = %d, argc = %p, argv = %p\n",
-		  (int)getppid(), argc, argv);
-    if (monitor_debug && argc != NULL && argv != NULL && *argc > 0) {
-	for (i = 0; i < *argc; i++) {
-	    MONITOR_DEBUG("argv[%d] = %s\n", i, argv[i]);
+    MONITOR_DEBUG("(default callback) parent = %d, argc = %d, argv = %p\n",
+		  (int)getppid(), (argc != NULL) ? *argc : 0, argv);
+    if (monitor_debug) {
+	if (argc != NULL && argv != NULL && *argc > 0) {
+	    for (i = 0; i < *argc; i++) {
+		MONITOR_DEBUG("argv[%d] = %s\n", i, argv[i]);
+	    }
+	} else {
+	    MONITOR_DEBUG1("no argument list\n");
 	}
     }
     return (data);

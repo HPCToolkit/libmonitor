@@ -1,7 +1,7 @@
 /*
  *  Libmonitor core functions: main and exit.
  *
- *  Copyright (c) 2007-2008, Rice University.
+ *  Copyright (c) 2007-2009, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -116,9 +116,9 @@ static char **monitor_envp = NULL;
 
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
-volatile static char monitor_init_process_called = 0;
 volatile static char monitor_fini_process_done = 0;
 volatile static char monitor_fini_process_cookie = 0;
+static char monitor_has_reached_main = 0;
 
 extern void monitor_main_fence1;
 extern void monitor_main_fence2;
@@ -221,13 +221,15 @@ void
 monitor_begin_process_fcn(void *user_data, int is_fork)
 {
     monitor_normal_init();
-    if (is_fork)
+    if (is_fork) {
 	monitor_reset_thread_list(&monitor_main_tn);
-
-    MONITOR_DEBUG1("calling monitor_init_process() ...\n");
-    monitor_main_tn.tn_user_data =
-	monitor_init_process(&monitor_argc, monitor_argv, user_data);
-    monitor_init_process_called = 1;
+	monitor_main_tn.tn_user_data = user_data;
+    }
+    if (!is_fork || monitor_has_reached_main) {
+	MONITOR_DEBUG1("calling monitor_init_process() ...\n");
+	monitor_main_tn.tn_user_data =
+	    monitor_init_process(&monitor_argc, monitor_argv, user_data);
+    }
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
     monitor_fini_process_cookie = 0;
@@ -403,6 +405,7 @@ monitor_main(int argc, char **argv, char **envp)
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
+    monitor_has_reached_main = 1;
     monitor_begin_process_fcn(NULL, FALSE);
 
     MONITOR_ASM_LABEL(monitor_main_fence2);

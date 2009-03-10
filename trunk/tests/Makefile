@@ -11,9 +11,15 @@
 CC = gcc
 CFLAGS = -g -O -Wall
 
-PROGRAMS = exit thread_fork
+PROGRAMS = emain exit thread_fork
 
 all: $(PROGRAMS)
+
+emain: emain.c libearly.so
+	$(CC) -o $@ $(CFLAGS) $< -L. -learly
+
+libearly.so: early.c
+	$(CC) -o $@ $(CFLAGS) -shared -fPIC $< -ldl -lpthread
 
 exit: exit.c
 	$(CC) -o $@ $(CFLAGS) $< -lpthread
@@ -22,5 +28,5 @@ thread_fork: thread_fork.c
 	$(CC) -o $@ $(CFLAGS) $< -lpthread
 
 clean:
-	rm -f *.o a.out $(PROGRAMS)
+	rm -f *.o *.so a.out $(PROGRAMS)
 
