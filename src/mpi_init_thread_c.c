@@ -23,6 +23,10 @@ MONITOR_WRAP_NAME(MPI_Init_thread)(int *argc, char ***argv,
     MONITOR_DEBUG1("\n");
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_init_thread, MPI_Init_thread);
     count = monitor_mpi_init_count(1);
+    if (count == 1) {
+	MONITOR_DEBUG1("calling monitor_mpi_pre_init() ...\n");
+	monitor_mpi_pre_init();
+    }
     ret = (*real_mpi_init_thread)(argc, argv, required, provided);
     if (count == 1) {
 	MONITOR_DEBUG1("calling monitor_init_mpi() ...\n");
