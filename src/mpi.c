@@ -45,6 +45,7 @@
 
 static int mpi_init_count = 0;
 static int mpi_fini_count = 0;
+static int max_init_count = 0;
 static int mpi_size = -1;
 static int mpi_rank = -1;
 
@@ -63,6 +64,8 @@ int
 monitor_mpi_init_count(int inc)
 {
     mpi_init_count += inc;
+    if (mpi_init_count > max_init_count)
+	max_init_count = mpi_init_count;
     return (mpi_init_count);
 }
 
@@ -78,14 +81,16 @@ monitor_mpi_fini_count(int inc)
  *
  *  Note: we depend on the application using MPI_COMM_WORLD before any
  *  other communicator, so we only want to set size/rank on the first
- *  use of MPI_Comm_rank().
+ *  use of MPI_Comm_rank().  But wait until after MPI_Init() finishes
+ *  in case it calls MPI_Comm_rank() itself with some other
+ *  communicator (some libraries do this).
  */
 void
 monitor_set_mpi_size_rank(int size, int rank)
 {
     static int first = 1;
 
-    if (first) {
+    if (first && mpi_init_count == 0 && max_init_count > 0) {
 	MONITOR_DEBUG("setting size = %d, rank = %d\n", size, rank);
 	mpi_size = size;
 	mpi_rank = rank;
