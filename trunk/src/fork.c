@@ -1,7 +1,7 @@
 /*
  *  Libmonitor fork and exec functions.
  *
- *  Copyright (c) 2007-2008, Rice University.
+ *  Copyright (c) 2007-2009, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,8 @@
  *----------------------------------------------------------------------
  */
 
+#define MONITOR_INIT_ARGV_SIZE  64
+
 typedef pid_t fork_fcn_t(void);
 typedef int execv_fcn_t(const char *path, char *const argv[]);
 typedef int execve_fcn_t(const char *path, char *const argv[],
@@ -76,6 +78,7 @@ typedef int execve_fcn_t(const char *path, char *const argv[],
 typedef int sigaction_fcn_t(int, const struct sigaction *,
 			    struct sigaction *);
 typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
+typedef void *malloc_fcn_t(size_t);
 
 #ifdef MONITOR_STATIC
 extern fork_fcn_t    __real_fork;
@@ -92,6 +95,7 @@ static execv_fcn_t   *real_execvp = NULL;
 static execve_fcn_t  *real_execve = NULL;
 static sigaction_fcn_t    *real_sigaction = NULL;
 static sigprocmask_fcn_t  *real_sigprocmask = NULL;
+static malloc_fcn_t  *real_malloc = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -118,19 +122,17 @@ monitor_fork_init(void)
  *  into an argv array, including the terminating NULL.  If envp is
  *  non-NULL, then there is an extra argument after NULL.  va_start
  *  and va_end are in the calling function.
+ *
+ *  Note: the caller passes an initial argv[] array, and we re-malloc
+ *  if it is too small.  Technically, this could leak memory, but only
+ *  on a series of failed exec()s, all with long argument lists.
  */
-#define MONITOR_INIT_ARGV_SIZE  32
 static void
 monitor_copy_va_args(char ***argv, char ***envp,
 		     const char *first_arg, va_list arglist)
 {
     int argc, size = MONITOR_INIT_ARGV_SIZE;
-    char *arg;
-
-    *argv = malloc(size * sizeof(char *));
-    if (*argv == NULL) {
-	MONITOR_ERROR1("malloc failed\n");
-    }
+    char *arg, **new_argv;
 
     /*
      * Include the terminating NULL in the argv array.
@@ -141,10 +143,13 @@ monitor_copy_va_args(char ***argv, char ***envp,
 	arg = va_arg(arglist, char *);
 	if (argc >= size) {
 	    size *= 2;
-	    *argv = realloc(*argv, size * sizeof(char *));
-	    if (*argv == NULL) {
-		MONITOR_ERROR1("realloc failed\n");
+	    MONITOR_GET_REAL_NAME(real_malloc, malloc);
+	    new_argv = (*real_malloc)(size * sizeof(char *));
+	    if (new_argv == NULL) {
+		MONITOR_ERROR1("malloc failed\n");
 	    }
+	    memcpy(new_argv, *argv, argc * sizeof(char *));
+	    *argv = new_argv;
 	}
 	(*argv)[argc++] = arg;
     } while (arg != NULL);
@@ -364,7 +369,8 @@ monitor_execve(const char *path, char *const argv[], char *const envp[])
 int
 MONITOR_WRAP_NAME(execl)(const char *path, const char *arg, ...)
 {
-    char **argv;
+    char *buf[MONITOR_INIT_ARGV_SIZE];
+    char **argv = &buf[0];
     va_list arglist;
 
     va_start(arglist, arg);
@@ -377,7 +383,8 @@ MONITOR_WRAP_NAME(execl)(const char *path, const char *arg, ...)
 int
 MONITOR_WRAP_NAME(execlp)(const char *file, const char *arg, ...)
 {
-    char **argv;
+    char *buf[MONITOR_INIT_ARGV_SIZE];
+    char **argv = &buf[0];
     va_list arglist;
 
     va_start(arglist, arg);
@@ -390,7 +397,9 @@ MONITOR_WRAP_NAME(execlp)(const char *file, const char *arg, ...)
 int
 MONITOR_WRAP_NAME(execle)(const char *path, const char *arg, ...)
 {
-    char **argv, **envp;
+    char *buf[MONITOR_INIT_ARGV_SIZE];
+    char **argv = &buf[0];
+    char **envp;
     va_list arglist;
 
     va_start(arglist, arg);
