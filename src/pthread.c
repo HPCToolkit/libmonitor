@@ -1,7 +1,7 @@
 /*
  *  Libmonitor pthread functions.
  *
- *  Copyright (c) 2007-2008, Rice University.
+ *  Copyright (c) 2007-2009, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,7 @@
  */
 
 #include "config.h"
+#include <sys/types.h>
 #ifdef MONITOR_DYNAMIC
 #include <dlfcn.h>
 #endif
@@ -74,6 +75,7 @@
  */
 
 #define MONITOR_EXIT_CLEANUP_SIGNAL  SIGUSR2
+#define MONITOR_TN_ARRAY_SIZE  150
 
 /*
  *  On some systems, pthread_equal() and pthread_cleanup_push/pop()
@@ -118,6 +120,7 @@ typedef void  pthread_cleanup_pop_fcn_t(int);
 typedef int   sigaction_fcn_t(int, const struct sigaction *,
 			      struct sigaction *);
 typedef int   sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
+typedef void *malloc_fcn_t(size_t);
 
 #ifdef MONITOR_STATIC
 extern pthread_create_fcn_t  __real_pthread_create;
@@ -146,6 +149,7 @@ static pthread_cleanup_push_fcn_t  *real_pthread_cleanup_push;
 static pthread_cleanup_pop_fcn_t   *real_pthread_cleanup_pop;
 static sigaction_fcn_t    *real_sigaction;
 static sigprocmask_fcn_t  *real_pthread_sigmask;
+static malloc_fcn_t  *real_malloc = NULL;
 
 /*
  *  The global thread mutex protects monitor's list of threads and
@@ -163,7 +167,12 @@ static pthread_mutex_t monitor_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define MONITOR_THREAD_TRYLOCK (*real_pthread_mutex_trylock)(&monitor_thread_mutex)
 #define MONITOR_THREAD_UNLOCK  (*real_pthread_mutex_unlock)(&monitor_thread_mutex)
 
+static struct monitor_thread_node monitor_init_tn_array[MONITOR_TN_ARRAY_SIZE];
+static struct monitor_thread_node *monitor_tn_array = &monitor_init_tn_array[0];
+static int monitor_tn_array_pos = 0;
+
 static LIST_HEAD(, monitor_thread_node) monitor_thread_list;
+static LIST_HEAD(, monitor_thread_node) monitor_free_list;
 
 volatile static int  monitor_thread_num = 0;
 volatile static char monitor_end_process_cookie = 0;
@@ -265,6 +274,8 @@ monitor_thread_list_init(void)
 
     MONITOR_DEBUG1("\n");
     LIST_INIT(&monitor_thread_list);
+    LIST_INIT(&monitor_free_list);
+    monitor_tn_array_pos = 0;
 
     ret = (*real_pthread_key_create)(&monitor_pthread_key, NULL);
     if (ret != 0) {
@@ -294,7 +305,7 @@ monitor_thread_list_init(void)
 void
 monitor_reset_thread_list(struct monitor_thread_node *main_tn)
 {
-    struct monitor_thread_node *tn, *tn2;
+    struct monitor_thread_node *tn;
 
     if (! monitor_has_used_threads)
 	return;
@@ -316,35 +327,57 @@ monitor_reset_thread_list(struct monitor_thread_node *main_tn)
 	main_tn->tn_is_main = 1;
     }
     /*
-     * Free the thread list and the pthread key.
+     * Free the thread list and the pthread key.  Technically, this
+     * could leak memory, but only if the process spawns more than 150
+     * threads before fork()ing.
      */
-    tn = LIST_FIRST(&monitor_thread_list);
-    while (tn != NULL) {
-	tn2 = LIST_NEXT(tn, tn_links);
-	free(tn);
-	tn = tn2;
-    }
+    LIST_INIT(&monitor_thread_list);
+    LIST_INIT(&monitor_free_list);
+    monitor_tn_array_pos = 0;
     if ((*real_pthread_key_delete)(monitor_pthread_key) != 0) {
 	MONITOR_WARN1("pthread_key_delete failed\n");
     }	
     monitor_has_used_threads = 0;
 }
 
+/*
+ *  Try in order: (1) the free list, (2) the pre-allocated tn array,
+ *  (3) malloc a new tn array.
+ */
 static struct monitor_thread_node *
 monitor_make_thread_node(void)
 {
     struct monitor_thread_node *tn;
 
-    tn = malloc(sizeof(struct monitor_thread_node));
-    if (tn == NULL) {
-	MONITOR_ERROR1("unable to malloc thread node\n");
+    MONITOR_THREAD_LOCK;
+
+    tn = LIST_FIRST(&monitor_free_list);
+    if (tn != NULL) {
+	/* Use the head of the free list. */
+	LIST_REMOVE(tn, tn_links);
     }
+    else if (monitor_tn_array_pos < MONITOR_TN_ARRAY_SIZE) {
+	/* Use the next element in the tn array. */
+	tn = &monitor_tn_array[monitor_tn_array_pos];
+	monitor_tn_array_pos++;
+    }
+    else {
+	/* Malloc a new tn array. */
+	MONITOR_GET_REAL_NAME(real_malloc, malloc);
+	monitor_tn_array =
+	    (*real_malloc)(MONITOR_TN_ARRAY_SIZE * sizeof(struct monitor_thread_node));
+	if (monitor_tn_array == NULL) {
+	    MONITOR_ERROR1("malloc failed\n");
+	}
+	tn = &monitor_tn_array[0];
+	monitor_tn_array_pos = 1;
+    }
+
     memset(tn, 0, sizeof(struct monitor_thread_node));
     tn->tn_magic = MONITOR_TN_MAGIC;
-    MONITOR_THREAD_LOCK;
     tn->tn_tid = ++monitor_thread_num;
-    MONITOR_THREAD_UNLOCK;
 
+    MONITOR_THREAD_UNLOCK;
     return (tn);
 }
 
@@ -356,11 +389,13 @@ static int
 monitor_link_thread_node(struct monitor_thread_node *tn)
 {
     MONITOR_THREAD_LOCK;
+
     if (monitor_in_exit_cleanup) {
 	MONITOR_THREAD_UNLOCK;
 	return (1);
     }
     LIST_INSERT_HEAD(&monitor_thread_list, tn, tn_links);
+
     MONITOR_THREAD_UNLOCK;
     return (0);
 }
@@ -369,7 +404,6 @@ static void
 monitor_unlink_thread_node(struct monitor_thread_node *tn)
 {
     MONITOR_THREAD_LOCK;
-
     /*
      * Don't delete the thread node if in exit cleanup, just mark the
      * node as finished.
@@ -379,9 +413,8 @@ monitor_unlink_thread_node(struct monitor_thread_node *tn)
     else {
 	LIST_REMOVE(tn, tn_links);
 	memset(tn, 0, sizeof(struct monitor_thread_node));
-	free(tn);
+	LIST_INSERT_HEAD(&monitor_free_list, tn, tn_links);
     }
-
     MONITOR_THREAD_UNLOCK;
 }
 
@@ -484,7 +517,7 @@ monitor_thread_shootdown(void)
 	     tn != NULL;
 	     tn = LIST_NEXT(tn, tn_links)) {
 
-	     if (PTHREAD_EQUAL(self, tn->tn_self)) {
+	    if (PTHREAD_EQUAL(self, tn->tn_self)) {
 		my_tn = tn;
 		continue;
 	    }
