@@ -12349,7 +12349,7 @@ cat >>confdefs.h <<\_ACEOF
 #define MONITOR_USE_PTHREADS 1
 _ACEOF
 
-    wrap_list="${wrap_list} pthread_create"
+    wrap_list="${wrap_list} pthread_create pthread_exit"
     #
     # See if pthread_equal and pthread_cleanup_push/pop are macros or
     # library functions.

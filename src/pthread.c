@@ -36,6 +36,7 @@
  *  Override functions:
  *
  *    pthread_create
+ *    pthread_exit
  *    pthread_sigmask
  *
  *  Support functions:
@@ -108,6 +109,7 @@ typedef int   pthread_attr_init_fcn_t(pthread_attr_t *);
 typedef int   pthread_attr_getstacksize_fcn_t(const pthread_attr_t *, size_t *);
 typedef int   pthread_attr_setstacksize_fcn_t(pthread_attr_t *, size_t);
 typedef int   pthread_equal_fcn_t(pthread_t, pthread_t);
+typedef void  pthread_exit_fcn_t(void *);
 typedef int   pthread_key_create_fcn_t(pthread_key_t *, void (*)(void *));
 typedef int   pthread_key_delete_fcn_t(pthread_key_t);
 typedef int   pthread_kill_fcn_t(pthread_t, int);
@@ -124,6 +126,7 @@ typedef void *malloc_fcn_t(size_t);
 
 #ifdef MONITOR_STATIC
 extern pthread_create_fcn_t  __real_pthread_create;
+extern pthread_exit_fcn_t    __real_pthread_exit;
 #ifdef MONITOR_USE_SIGNALS
 extern sigaction_fcn_t    __real_sigaction;
 extern sigprocmask_fcn_t  __real_pthread_sigmask;
@@ -135,7 +138,8 @@ static pthread_attr_init_fcn_t  *real_pthread_attr_init;
 static pthread_attr_init_fcn_t  *real_pthread_attr_destroy;
 static pthread_attr_getstacksize_fcn_t  *real_pthread_attr_getstacksize;
 static pthread_attr_setstacksize_fcn_t  *real_pthread_attr_setstacksize;
-static pthread_equal_fcn_t   *real_pthread_equal;
+static pthread_equal_fcn_t  *real_pthread_equal;
+static pthread_exit_fcn_t   *real_pthread_exit;
 static pthread_key_create_fcn_t   *real_pthread_key_create;
 static pthread_key_delete_fcn_t   *real_pthread_key_delete;
 static pthread_kill_fcn_t  *real_pthread_kill;
@@ -937,6 +941,29 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
     }
 
     return (ret);
+}
+
+/*
+ *  Pthread_exit() from the main thread exits the process, and this
+ *  bypasses our other exit-catching methods, so we have to override
+ *  it here.
+ */
+void
+MONITOR_WRAP_NAME(pthread_exit)(void *data)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    if (tn == NULL || tn->tn_is_main) {
+	MONITOR_DEBUG1("pthread_exit called from main thread\n");
+	monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
+    }
+
+    MONITOR_GET_REAL_NAME_WRAP(real_pthread_exit, pthread_exit);
+    (*real_pthread_exit)(data);
+
+    /* Never reached, but silence a compiler warning. */
+    exit(0);
 }
 
 /*

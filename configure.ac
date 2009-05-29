@@ -235,7 +235,7 @@ fi
 if test "x$enable_pthreads" = xyes ; then
     AC_DEFINE([MONITOR_USE_PTHREADS], [1],
 	[Include support for pthreads.])
-    wrap_list="${wrap_list} pthread_create"
+    wrap_list="${wrap_list} pthread_create pthread_exit"
     #
     # See if pthread_equal and pthread_cleanup_push/pop are macros or
     # library functions.
