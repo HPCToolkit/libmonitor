@@ -288,7 +288,7 @@ monitor_thread_list_init(void)
     if (main_tn == NULL || main_tn->tn_magic != MONITOR_TN_MAGIC) {
 	MONITOR_ERROR1("monitor_get_main_tn failed\n");
     }
-    main_tn->tn_self = pthread_self();
+    main_tn->tn_self = (*real_pthread_self)();
     ret = (*real_pthread_setspecific)(monitor_pthread_key, main_tn);
     if (ret != 0) {
 	MONITOR_ERROR("pthread_setspecific failed (%d)\n", ret);
