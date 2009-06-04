@@ -23,7 +23,7 @@ MONITOR_WRAP_NAME(mpi_finalize)(int *ierror)
     MONITOR_GET_REAL_NAME_WRAP(real_mpi_finalize, mpi_finalize);
     count = monitor_mpi_fini_count(1);
     if (count == 1) {
-	MONITOR_DEBUG("calling monitor_fini_mpi(), size = %d, rank = %d, ...\n",
+	MONITOR_DEBUG("calling monitor_fini_mpi(), size = %d, rank = %d ...\n",
 		      monitor_mpi_comm_size(), monitor_mpi_comm_rank());
 	monitor_fini_mpi();
     }
