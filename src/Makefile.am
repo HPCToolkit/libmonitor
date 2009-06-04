@@ -65,7 +65,7 @@ if MONITOR_TEST_USE_SIGNALS
     libmonitor_la_SOURCES += signal.c
 endif
 if MONITOR_TEST_USE_MPI
-    libmonitor_la_SOURCES += $(MONITOR_MPI_FILES)
+    libmonitor_la_SOURCES += $(MONITOR_MPI_FILES) pmpi.c
 endif
 endif
 
