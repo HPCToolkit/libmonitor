@@ -73,17 +73,28 @@ int monitor_debug = 0;
  *----------------------------------------------------------------------
  */
 
-#define START_MAIN_PARAM_LIST 			\
-    int (*main) (int, char **, char **),	\
-    int argc,					\
-    char **argv,				\
-    void (*init) (void),			\
-    void (*fini) (void),			\
-    void (*rtld_fini) (void),			\
+#ifdef MONITOR_START_MAIN_PPC
+#define START_MAIN_PARAM_LIST 		\
+    int  argc,				\
+    char **argv,			\
+    char **envp,			\
+    void *auxp,				\
+    void (*rtld_fini)(void),		\
+    void **stinfo,			\
     void *stack_end
 
-#define START_MAIN_ARG_LIST  \
-    main, argc, argv, init, fini, rtld_fini, stack_end
+static void *new_stinfo[4];
+
+#else  /* default __libc_start_main() args */
+#define START_MAIN_PARAM_LIST 			\
+    int  (*main)(int, char **, char **),	\
+    int  argc,					\
+    char **argv,				\
+    void (*init)(void),				\
+    void (*fini)(void),				\
+    void (*rtld_fini)(void),			\
+    void *stack_end
+#endif
 
 typedef int start_main_fcn_t(START_MAIN_PARAM_LIST);
 typedef int main_fcn_t(int, char **, char **);
@@ -433,10 +444,22 @@ int
 __libc_start_main(START_MAIN_PARAM_LIST)
 {
     MONITOR_DEBUG1("\n");
+    MONITOR_REQUIRE_DLSYM(real_start_main, "__libc_start_main");
+
+#ifdef MONITOR_START_MAIN_PPC
+    real_main = stinfo[1];
+    memcpy(new_stinfo, stinfo, sizeof(new_stinfo));
+    new_stinfo[1] = &monitor_main;
+
+    (*real_start_main)(argc, argv, envp, auxp, rtld_fini,
+		       new_stinfo, stack_end);
+
+#else
     real_main = main;
 
     (*real_start_main)(monitor_main, argc, argv, init, fini,
 		       rtld_fini, stack_end);
+#endif
 
     /* Never reached. */
     return (0);

@@ -933,6 +933,7 @@ enable_fork
 enable_mpi
 enable_pthreads
 enable_signals
+enable_start_main
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1594,6 +1595,8 @@ Optional Features:
   --enable-mpi            include support for MPI [default=yes]
   --enable-pthreads       include support for pthreads [default=yes]
   --enable-signals        include support for signals [default=yes]
+  --enable-start-main=TYPE
+                          type of __libc_start_main function (ppc, x86)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4674,13 +4677,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4677: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4680: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4680: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4683: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4683: output\"" >&5)
+  (eval echo "\"\$as_me:4686: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5886,7 +5889,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5889 "configure"' > conftest.$ac_ext
+  echo '#line 5892 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7739,11 +7742,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7742: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7745: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7746: \$? = $ac_status" >&5
+   echo "$as_me:7749: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8078,11 +8081,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8081: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8084: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8085: \$? = $ac_status" >&5
+   echo "$as_me:8088: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8183,11 +8186,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8186: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8189: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8190: \$? = $ac_status" >&5
+   echo "$as_me:8193: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8238,11 +8241,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8241: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8244: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8245: \$? = $ac_status" >&5
+   echo "$as_me:8248: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11038,7 +11041,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11041 "configure"
+#line 11044 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11134,7 +11137,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11137 "configure"
+#line 11140 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11580,6 +11583,16 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 wrap_list="main exit _exit"
 
+
+#------------------------------------------------------------
+# CPU type
+#------------------------------------------------------------
+
+case "$host_cpu" in
+    *[pP][pP][cC]* | *[pP][oO][wW][eE][rR][pP][cC]* )
+	host_cpu_ppc=yes
+	;;
+esac
 
 #
 # Find the svn revision.
@@ -12634,6 +12647,43 @@ fi
 if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
     wrap_list="${wrap_list} pthread_sigmask"
 fi
+
+#------------------------------------------------------------
+# Option: --enable-start-main=TYPE
+#------------------------------------------------------------
+
+{ $as_echo "$as_me:$LINENO: checking type of __libc_start_main function" >&5
+$as_echo_n "checking type of __libc_start_main function... " >&6; }
+# Check whether --enable-start-main was given.
+if test "${enable_start_main+set}" = set; then
+  enableval=$enable_start_main;
+else
+  enable_start_main=x86
+     if test "x$host_cpu_ppc" = xyes ; then
+	 enable_start_main=ppc
+     fi
+fi
+
+
+case "$enable_start_main" in
+    ppc )
+
+cat >>confdefs.h <<\_ACEOF
+#define MONITOR_START_MAIN_PPC 1
+_ACEOF
+
+	;;
+    x86 )
+	;;
+    * )
+	{ { $as_echo "$as_me:$LINENO: error: invalid start main type (ppc or x86): $enable_start_main" >&5
+$as_echo "$as_me: error: invalid start main type (ppc or x86): $enable_start_main" >&2;}
+   { (exit 1); exit 1; }; }
+	;;
+esac
+
+{ $as_echo "$as_me:$LINENO: result: $enable_start_main" >&5
+$as_echo "$enable_start_main" >&6; }
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -15080,3 +15130,5 @@ $as_echo "$as_me: enable mpi: $enable_mpi" >&6;}
 $as_echo "$as_me: enable pthreads: $enable_pthreads" >&6;}
 { $as_echo "$as_me:$LINENO: enable signals: $enable_signals" >&5
 $as_echo "$as_me: enable signals: $enable_signals" >&6;}
+{ $as_echo "$as_me:$LINENO: start main type: $enable_start_main" >&5
+$as_echo "$as_me: start main type: $enable_start_main" >&6;}

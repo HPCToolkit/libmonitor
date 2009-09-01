@@ -43,6 +43,9 @@
 /* pthread_equal is a function, not a macro. */
 #undef MONITOR_PTHREAD_EQUAL_IS_FCN
 
+/* Libc start main type is ppc. */
+#undef MONITOR_START_MAIN_PPC
+
 /* Include support for dlopen. */
 #undef MONITOR_USE_DLOPEN
 
