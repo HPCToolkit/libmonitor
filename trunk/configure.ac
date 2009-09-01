@@ -65,6 +65,16 @@ AC_CANONICAL_HOST
 
 AC_SUBST([wrap_list], ["main exit _exit"])
 
+#------------------------------------------------------------
+# CPU type
+#------------------------------------------------------------
+
+case "$host_cpu" in
+    [*[pP][pP][cC]*] | [*[pP][oO][wW][eE][rR][pP][cC]*] )
+	host_cpu_ppc=yes
+	;;
+esac
+
 #
 # Find the svn revision.
 #
@@ -276,6 +286,34 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
     wrap_list="${wrap_list} pthread_sigmask"
 fi
 
+#------------------------------------------------------------
+# Option: --enable-start-main=TYPE
+#------------------------------------------------------------
+
+AC_MSG_CHECKING([type of __libc_start_main function])
+AC_ARG_ENABLE([start-main],
+    [AS_HELP_STRING([--enable-start-main=TYPE],
+        [type of __libc_start_main function (ppc, x86)])],
+    [],
+    [enable_start_main=x86
+     if test "x$host_cpu_ppc" = xyes ; then
+	 enable_start_main=ppc
+     fi])
+
+case "$enable_start_main" in
+    ppc )
+	AC_DEFINE([MONITOR_START_MAIN_PPC], [1],
+	    [Libc start main type is ppc.])
+	;;
+    x86 )
+	;;
+    * )
+	AC_MSG_ERROR([invalid start main type (ppc or x86): $enable_start_main])
+	;;
+esac
+
+AC_MSG_RESULT([$enable_start_main])
+
 AC_OUTPUT
 
 #
@@ -297,3 +335,4 @@ AC_MSG_NOTICE([enable fork: $enable_fork])
 AC_MSG_NOTICE([enable mpi: $enable_mpi])
 AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
 AC_MSG_NOTICE([enable signals: $enable_signals])
+AC_MSG_NOTICE([start main type: $enable_start_main])
