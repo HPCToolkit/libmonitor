@@ -1,7 +1,7 @@
 /*
  *  Libmonitor dlopen functions.
  *
- *  Copyright (c) 2007-2008, Rice University.
+ *  Copyright (c) 2007-2009, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -79,9 +79,14 @@ static dlclose_fcn_t  *real_dlclose = NULL;
 static void
 monitor_dlopen_init(void)
 {
-    MONITOR_RUN_ONCE(dlopen_init);
+    static int init_done = 0;
+
+    if (init_done)
+	return;
+
     MONITOR_GET_REAL_NAME_WRAP(real_dlopen, dlopen);
     MONITOR_GET_REAL_NAME_WRAP(real_dlclose, dlclose);
+    init_done = 1;
 }
 
 /*
