@@ -106,7 +106,10 @@ static malloc_fcn_t  *real_malloc = NULL;
 static void
 monitor_fork_init(void)
 {
-    MONITOR_RUN_ONCE(fork_init);
+    static int init_done = 0;
+
+    if (init_done)
+	return;
 
     monitor_early_init();
     MONITOR_GET_REAL_NAME_WRAP(real_fork, fork);
@@ -115,6 +118,7 @@ monitor_fork_init(void)
     MONITOR_GET_REAL_NAME_WRAP(real_execve, execve);
     MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
     MONITOR_GET_REAL_NAME_WRAP(real_sigprocmask, sigprocmask);
+    init_done = 1;
 }
 
 /*
