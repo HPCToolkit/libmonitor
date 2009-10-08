@@ -263,16 +263,21 @@ monitor_begin_process_fcn(void *user_data, int is_fork)
 void
 monitor_end_process_fcn(int how)
 {
-    if (monitor_end_process_race()) {
+    int ans = monitor_end_process_race();
+
+    if (ans == EXIT_RACE_WIN) {
 	monitor_thread_shootdown();
 	MONITOR_DEBUG("calling monitor_fini_process(how = %d) ...\n", how);
 	monitor_fini_process(how, monitor_main_tn.tn_user_data);
-	monitor_fini_process_done = 1;
-    } else {
+    }
+    else if (ans == EXIT_RACE_LOSE) {
 	while (! monitor_fini_process_done)
 	    usleep(MONITOR_POLL_USLEEP_TIME);
 	sleep(2);
     }
+    /* EXIT_RACE_REPEAT passes straight through. */
+
+    monitor_fini_process_done = 1;
     MONITOR_DEBUG1("resume system exit\n");
 }
 
@@ -652,11 +657,15 @@ monitor_thread_shootdown(void)
     return;
 }
 
+/*
+ *  The weak version here is always single threaded.
+ */
 int __attribute__ ((weak))
 monitor_end_process_race(void)
 {
-    int ans = !monitor_fini_process_cookie;
+    int ans;
 
+    ans = monitor_fini_process_cookie ? EXIT_RACE_REPEAT : EXIT_RACE_WIN;
     monitor_fini_process_cookie = 1;
     MONITOR_DEBUG("(weak) ans = %d\n", ans);
     return (ans);
