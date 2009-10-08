@@ -1,7 +1,7 @@
 /*
  *  Internal shared declarations.
  *
- *  Copyright (c) 2007-2008, Rice University.
+ *  Copyright (c) 2007-2009, Rice University.
  *  All rights reserved.
  *  
  *  Redistribution and use in source and binary forms, with or without
@@ -70,6 +70,8 @@
 #define FAILURE  -1
 
 #define MONITOR_POLL_USLEEP_TIME  100000
+
+enum { EXIT_RACE_WIN = 1, EXIT_RACE_LOSE, EXIT_RACE_REPEAT };
 
 /*
  *  Format (fmt) must be a string constant in these macros.  Some

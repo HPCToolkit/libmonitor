@@ -1,7 +1,7 @@
 /*
  *  Shared thread declarations.
  *
- *  Copyright (c) 2008, Rice University.
+ *  Copyright (c) 2008-2009, Rice University.
  *  All rights reserved.
  *  
  *  Redistribution and use in source and binary forms, with or without
@@ -66,6 +66,7 @@ struct monitor_thread_node {
     char   tn_appl_started;
     char   tn_fini_started;
     char   tn_fini_done;
+    char   tn_exit_win;
 };
 
 struct monitor_thread_node *monitor_get_main_tn(void);

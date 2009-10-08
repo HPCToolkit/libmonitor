@@ -311,6 +311,7 @@ monitor_reset_thread_list(struct monitor_thread_node *main_tn)
 {
     struct monitor_thread_node *tn;
 
+    monitor_end_process_cookie = 0;
     if (! monitor_has_used_threads)
 	return;
 
@@ -560,18 +561,30 @@ monitor_thread_shootdown(void)
  *  possible for a single thread to get here multiple times, even in a
  *  non-threaded program.
  *
- *  Returns: 1 if this thread wins the race, else 0.
+ *  Returns: EXIT_RACE_WIN, _LOSE or _REPEAT.
  */
 int
 monitor_end_process_race(void)
 {
+    struct monitor_thread_node *tn;
     int ans;
 
     if (monitor_has_used_threads) {
 	MONITOR_THREAD_LOCK;
     }
-    ans = !monitor_end_process_cookie;
+    tn = monitor_get_tn();
+    if (! monitor_end_process_cookie) {
+	ans = EXIT_RACE_WIN;
+	tn->tn_exit_win = 1;
+    }
+    else if (tn->tn_exit_win) {
+	ans = EXIT_RACE_REPEAT;
+    }
+    else {
+	ans = EXIT_RACE_LOSE;
+    }
     monitor_end_process_cookie = 1;
+
     if (monitor_has_used_threads) {
 	MONITOR_THREAD_UNLOCK;
     }
