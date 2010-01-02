@@ -9,7 +9,7 @@
 # This configure script is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 #
-# libmonitor is Copyright (c) 2007-2009, Rice University.
+# libmonitor is Copyright (c) 2007-2010, Rice University.
 # See the file LICENSE for details.
 ## --------------------- ##
 ## M4sh Initialization.  ##
@@ -1689,7 +1689,7 @@ Copyright (C) 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
 This configure script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it.
 
-libmonitor is Copyright (c) 2007-2009, Rice University.
+libmonitor is Copyright (c) 2007-2010, Rice University.
 See the file LICENSE for details.
 _ACEOF
   exit
@@ -11594,6 +11594,117 @@ case "$host_cpu" in
 	;;
 esac
 
+#------------------------------------------------------------
+# CFLAGS and Fence Labels
+#------------------------------------------------------------
+
+# On ia64, gcc at -O2 or higher will duplicate code after a branch to
+# make long pipelines.  This breaks our fence labels because it
+# duplicates the symbol.  Here, we test for this and try lowering the
+# optimization level if needed.
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+orig_cflags="$CFLAGS"
+cflags_noopt=
+warn_cflags_opt=no
+
+for opt in $CFLAGS
+do
+    case "$opt" in
+	-O* ) ;;
+	* ) cflags_noopt="$cflags_noopt $opt" ;;
+    esac
+done
+
+for opt in orig -O1 none fail
+do
+    case "$opt" in
+	orig )
+	    CFLAGS="$orig_cflags"
+	    warn_cflags_opt=no
+	    ;;
+	none )
+	    CFLAGS="$cflags_noopt"
+	    warn_cflags_opt=yes
+	    ;;
+	fail )
+	    { { $as_echo "$as_me:$LINENO: error: unable to find CFLAGS that work with asm fence labels" >&5
+$as_echo "$as_me: error: unable to find CFLAGS that work with asm fence labels" >&2;}
+   { (exit 1); exit 1; }; }
+	    ;;
+	* )
+	    CFLAGS="$cflags_noopt $opt"
+	    warn_cflags_opt=yes
+	    ;;
+    esac
+
+    { $as_echo "$as_me:$LINENO: checking if asm fence labels work with CFLAGS='$CFLAGS'" >&5
+$as_echo_n "checking if asm fence labels work with CFLAGS='$CFLAGS'... " >&6; }
+
+    cat >conftest.$ac_ext <<_ACEOF
+
+extern void fence;
+int baz(void);
+int foo(int x)
+{
+  int ret = 0;
+  if (x != 0) {
+    ret = baz();
+  }
+  asm (".globl fence");
+  asm ("fence:");
+  return ret;
+}
+
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ans=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ans=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+    { $as_echo "$as_me:$LINENO: result: $ans" >&5
+$as_echo "$ans" >&6; }
+    if test "$ans" = yes ; then
+	break
+    fi
+done
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
 #
 # Find the svn revision.
 #
@@ -15095,19 +15206,28 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-#
+#------------------------------------------------------------
 # Display a summary of the config options.
-#
+#------------------------------------------------------------
+
 { $as_echo "$as_me:$LINENO: -------------------" >&5
 $as_echo "$as_me: -------------------" >&6;}
 { $as_echo "$as_me:$LINENO: Libmonitor summary" >&5
 $as_echo "$as_me: Libmonitor summary" >&6;}
 { $as_echo "$as_me:$LINENO: -------------------" >&5
 $as_echo "$as_me: -------------------" >&6;}
-{ $as_echo "$as_me:$LINENO: prefix: $prefix" >&5
-$as_echo "$as_me: prefix: $prefix" >&6;}
+
+if test "$warn_cflags_opt" = yes ; then
+    { $as_echo "$as_me:$LINENO: WARNING: Modified -O flags in CFLAGS to support asm fence labels." >&5
+$as_echo "$as_me: WARNING: Modified -O flags in CFLAGS to support asm fence labels." >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: Probably the compiler is duplicating code on ia64." >&5
+$as_echo "$as_me: WARNING: Probably the compiler is duplicating code on ia64." >&2;}
+fi
+
 { $as_echo "$as_me:$LINENO: svn revision: $svn_revision" >&5
 $as_echo "$as_me: svn revision: $svn_revision" >&6;}
+{ $as_echo "$as_me:$LINENO: prefix: $prefix" >&5
+$as_echo "$as_me: prefix: $prefix" >&6;}
 { $as_echo "$as_me:$LINENO: build: $build" >&5
 $as_echo "$as_me: build: $build" >&6;}
 { $as_echo "$as_me:$LINENO: host:  $host" >&5
