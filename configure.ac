@@ -1,7 +1,7 @@
 dnl
 dnl  Libmonitor top-level configure.ac.
 dnl
-dnl  Copyright (c) 2007-2009, Rice University.
+dnl  Copyright (c) 2007-2010, Rice University.
 dnl  All rights reserved.
 dnl
 dnl  Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ dnl  $Id$
 dnl
 
 AC_INIT([libmonitor], [0.x], [hpc@cs.rice.edu])
-AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2009, Rice University.
+AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2010, Rice University.
 See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
@@ -74,6 +74,74 @@ case "$host_cpu" in
 	host_cpu_ppc=yes
 	;;
 esac
+
+#------------------------------------------------------------
+# CFLAGS and Fence Labels
+#------------------------------------------------------------
+
+# On ia64, gcc at -O2 or higher will duplicate code after a branch to
+# make long pipelines.  This breaks our fence labels because it
+# duplicates the symbol.  Here, we test for this and try lowering the
+# optimization level if needed.
+
+AC_LANG_PUSH([C])
+
+orig_cflags="$CFLAGS"
+cflags_noopt=
+warn_cflags_opt=no
+
+for opt in $CFLAGS
+do
+    case "$opt" in
+	-O* ) ;;
+	* ) cflags_noopt="$cflags_noopt $opt" ;;
+    esac
+done
+
+for opt in orig -O1 none fail
+do
+    case "$opt" in
+	orig )
+	    CFLAGS="$orig_cflags"
+	    warn_cflags_opt=no
+	    ;;
+	none )
+	    CFLAGS="$cflags_noopt"
+	    warn_cflags_opt=yes
+	    ;;
+	fail )
+	    AC_MSG_ERROR([unable to find CFLAGS that work with asm fence labels])
+	    ;;
+	* )
+	    CFLAGS="$cflags_noopt $opt"
+	    warn_cflags_opt=yes
+	    ;;
+    esac
+
+    AC_MSG_CHECKING([if asm fence labels work with CFLAGS='$CFLAGS'])
+
+    AC_COMPILE_IFELSE([
+extern void fence;
+int baz(void);
+int foo(int x)
+{
+  int ret = 0;
+  if (x != 0) {
+    ret = baz();
+  }
+  asm (".globl fence");
+  asm ("fence:");
+  return ret;
+}
+], [ans=yes], [ans=no])
+
+    AC_MSG_RESULT([$ans])
+    if test "$ans" = yes ; then
+	break
+    fi
+done
+
+AC_LANG_POP
 
 #
 # Find the svn revision.
@@ -316,14 +384,21 @@ AC_MSG_RESULT([$enable_start_main])
 
 AC_OUTPUT
 
-#
+#------------------------------------------------------------
 # Display a summary of the config options.
-#
+#------------------------------------------------------------
+
 AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([Libmonitor summary])
 AC_MSG_NOTICE([-------------------])
-AC_MSG_NOTICE([prefix: $prefix])
+
+if test "$warn_cflags_opt" = yes ; then
+    AC_MSG_WARN([Modified -O flags in CFLAGS to support asm fence labels.])
+    AC_MSG_WARN([Probably the compiler is duplicating code on ia64.])
+fi
+
 AC_MSG_NOTICE([svn revision: $svn_revision])
+AC_MSG_NOTICE([prefix: $prefix])
 AC_MSG_NOTICE([build: $build])
 AC_MSG_NOTICE([host:  $host])
 AC_MSG_NOTICE([CC CFLAGS: $CC $CFLAGS])
