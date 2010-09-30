@@ -1,7 +1,7 @@
 /*
  *  Include file for libmonitor clients.
  *
- *  Copyright (c) 2007-2009, Rice University.
+ *  Copyright (c) 2007-2010, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -96,6 +96,7 @@ extern int monitor_in_start_func_wide(void *addr);
 extern int monitor_in_start_func_narrow(void *addr);
 extern int monitor_unwind_process_bottom_frame(void *addr);
 extern int monitor_unwind_thread_bottom_frame(void *addr);
+extern void monitor_set_size_rank(int, int);
 extern int monitor_mpi_comm_size(void);
 extern int monitor_mpi_comm_rank(void);
 

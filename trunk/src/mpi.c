@@ -1,7 +1,7 @@
 /*
  *  Libmonitor common MPI functions.
  *
- *  Copyright (c) 2008-2009, Rice University.
+ *  Copyright (c) 2008-2010, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -77,6 +77,28 @@ monitor_mpi_fini_count(int inc)
 }
 
 /*
+ *  Allow the client to publish its own size and rank.  This is useful
+ *  for parallel applications that are not based on MPI, eg: Gasnet
+ *  and Rice Coarray Fortran.  If called more than once, the first one
+ *  wins (ensures consistent answers).
+ *
+ *  FIXME: this interface may be subject to change (it shouldn't be
+ *  mixed with MPI).
+ */
+void
+monitor_set_size_rank(int size, int rank)
+{
+    static int first = 1;
+
+    if (first) {
+	MONITOR_DEBUG("setting size = %d, rank = %d\n", size, rank);
+	mpi_size = size;
+	mpi_rank = rank;
+	first = 0;
+    }
+}
+
+/*
  *  Set in the C or Fortran MPI_Comm_rank() override function.
  *
  *  Note: we depend on the application using MPI_COMM_WORLD before any
@@ -91,9 +113,7 @@ monitor_set_mpi_size_rank(int size, int rank)
     static int first = 1;
 
     if (first && mpi_init_count == 0 && max_init_count > 0) {
-	MONITOR_DEBUG("setting size = %d, rank = %d\n", size, rank);
-	mpi_size = size;
-	mpi_rank = rank;
+	monitor_set_size_rank(size, rank);
 	first = 0;
     }
 }
