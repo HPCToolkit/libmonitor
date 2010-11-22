@@ -842,7 +842,7 @@ monitor_begin_thread(void *arg)
  *  and whether we need to destroy the attr object.  If anything goes
  *  wrong, use the original attributes and hope for the best.
  */
-static pthread_attr_t *
+pthread_attr_t *
 monitor_adjust_stack_size(pthread_attr_t *orig_attr,
 			  pthread_attr_t *default_attr,
 			  int *restore, int *destroy, size_t *old_size)
