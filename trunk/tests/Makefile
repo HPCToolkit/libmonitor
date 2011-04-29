@@ -11,9 +11,12 @@
 CC = gcc
 CFLAGS = -g -O -Wall
 
-PROGRAMS = emain exit thread_fork
+PROGRAMS = cancel emain exit thread_fork
 
 all: $(PROGRAMS)
+
+cancel: cancel.c
+	$(CC) -o $@ $(CFLAGS) $< -lpthread
 
 emain: emain.c libearly.so
 	$(CC) -o $@ $(CFLAGS) $< -L. -learly
