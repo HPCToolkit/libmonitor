@@ -380,7 +380,7 @@ monitor_make_thread_node(void)
 
     memset(tn, 0, sizeof(struct monitor_thread_node));
     tn->tn_magic = MONITOR_TN_MAGIC;
-    tn->tn_tid = ++monitor_thread_num;
+    tn->tn_tid = -1;
 
     MONITOR_THREAD_UNLOCK;
     return (tn);
@@ -399,6 +399,7 @@ monitor_link_thread_node(struct monitor_thread_node *tn)
 	MONITOR_THREAD_UNLOCK;
 	return (1);
     }
+    tn->tn_tid = ++monitor_thread_num;
     LIST_INSERT_HEAD(&monitor_thread_list, tn, tn_links);
 
     MONITOR_THREAD_UNLOCK;
@@ -501,7 +502,7 @@ monitor_thread_shootdown(void)
     sigemptyset(&empty_set);
     my_action.sa_handler = monitor_thread_signal_handler;
     my_action.sa_mask = empty_set;
-    my_action.sa_flags = 0;
+    my_action.sa_flags = SA_RESTART;
     if ((*real_sigaction)(MONITOR_EXIT_CLEANUP_SIGNAL,
 			  &my_action, NULL) != 0) {
 	MONITOR_ERROR1("sigaction failed\n");
@@ -529,7 +530,7 @@ monitor_thread_shootdown(void)
 	    if (tn->tn_appl_started && !tn->tn_fini_started)
 		(*real_pthread_kill)(tn->tn_self, MONITOR_EXIT_CLEANUP_SIGNAL);
 
-	    if (! tn->tn_fini_done)
+	    if (tn->tn_appl_started && !tn->tn_fini_done)
 		num_unfinished++;
 	}
 	MONITOR_DEBUG("waiting on %d threads to finish\n", num_unfinished);
@@ -782,7 +783,6 @@ monitor_begin_thread(void *arg)
     void *ret;
 
     MONITOR_ASM_LABEL(monitor_thread_fence1);
-    MONITOR_DEBUG("tid = %d\n", tn->tn_tid);
 
     /*
      * Don't create any new threads after someone has called exit().
@@ -798,6 +798,8 @@ monitor_begin_thread(void *arg)
     if ((*real_pthread_setspecific)(monitor_pthread_key, tn) != 0) {
 	MONITOR_ERROR1("pthread_setspecific failed\n");
     }
+    MONITOR_DEBUG("tid = %d, start_routine = %p\n",
+		  tn->tn_tid, tn->tn_start_routine);
 
     /*
      * Wait for monitor_init_thread_support() to finish in the main
@@ -916,7 +918,8 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
     tn = monitor_make_thread_node();
     tn->tn_start_routine = start_routine;
     tn->tn_arg = arg;
-    MONITOR_DEBUG1("calling monitor_thread_pre_create() ...\n");
+    MONITOR_DEBUG("calling monitor_thread_pre_create(start_routine = %p) ...\n",
+		  start_routine);
     tn->tn_user_data = monitor_thread_pre_create();
 
     /*
@@ -935,8 +938,13 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
     if (destroy) {
 	(*real_pthread_attr_destroy)(&default_attr);
     }
+    if (ret != 0) {
+	MONITOR_DEBUG("real_pthread_create failed: start_routine = %p, ret = %d\n",
+		      start_routine, ret);
+    }
 
-    MONITOR_DEBUG1("calling monitor_thread_post_create() ...\n");
+    MONITOR_DEBUG("calling monitor_thread_post_create(start_routine = %p) ...\n",
+		  start_routine);
     monitor_thread_post_create(tn->tn_user_data);
 
     if (first) {
