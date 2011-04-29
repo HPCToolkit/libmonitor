@@ -1,7 +1,7 @@
 dnl
 dnl  Libmonitor top-level configure.ac.
 dnl
-dnl  Copyright (c) 2007-2010, Rice University.
+dnl  Copyright (c) 2007-2011, Rice University.
 dnl  All rights reserved.
 dnl
 dnl  Redistribution and use in source and binary forms, with or without
@@ -34,15 +34,15 @@ dnl
 dnl  $Id$
 dnl
 
-AC_INIT([libmonitor], [0.x], [hpc@cs.rice.edu])
-AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2010, Rice University.
+AC_INIT([libmonitor], [0.x], [hpctoolkit-forum@rice.edu])
+AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2011, Rice University.
 See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist])
 AM_MAINTAINER_MODE
-AC_PREREQ(2.63)
-AM_INIT_AUTOMAKE(1.10.2)
+AC_PREREQ(2.67)
+AM_INIT_AUTOMAKE(1.11.1)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
