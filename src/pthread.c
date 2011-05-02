@@ -414,9 +414,10 @@ monitor_unlink_thread_node(struct monitor_thread_node *tn)
      * Don't delete the thread node if in exit cleanup, just mark the
      * node as finished.
      */
-    if (monitor_in_exit_cleanup)
+    if (monitor_in_exit_cleanup) {
+	tn->tn_fini_started = 1;
 	tn->tn_fini_done = 1;
-    else {
+    } else {
 	LIST_REMOVE(tn, tn_links);
 	memset(tn, 0, sizeof(struct monitor_thread_node));
 	LIST_INSERT_HEAD(&monitor_free_list, tn, tn_links);
@@ -527,11 +528,13 @@ monitor_thread_shootdown(void)
 		my_tn = tn;
 		continue;
 	    }
-	    if (tn->tn_appl_started && !tn->tn_fini_started)
-		(*real_pthread_kill)(tn->tn_self, MONITOR_EXIT_CLEANUP_SIGNAL);
+	    if (tn->tn_appl_started) {
+		if (! tn->tn_fini_started)
+		    (*real_pthread_kill)(tn->tn_self, MONITOR_EXIT_CLEANUP_SIGNAL);
 
-	    if (tn->tn_appl_started && !tn->tn_fini_done)
-		num_unfinished++;
+		if (! tn->tn_fini_done)
+		    num_unfinished++;
+	    }
 	}
 	MONITOR_DEBUG("waiting on %d threads to finish\n", num_unfinished);
 	if (num_unfinished == 0)
@@ -760,14 +763,12 @@ monitor_pthread_cleanup_routine(void *arg)
 	return;
     }
 
-    if (! tn->tn_fini_started) {
+    if (tn->tn_appl_started && !tn->tn_fini_started) {
 	tn->tn_fini_started = 1;
 	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
 		      tn->tn_user_data, tn->tn_tid);
 	monitor_fini_thread(tn->tn_user_data);
 	tn->tn_fini_done = 1;
-    } else {
-	MONITOR_DEBUG("already called fini thread for tid = %d\n", tn->tn_tid);
     }
     monitor_unlink_thread_node(tn);
 }
@@ -783,23 +784,7 @@ monitor_begin_thread(void *arg)
     void *ret;
 
     MONITOR_ASM_LABEL(monitor_thread_fence1);
-
-    /*
-     * Don't create any new threads after someone has called exit().
-     */
-    if (monitor_link_thread_node(tn) != 0) {
-	MONITOR_WARN1("trying to create new thread during exit cleanup: "
-		      "thread not started\n");
-	return (NULL);
-    }
-    tn->tn_self = (*real_pthread_self)();
-    tn->tn_stack_bottom = alloca(8);
-    strncpy(tn->tn_stack_bottom, "stakbot", 8);
-    if ((*real_pthread_setspecific)(monitor_pthread_key, tn) != 0) {
-	MONITOR_ERROR1("pthread_setspecific failed\n");
-    }
-    MONITOR_DEBUG("tid = %d, start_routine = %p\n",
-		  tn->tn_tid, tn->tn_start_routine);
+    MONITOR_DEBUG1("\n");
 
     /*
      * Wait for monitor_init_thread_support() to finish in the main
@@ -815,11 +800,28 @@ monitor_begin_thread(void *arg)
     while (! monitor_thread_support_done)
 	usleep(MONITOR_POLL_USLEEP_TIME);
 
+    /*
+     * Don't create any new threads after someone has called exit().
+     */
+    tn->tn_self = (*real_pthread_self)();
+    tn->tn_stack_bottom = alloca(8);
+    strncpy(tn->tn_stack_bottom, "stakbot", 8);
+    if ((*real_pthread_setspecific)(monitor_pthread_key, tn) != 0) {
+	MONITOR_ERROR1("pthread_setspecific failed\n");
+    }
+    if (monitor_link_thread_node(tn) != 0) {
+	MONITOR_DEBUG1("warning: trying to create new thread during "
+		       "exit cleanup: thread not started\n");
+	return (NULL);
+    }
+
+    PTHREAD_CLEANUP_PUSH(monitor_pthread_cleanup_routine, tn);
+
+    MONITOR_DEBUG("tid = %d, start_routine = %p\n",
+		  tn->tn_tid, tn->tn_start_routine);
     MONITOR_DEBUG("calling monitor_init_thread(tid = %d, data = %p) ...\n",
 		  tn->tn_tid, tn->tn_user_data);
     tn->tn_user_data = monitor_init_thread(tn->tn_tid, tn->tn_user_data);
-
-    PTHREAD_CLEANUP_PUSH(monitor_pthread_cleanup_routine, tn);
 
     tn->tn_appl_started = 1;
     MONITOR_ASM_LABEL(monitor_thread_fence2);
@@ -895,20 +897,30 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
 {
     struct monitor_thread_node *tn;
     pthread_attr_t default_attr;
-    int first, ret, restore, destroy;
+    int ret, restore, destroy;
     size_t old_size;
+
+    MONITOR_DEBUG1("\n");
 
     /*
      * There is no race condition to get here first because until now,
      * there is only one thread.
      */
-    first = !monitor_has_used_threads;
-    if (first) {
+    if (! monitor_has_used_threads) {
 	monitor_thread_list_init();
 	monitor_has_used_threads = 1;
+	/*
+	 * Normally, we run thread_support here, on the first call to
+	 * pthread_create().  But if we're here early, before
+	 * libc_start_main, then defer thread_support until after
+	 * init_process in libc_start_main.
+	 */
+	if (monitor_has_reached_main) {
+	    monitor_call_thread_support();
+	} else {
+	    MONITOR_DEBUG1("deferring thread support\n");
+	}
     }
-
-    MONITOR_DEBUG1("\n");
 
     /*
      * Always launch the thread.  If we're in pthread_create() too
@@ -946,20 +958,6 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
     MONITOR_DEBUG("calling monitor_thread_post_create(start_routine = %p) ...\n",
 		  start_routine);
     monitor_thread_post_create(tn->tn_user_data);
-
-    if (first) {
-	/*
-	 * Normally, we run thread_support here, on the first call to
-	 * pthread_create().  But if we're here early, before
-	 * libc_start_main, then defer thread_support until after
-	 * init_process in libc_start_main.
-	 */
-	if (monitor_has_reached_main) {
-	    monitor_call_thread_support();
-	} else {
-	    MONITOR_DEBUG1("deferring thread support\n");
-	}
-    }
 
     return (ret);
 }
