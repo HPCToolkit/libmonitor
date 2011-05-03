@@ -52,6 +52,7 @@
  */
 
 #include "config.h"
+#include <sys/time.h>
 #include <sys/types.h>
 #ifdef MONITOR_DYNAMIC
 #include <dlfcn.h>
@@ -77,6 +78,7 @@
 
 #define MONITOR_EXIT_CLEANUP_SIGNAL  SIGUSR2
 #define MONITOR_TN_ARRAY_SIZE  150
+#define MONITOR_SHOOTDOWN_TIMEOUT  60
 
 /*
  *  On some systems, pthread_equal() and pthread_cleanup_push/pop()
@@ -480,11 +482,13 @@ monitor_thread_release(void)
 void
 monitor_thread_shootdown(void)
 {
+    struct timeval last, now;
     struct monitor_thread_node *tn, *my_tn;
     struct sigaction my_action;
     sigset_t empty_set;
     pthread_t self;
-    int num_unfinished;
+    int num_started, num_unstarted, last_started;
+    int num_finished, num_unfinished;
 
     if (! monitor_has_used_threads) {
 	MONITOR_DEBUG1("(no threads)\n");
@@ -514,11 +518,19 @@ monitor_thread_shootdown(void)
      * force them into their fini_thread functions, and wait until
      * they all finish.  But don't signal ourself.
      *
-     * Note: may want to add a timeout here.
+     * Add a timeout: if we make no progress for 60 consecutive
+     * seconds, then give up.  Progress means receiving the signal in
+     * the other thread, the fini thread callback can take as long as
+     * it likes.
      */
     self = (*real_pthread_self)();
     my_tn = NULL;
+    gettimeofday(&last, NULL);
+    last_started = 0;
     for (;;) {
+	num_started = 0;
+	num_unstarted = 0;
+	num_finished = 0;
 	num_unfinished = 0;
 	for (tn = LIST_FIRST(&monitor_thread_list);
 	     tn != NULL;
@@ -529,16 +541,33 @@ monitor_thread_shootdown(void)
 		continue;
 	    }
 	    if (tn->tn_appl_started) {
-		if (! tn->tn_fini_started)
+		if (tn->tn_fini_started) {
+		    num_started++;
+		} else {
 		    (*real_pthread_kill)(tn->tn_self, MONITOR_EXIT_CLEANUP_SIGNAL);
-
-		if (! tn->tn_fini_done)
+		    num_unstarted++;
+		}
+		if (tn->tn_fini_done)
+		    num_finished++;
+		else
 		    num_unfinished++;
 	    }
 	}
-	MONITOR_DEBUG("waiting on %d threads to finish\n", num_unfinished);
+	MONITOR_DEBUG("started: %d, unstarted: %d, finished: %d, unfinished: %d\n",
+		      num_started, num_unstarted, num_finished, num_unfinished);
 	if (num_unfinished == 0)
 	    break;
+
+	gettimeofday(&now, NULL);
+	if (num_started > last_started) {
+	    last = now;
+	    last_started = num_started;
+	} else if (now.tv_sec > last.tv_sec + MONITOR_SHOOTDOWN_TIMEOUT
+		   && num_unstarted > 0) {
+	    MONITOR_DEBUG("warning: timeout exceeded (%d), giving up\n",
+			  MONITOR_SHOOTDOWN_TIMEOUT);
+	    break;
+	}
 
 	usleep(MONITOR_POLL_USLEEP_TIME);
     }
