@@ -165,6 +165,7 @@ void monitor_end_library_fcn(void);
 int  monitor_end_process_race(void);
 void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
+int  monitor_shootdown_signal(void);
 void monitor_remove_client_signals(sigset_t *);
 void monitor_get_main_args(int *, char ***, char ***);
 int  monitor_in_main_start_func_wide(void *);

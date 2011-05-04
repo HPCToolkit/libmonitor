@@ -76,7 +76,6 @@
  *----------------------------------------------------------------------
  */
 
-#define MONITOR_EXIT_CLEANUP_SIGNAL  SIGUSR2
 #define MONITOR_TN_ARRAY_SIZE  150
 #define MONITOR_SHOOTDOWN_TIMEOUT  60
 
@@ -489,6 +488,7 @@ monitor_thread_shootdown(void)
     pthread_t self;
     int num_started, num_unstarted, last_started;
     int num_finished, num_unfinished;
+    int sig;
 
     if (! monitor_has_used_threads) {
 	MONITOR_DEBUG1("(no threads)\n");
@@ -501,15 +501,16 @@ monitor_thread_shootdown(void)
     MONITOR_DEBUG1("(threads)\n");
 
     /*
-     * Install the signal handler for MONITOR_EXIT_CLEANUP_SIGNAL.
+     * Install the signal handler for thread shootdown.
      * Note: the signal handler is process-wide.
      */
+    sig = monitor_shootdown_signal();
+    MONITOR_DEBUG("using signal: %d\n", sig);
     sigemptyset(&empty_set);
     my_action.sa_handler = monitor_thread_signal_handler;
     my_action.sa_mask = empty_set;
     my_action.sa_flags = SA_RESTART;
-    if ((*real_sigaction)(MONITOR_EXIT_CLEANUP_SIGNAL,
-			  &my_action, NULL) != 0) {
+    if ((*real_sigaction)(sig, &my_action, NULL) != 0) {
 	MONITOR_ERROR1("sigaction failed\n");
     }
 
@@ -544,7 +545,7 @@ monitor_thread_shootdown(void)
 		if (tn->tn_fini_started) {
 		    num_started++;
 		} else {
-		    (*real_pthread_kill)(tn->tn_self, MONITOR_EXIT_CLEANUP_SIGNAL);
+		    (*real_pthread_kill)(tn->tn_self, sig);
 		    num_unstarted++;
 		}
 		if (tn->tn_fini_done)

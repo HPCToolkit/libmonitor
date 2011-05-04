@@ -87,6 +87,7 @@ struct monitor_signal_entry {
     char  mse_avoid;
     char  mse_invalid;
     char  mse_noterm;
+    char  mse_shootdown_avoid;
     char  mse_stop;
 };
 
@@ -109,6 +110,14 @@ static int monitor_signal_noterm_list[] = {
  */
 static int monitor_signal_stop_list[] = {
     SIGTSTP, SIGTTIN, SIGTTOU, -1
+};
+
+/*  Signals that monitor tries for thread shootdown, in order.  The
+ *  first entry is also the emergency signal if none of the others are
+ *  available.
+ */
+static int monitor_shootdown_list[] = {
+    SIGUSR2, SIGUSR1, SIGWINCH, SIGPWR, SIGURG, SIGPIPE, SIGHUP, SIGCHLD, -1
 };
 
 /*
@@ -151,7 +160,7 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
      * Apply the applicaton's action: ignore, default or handler.
      */
     sa = &mse->mse_appl_act;
-    if (sa->sa_handler == SIG_IGN) {
+    if (sa == NULL || sa->sa_handler == SIG_IGN) {
 	/*
 	 * Ignore the signal.
 	 */
@@ -215,6 +224,7 @@ monitor_signal_init(void)
     memset(monitor_signal_array, 0, sizeof(monitor_signal_array));
     for (i = 0; monitor_signal_avoid_list[i] > 0; i++) {
 	monitor_signal_array[monitor_signal_avoid_list[i]].mse_avoid = 1;
+	monitor_signal_array[monitor_signal_avoid_list[i]].mse_shootdown_avoid = 1;
     }
     for (i = 0; monitor_signal_noterm_list[i] > 0; i++) {
 	monitor_signal_array[monitor_signal_noterm_list[i]].mse_noterm = 1;
@@ -277,6 +287,25 @@ monitor_adjust_saflags(int flags)
 }
 
 /*
+ *  Return a signal unused by the client or application, if possible.
+ */
+int
+monitor_shootdown_signal(void)
+{
+    int i, sig;
+
+    for (i = 0; monitor_shootdown_list[i] > 0; i++) {
+	sig = monitor_shootdown_list[i];
+	if (! monitor_signal_array[sig].mse_shootdown_avoid) {
+	    return sig;
+	}
+    }
+
+    MONITOR_DEBUG1("warning: unable to find unused signal\n");
+    return monitor_shootdown_list[0];
+}
+
+/*
  *----------------------------------------------------------------------
  *  SUPPORT FUNCTIONS
  *----------------------------------------------------------------------
@@ -301,9 +330,10 @@ monitor_sigaction(int sig, monitor_sighandler_t *handler,
 	MONITOR_DEBUG("client sigaction: %d (invalid)\n", sig);
 	return (-1);
     }
+    mse = &monitor_signal_array[sig];
+    mse->mse_shootdown_avoid = 1;
 
     MONITOR_DEBUG("client sigaction: %d (caught)\n", sig);
-    mse = &monitor_signal_array[sig];
     mse->mse_client_handler = handler;
     mse->mse_client_flags = flags;
     if (act != NULL) {
@@ -363,11 +393,12 @@ monitor_appl_sigaction(int sig, const struct sigaction *act,
 	errno = EINVAL;
 	return (-1);
     }
+    mse = &monitor_signal_array[sig];
+    mse->mse_shootdown_avoid = 1;
 
     /*
      * Use the system sigaction for signals on the avoid list.
      */
-    mse = &monitor_signal_array[sig];
     if (mse->mse_avoid) {
 	MONITOR_DEBUG("application sigaction: %d (avoid)\n", sig);
 	return (*real_sigaction)(sig, act, oldact);
