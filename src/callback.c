@@ -160,3 +160,10 @@ monitor_mpi_post_fini(void)
 {
     MONITOR_DEBUG1("(default callback)\n");
 }
+
+int __attribute__ ((weak))
+monitor_wrap_main(int argc, char **argv, char **envp)
+{
+    MONITOR_DEBUG1("(default callback)\n");
+    return 0;
+}
