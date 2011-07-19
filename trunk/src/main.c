@@ -425,6 +425,15 @@ monitor_main(int argc, char **argv, char **envp)
     monitor_begin_process_fcn(NULL, FALSE);
 
     MONITOR_ASM_LABEL(monitor_main_fence2);
+#ifdef MONITOR_STATIC
+    /*
+     * In the static case, if an application wants to link with
+     * libmonitor and wrap main() itself, then we pass control to the
+     * application via monitor_wrap_main().  The application should
+     * call __real_main() and exit() itself and not return.
+     */
+    monitor_wrap_main(monitor_argc, monitor_argv, monitor_envp);
+#endif
     ret = (*real_main)(monitor_argc, monitor_argv, monitor_envp);
     MONITOR_ASM_LABEL(monitor_main_fence3);
 
@@ -438,6 +447,8 @@ monitor_main(int argc, char **argv, char **envp)
 int
 __wrap_main(int argc, char **argv, char **envp)
 {
+    monitor_normal_init();
+
     MONITOR_DEBUG1("\n");
     real_main = &__real_main;
 

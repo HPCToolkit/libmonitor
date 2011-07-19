@@ -100,6 +100,11 @@ extern void monitor_set_size_rank(int, int);
 extern int monitor_mpi_comm_size(void);
 extern int monitor_mpi_comm_rank(void);
 
+/*
+ *  Special access to wrapped functions for the application.
+ */
+extern int monitor_wrap_main(int, char **, char **);
+
 #ifdef __cplusplus
 }
 #endif
