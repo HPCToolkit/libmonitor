@@ -99,6 +99,8 @@ extern int monitor_unwind_thread_bottom_frame(void *addr);
 extern void monitor_set_size_rank(int, int);
 extern int monitor_mpi_comm_size(void);
 extern int monitor_mpi_comm_rank(void);
+extern int monitor_block_shootdown(void);
+extern void monitor_unblock_shootdown(void);
 
 /*
  *  Special access to wrapped functions for the application.

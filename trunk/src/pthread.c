@@ -427,7 +427,7 @@ monitor_unlink_thread_node(struct monitor_thread_node *tn)
 }
 
 static void
-monitor_thread_signal_handler(int signum)
+monitor_shootdown_handler(int signum)
 {
     struct monitor_thread_node *tn;
 
@@ -437,7 +437,7 @@ monitor_thread_signal_handler(int signum)
 		      "unable to call monitor_fini_thread\n");
 	return;
     }
-    if (tn->tn_appl_started && !tn->tn_fini_started) {
+    if (tn->tn_appl_started && !tn->tn_fini_started && !tn->tn_block_shootdown) {
 	tn->tn_fini_started = 1;
 	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
 		      tn->tn_user_data, tn->tn_tid);
@@ -507,7 +507,7 @@ monitor_thread_shootdown(void)
     sig = monitor_shootdown_signal();
     MONITOR_DEBUG("using signal: %d\n", sig);
     sigemptyset(&empty_set);
-    my_action.sa_handler = monitor_thread_signal_handler;
+    my_action.sa_handler = monitor_shootdown_handler;
     my_action.sa_mask = empty_set;
     my_action.sa_flags = SA_RESTART;
     if ((*real_sigaction)(sig, &my_action, NULL) != 0) {
@@ -769,6 +769,41 @@ monitor_broadcast_signal(int sig)
 
     MONITOR_THREAD_UNLOCK;
     return (SUCCESS);
+}
+
+/*
+ *  Block and unblock receiving a thread shootdown signal.  This is
+ *  used in hpctoolkit to block receiving the fini-thread callback
+ *  (via shootdown signal) while in the middle of a sample.
+ *
+ *  Returns: 1 if already at process exit.
+ */
+int
+monitor_block_shootdown(void)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    if (tn == NULL) {
+	MONITOR_DEBUG1("unable to find thread node\n");
+	return 0;
+    }
+    tn->tn_block_shootdown = 1;
+
+    return monitor_in_exit_cleanup;
+}
+
+void
+monitor_unblock_shootdown(void)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    if (tn == NULL) {
+	MONITOR_DEBUG1("unable to find thread node\n");
+	return;
+    }
+    tn->tn_block_shootdown = 0;
 }
 
 /*
