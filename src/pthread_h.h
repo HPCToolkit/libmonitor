@@ -63,10 +63,11 @@ struct monitor_thread_node {
     void  *tn_user_data;
     void  *tn_stack_bottom;
     char   tn_is_main;
-    char   tn_appl_started;
-    char   tn_fini_started;
-    char   tn_fini_done;
-    char   tn_exit_win;
+    volatile char  tn_appl_started;
+    volatile char  tn_fini_started;
+    volatile char  tn_fini_done;
+    volatile char  tn_exit_win;
+    volatile char  tn_block_shootdown;
 };
 
 struct monitor_thread_node *monitor_get_main_tn(void);
