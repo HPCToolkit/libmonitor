@@ -143,14 +143,44 @@ done
 
 AC_LANG_POP
 
-#
-# Find the svn revision.
-#
+#------------------------------------------------------------
+# GNU atomic ops
+#------------------------------------------------------------
+
+# Test if CC supports GNU atomic ops: __sync_val_compare_and_swap()
+
+AC_MSG_CHECKING([if CC supports GNU atomic ops])
+
+AC_LANG_PUSH([C])
+
+AC_LINK_IFELSE([
+#include <stdio.h>
+int main(int argc, char **argv)
+{
+    long x = (long) argc;
+    x = __sync_val_compare_and_swap(&x, 2L, 3L);
+    printf("%ld", x);
+    return 0;
+}
+],  [use_gnu_atomic_ops=yes],
+    [use_gnu_atomic_ops=no])
+
+AC_MSG_RESULT([$use_gnu_atomic_ops])
+
+AC_LANG_POP([C])
+
+AM_CONDITIONAL([MONITOR_TEST_USE_GNU_ATOMIC_OPS],
+    [test x$use_gnu_atomic_ops = xyes])
+
+#------------------------------------------------------------
+# SVN Revision
+#------------------------------------------------------------
+
 # If this directory is an svn sandbox, then use svn info (and store
 # the result in a file), else expect the answer to be in the file.
 # Note: svn update changes the revision number, so svn info must take
 # precedence over the file.
-#
+
 version_file="${srcdir}/.svn-revision"
 
 AC_MSG_CHECKING([for svn revision])

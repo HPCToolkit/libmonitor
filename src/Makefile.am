@@ -67,6 +67,9 @@ endif
 if MONITOR_TEST_USE_MPI
     libmonitor_la_SOURCES += $(MONITOR_MPI_FILES) pmpi.c
 endif
+if MONITOR_TEST_USE_GNU_ATOMIC_OPS
+    libmonitor_la_CPPFLAGS += -DUSE_GNU_ATOMIC_OPS
+endif
 endif
 
 if MONITOR_TEST_LINK_STATIC
@@ -88,5 +91,8 @@ if MONITOR_TEST_USE_SIGNALS
 endif
 if MONITOR_TEST_USE_MPI
     libmonitor_wrap_a_SOURCES += $(MONITOR_MPI_FILES)
+endif
+if MONITOR_TEST_USE_GNU_ATOMIC_OPS
+    libmonitor_wrap_a_CPPFLAGS += -DUSE_GNU_ATOMIC_OPS
 endif
 endif
