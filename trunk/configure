@@ -625,6 +625,8 @@ MONITOR_TEST_LINK_STATIC_TRUE
 MONITOR_TEST_LINK_PRELOAD_FALSE
 MONITOR_TEST_LINK_PRELOAD_TRUE
 svn_revision
+MONITOR_TEST_USE_GNU_ATOMIC_OPS_FALSE
+MONITOR_TEST_USE_GNU_ATOMIC_OPS_TRUE
 wrap_list
 CPP
 OTOOL64
@@ -10949,14 +10951,71 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-#
-# Find the svn revision.
-#
+#------------------------------------------------------------
+# GNU atomic ops
+#------------------------------------------------------------
+
+# Test if CC supports GNU atomic ops: __sync_val_compare_and_swap()
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if CC supports GNU atomic ops" >&5
+$as_echo_n "checking if CC supports GNU atomic ops... " >&6; }
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdio.h>
+int main(int argc, char **argv)
+{
+    long x = (long) argc;
+    x = __sync_val_compare_and_swap(&x, 2L, 3L);
+    printf("%ld", x);
+    return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  use_gnu_atomic_ops=yes
+else
+  use_gnu_atomic_ops=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $use_gnu_atomic_ops" >&5
+$as_echo "$use_gnu_atomic_ops" >&6; }
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+ if test x$use_gnu_atomic_ops = xyes; then
+  MONITOR_TEST_USE_GNU_ATOMIC_OPS_TRUE=
+  MONITOR_TEST_USE_GNU_ATOMIC_OPS_FALSE='#'
+else
+  MONITOR_TEST_USE_GNU_ATOMIC_OPS_TRUE='#'
+  MONITOR_TEST_USE_GNU_ATOMIC_OPS_FALSE=
+fi
+
+
+#------------------------------------------------------------
+# SVN Revision
+#------------------------------------------------------------
+
 # If this directory is an svn sandbox, then use svn info (and store
 # the result in a file), else expect the answer to be in the file.
 # Note: svn update changes the revision number, so svn info must take
 # precedence over the file.
-#
+
 version_file="${srcdir}/.svn-revision"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for svn revision" >&5
@@ -11873,6 +11932,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MONITOR_TEST_USE_GNU_ATOMIC_OPS_TRUE}" && test -z "${MONITOR_TEST_USE_GNU_ATOMIC_OPS_FALSE}"; then
+  as_fn_error $? "conditional \"MONITOR_TEST_USE_GNU_ATOMIC_OPS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MONITOR_TEST_LINK_PRELOAD_TRUE}" && test -z "${MONITOR_TEST_LINK_PRELOAD_FALSE}"; then
