@@ -137,13 +137,13 @@ done
 wrap_args=
 for name in $monitor_wrap_names $wrap_names
 do
-    wrap_args="${wrap_args} -Wl,--wrap,${name}"
+    wrap_args="${wrap_args} -Wl,--wrap=${name}"
 done
 
 undef_args=
 for name in $undef_names
 do
-    undef_args="${undef_args} -Wl,-u,__wrap_${name}"
+    undef_args="${undef_args} -Wl,--undefined=__wrap_${name}"
 done
 
 mon_args="${insert_files} ${libmonitor} ${appl_libs} ${library_names}"
