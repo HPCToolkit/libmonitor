@@ -1,6 +1,9 @@
 /*
  *  Override MPI_Comm_rank in C/C++.
  *
+ *  Copyright (c) 2007-2012, Rice University.
+ *  See the file LICENSE for details.
+ *
  *  $Id$
  */
 
@@ -9,6 +12,7 @@
 #include "monitor.h"
 
 typedef int mpi_comm_fcn_t(void *, int *);
+
 #ifdef MONITOR_STATIC
 extern mpi_comm_fcn_t  MPI_Comm_size;
 extern mpi_comm_fcn_t  __real_MPI_Comm_rank;

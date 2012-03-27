@@ -1,6 +1,9 @@
 /*
  *  Override mpi_finalize_ in Fortran.
  *
+ *  Copyright (c) 2007-2012, Rice University.
+ *  See the file LICENSE for details.
+ *
  *  $Id$
  */
 
@@ -9,6 +12,7 @@
 #include "monitor.h"
 
 typedef void mpi_finalize_fcn_t(int *);
+
 #ifdef MONITOR_STATIC
 extern mpi_finalize_fcn_t  __real_mpi_finalize_;
 #endif
