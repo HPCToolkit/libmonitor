@@ -1,6 +1,9 @@
 /*
  *  Override mpi_comm_rank__ in Fortran.
  *
+ *  Copyright (c) 2007-2012, Rice University.
+ *  See the file LICENSE for details.
+ *
  *  $Id$
  */
 
@@ -9,6 +12,7 @@
 #include "monitor.h"
 
 typedef void mpi_comm_fcn_t(int *, int *, int *);
+
 #ifdef MONITOR_STATIC
 extern mpi_comm_fcn_t  mpi_comm_size__;
 extern mpi_comm_fcn_t  __real_mpi_comm_rank__;

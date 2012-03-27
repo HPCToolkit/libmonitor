@@ -12,6 +12,9 @@
  * to have the library call fork() and dlopen() from its init
  * constructor.
  *
+ * Copyright (c) 2007-2012, Rice University.
+ * See the file LICENSE for details.
+ *
  * $Id$
  */
 

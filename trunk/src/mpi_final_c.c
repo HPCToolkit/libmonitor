@@ -1,6 +1,9 @@
 /*
  *  Override MPI_Finalize in C/C++.
  *
+ *  Copyright (c) 2007-2012, Rice University.
+ *  See the file LICENSE for details.
+ *
  *  $Id$
  */
 
@@ -9,6 +12,7 @@
 #include "monitor.h"
 
 typedef int mpi_finalize_fcn_t(void);
+
 #ifdef MONITOR_STATIC
 extern mpi_finalize_fcn_t  __real_MPI_Finalize;
 #endif

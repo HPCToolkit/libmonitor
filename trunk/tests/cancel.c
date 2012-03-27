@@ -6,6 +6,9 @@
  *  shootdown can get stuck trying to access a thread that no longer
  *  exists.
  *
+ *  Copyright (c) 2007-2012, Rice University.
+ *  See the file LICENSE for details.
+ *
  *  $Id$
  */
 

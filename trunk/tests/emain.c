@@ -1,6 +1,9 @@
 /*
  * Main program to link with libearly.so.
  *
+ * Copyright (c) 2007-2012, Rice University.
+ * See the file LICENSE for details.
+ *
  * $Id$
  */
 

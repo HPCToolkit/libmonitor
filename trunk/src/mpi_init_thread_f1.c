@@ -1,6 +1,9 @@
 /*
  *  Override mpi_init_thread_ in Fortran.
  *
+ *  Copyright (c) 2007-2012, Rice University.
+ *  See the file LICENSE for details.
+ *
  *  $Id$
  */
 
@@ -9,6 +12,7 @@
 #include "monitor.h"
 
 typedef void mpi_init_thread_fcn_t(int *, int *, int *);
+
 #ifdef MONITOR_STATIC
 extern mpi_init_thread_fcn_t  __real_mpi_init_thread_;
 #endif
