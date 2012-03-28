@@ -70,6 +70,7 @@ struct monitor_thread_node {
     volatile char  tn_block_shootdown;
 };
 
+struct monitor_thread_node *monitor_get_tn(void);
 struct monitor_thread_node *monitor_get_main_tn(void);
 void monitor_reset_thread_list(struct monitor_thread_node *);
 
