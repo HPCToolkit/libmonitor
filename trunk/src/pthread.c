@@ -207,7 +207,7 @@ extern void monitor_thread_fence4;
  *  specific data is not yet set, so it's not really an error for
  *  getspecific to fail.  But bad magic implies an internal error.
  */
-static struct monitor_thread_node *
+struct monitor_thread_node *
 monitor_get_tn(void)
 {
     struct monitor_thread_node *tn;
@@ -218,8 +218,9 @@ monitor_get_tn(void)
 	    MONITOR_WARN("bad magic in thread node: %p\n", tn);
 	    tn = NULL;
 	}
-    } else
+    } else {
 	tn = monitor_get_main_tn();
+    }
 
     return (tn);
 }

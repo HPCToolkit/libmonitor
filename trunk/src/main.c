@@ -647,6 +647,12 @@ monitor_unwind_thread_bottom_frame(void *addr)
 /*
  *  Internal monitor functions.
  */
+struct monitor_thread_node * __attribute__ ((weak))
+monitor_get_tn(void)
+{
+    return &monitor_main_tn;
+}
+
 void __attribute__ ((weak))
 monitor_reset_thread_list(struct monitor_thread_node *main_tn)
 {
