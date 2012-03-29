@@ -58,6 +58,7 @@
 #include <unistd.h>
 
 #include "common.h"
+#include "atomic.h"
 #include "monitor.h"
 #include "pthread_h.h"
 
@@ -128,8 +129,8 @@ static char **monitor_envp = NULL;
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
 volatile static char monitor_fini_process_done = 0;
-volatile static char monitor_fini_process_cookie = 0;
 static char monitor_has_reached_main = 0;
+volatile static long monitor_end_process_cookie = 0;
 
 extern void monitor_main_fence1;
 extern void monitor_main_fence2;
@@ -243,7 +244,6 @@ monitor_begin_process_fcn(void *user_data, int is_fork)
     }
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
-    monitor_fini_process_cookie = 0;
     monitor_thread_release();
 }
 
@@ -263,19 +263,41 @@ monitor_begin_process_fcn(void *user_data, int is_fork)
 void
 monitor_end_process_fcn(int how)
 {
-    int ans = monitor_end_process_race();
+    struct monitor_thread_node *tn = monitor_get_tn();
+    long prev;
 
-    if (ans == EXIT_RACE_WIN) {
+    prev = compare_and_swap(&monitor_end_process_cookie, 0, 1);
+    if (prev == 0) {
+	/*
+	 * Race winner: use the first thread that starts process exit
+	 * to launch the fini-thread and fini-process callbacks.
+	 */
+	MONITOR_DEBUG("begin process exit (how = %d)\n", how);
+	if (tn != NULL) {
+	    tn->tn_exit_win = 1;
+	}
 	monitor_thread_shootdown();
-	MONITOR_DEBUG("calling monitor_fini_process(how = %d) ...\n", how);
+	MONITOR_DEBUG("calling monitor_fini_process (how = %d) ...\n", how);
 	monitor_fini_process(how, monitor_main_tn.tn_user_data);
     }
-    else if (ans == EXIT_RACE_LOSE) {
-	while (! monitor_fini_process_done)
+    else if (tn != NULL && tn->tn_exit_win) {
+	/*
+	 * Repeat winner: somehow this thread has started process exit
+	 * again.  Assume the callbacks have had their chance.
+	 */
+	MONITOR_DEBUG("same thread restarting process exit (how = %d)\n", how);
+    }
+    else {
+	/*
+	 * Race loser: delay this thread until the fini callbacks are
+	 * finished.
+	 */
+	MONITOR_DEBUG("delay second thread trying to exit (how = %d)\n", how);
+	while (! monitor_fini_process_done) {
 	    usleep(MONITOR_POLL_USLEEP_TIME);
+	}
 	sleep(2);
     }
-    /* EXIT_RACE_REPEAT passes straight through. */
 
     monitor_fini_process_done = 1;
     MONITOR_DEBUG1("resume system exit\n");
@@ -672,18 +694,4 @@ monitor_thread_shootdown(void)
 {
     MONITOR_DEBUG1("(weak)\n");
     return;
-}
-
-/*
- *  The weak version here is always single threaded.
- */
-int __attribute__ ((weak))
-monitor_end_process_race(void)
-{
-    int ans;
-
-    ans = monitor_fini_process_cookie ? EXIT_RACE_REPEAT : EXIT_RACE_WIN;
-    monitor_fini_process_cookie = 1;
-    MONITOR_DEBUG("(weak) ans = %d\n", ans);
-    return (ans);
 }

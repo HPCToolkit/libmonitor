@@ -77,7 +77,7 @@
  */
 
 #define MONITOR_TN_ARRAY_SIZE  150
-#define MONITOR_SHOOTDOWN_TIMEOUT  60
+#define MONITOR_SHOOTDOWN_TIMEOUT  10
 
 /*
  *  On some systems, pthread_equal() and pthread_cleanup_push/pop()
@@ -180,7 +180,6 @@ static LIST_HEAD(, monitor_thread_node) monitor_thread_list;
 static LIST_HEAD(, monitor_thread_node) monitor_free_list;
 
 volatile static int  monitor_thread_num = 0;
-volatile static char monitor_end_process_cookie = 0;
 volatile static char monitor_in_exit_cleanup = 0;
 
 /***  End of mutex-protected variables.  ***/
@@ -313,7 +312,6 @@ monitor_reset_thread_list(struct monitor_thread_node *main_tn)
 {
     struct monitor_thread_node *tn;
 
-    monitor_end_process_cookie = 0;
     if (! monitor_has_used_threads)
 	return;
 
@@ -584,48 +582,6 @@ monitor_thread_shootdown(void)
 	monitor_fini_thread(my_tn->tn_user_data);
 	my_tn->tn_fini_done = 1;
     }
-}
-
-/*
- *  If multiple threads try to exit the process simultaneously, then
- *  the first one wins and carries out the process shutdown functions,
- *  and the others wait.  The winner is the thread that flips the
- *  monitor_end_process_cookie bit.
- *
- *  Note: monitor catches process exit in several places, so it's
- *  possible for a single thread to get here multiple times, even in a
- *  non-threaded program.
- *
- *  Returns: EXIT_RACE_WIN, _LOSE or _REPEAT.
- */
-int
-monitor_end_process_race(void)
-{
-    struct monitor_thread_node *tn;
-    int ans;
-
-    if (monitor_has_used_threads) {
-	MONITOR_THREAD_LOCK;
-    }
-    tn = monitor_get_tn();
-    if (! monitor_end_process_cookie) {
-	ans = EXIT_RACE_WIN;
-	tn->tn_exit_win = 1;
-    }
-    else if (tn->tn_exit_win) {
-	ans = EXIT_RACE_REPEAT;
-    }
-    else {
-	ans = EXIT_RACE_LOSE;
-    }
-    monitor_end_process_cookie = 1;
-
-    if (monitor_has_used_threads) {
-	MONITOR_THREAD_UNLOCK;
-    }
-
-    MONITOR_DEBUG("ans = %d\n", ans);
-    return (ans);
 }
 
 /*

@@ -71,8 +71,6 @@
 
 #define MONITOR_POLL_USLEEP_TIME  100000
 
-enum { EXIT_RACE_WIN = 1, EXIT_RACE_LOSE, EXIT_RACE_REPEAT };
-
 /*
  *  Format (fmt) must be a string constant in these macros.  Some
  *  compilers don't accept the ##__VA_ARGS__ syntax for the case of
@@ -162,7 +160,6 @@ void monitor_signal_init(void);
 void monitor_begin_process_fcn(void *, int);
 void monitor_end_process_fcn(int);
 void monitor_end_library_fcn(void);
-int  monitor_end_process_race(void);
 void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 int  monitor_shootdown_signal(void);
