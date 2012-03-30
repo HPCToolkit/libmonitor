@@ -14,11 +14,16 @@
 CC = gcc
 CFLAGS = -g -O -Wall
 
-PROGRAMS = cancel emain exit thread_fork
+THREAD_PROGRAMS = cancel exit shootdown thread_fork
+NONTHREAD_PROGRAMS = emain
+
+PROGRAMS = $(THREAD_PROGRAMS) $(NONTHREAD_PROGRAMS)
+
+.PHONY: all clean
 
 all: $(PROGRAMS)
 
-cancel: cancel.c
+$(THREAD_PROGRAMS): %: %.c
 	$(CC) -o $@ $(CFLAGS) $< -lpthread
 
 emain: emain.c libearly.so
@@ -26,12 +31,6 @@ emain: emain.c libearly.so
 
 libearly.so: early.c
 	$(CC) -o $@ $(CFLAGS) -shared -fPIC $< -ldl -lpthread
-
-exit: exit.c
-	$(CC) -o $@ $(CFLAGS) $< -lpthread
-
-thread_fork: thread_fork.c
-	$(CC) -o $@ $(CFLAGS) $< -lpthread
 
 clean:
 	rm -f *.o *.so a.out $(PROGRAMS)
