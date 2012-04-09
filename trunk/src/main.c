@@ -237,14 +237,15 @@ monitor_begin_process_fcn(void *user_data, int is_fork)
 	monitor_reset_thread_list(&monitor_main_tn);
 	monitor_main_tn.tn_user_data = user_data;
     }
-    if (!is_fork || monitor_has_reached_main) {
+    monitor_fini_library_called = 0;
+    monitor_fini_process_done = 0;
+
+    if (monitor_has_reached_main) {
 	MONITOR_DEBUG1("calling monitor_init_process() ...\n");
 	monitor_main_tn.tn_user_data =
 	    monitor_init_process(&monitor_argc, monitor_argv, user_data);
+	monitor_thread_release();
     }
-    monitor_fini_library_called = 0;
-    monitor_fini_process_done = 0;
-    monitor_thread_release();
 }
 
 /*
