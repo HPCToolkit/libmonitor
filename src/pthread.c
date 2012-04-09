@@ -189,6 +189,7 @@ static pthread_key_t monitor_pthread_key;
 volatile static char monitor_has_used_threads = 0;
 volatile static char monitor_has_reached_main = 0;
 volatile static char monitor_thread_support_done = 0;
+volatile static char monitor_fini_thread_done = 0;
 
 extern void monitor_thread_fence1;
 extern void monitor_thread_fence2;
@@ -426,14 +427,24 @@ monitor_unlink_thread_node(struct monitor_thread_node *tn)
 }
 
 static void
-monitor_shootdown_handler(int signum)
+monitor_shootdown_handler(int sig)
 {
     struct monitor_thread_node *tn;
 
     tn = (*real_pthread_getspecific)(monitor_pthread_key);
-    if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
-	MONITOR_WARN1("pthread_getspecific failed: "
-		      "unable to call monitor_fini_thread\n");
+    if (tn == NULL) {
+	MONITOR_WARN1("unable to deliver monitor_fini_thread callback: "
+		      "pthread_getspecific() failed\n");
+	return;
+    }
+    if (tn->tn_magic != MONITOR_TN_MAGIC) {
+	MONITOR_WARN1("unable to deliver monitor_fini_thread callback: "
+		      "bad magic in thread node\n");
+	return;
+    }
+    if (monitor_fini_thread_done) {
+	MONITOR_WARN("unable to deliver monitor_fini_thread callback (tid %d): "
+		     "fini_process has begun\n", tn->tn_tid);
 	return;
     }
     if (tn->tn_appl_started && !tn->tn_fini_started && !tn->tn_block_shootdown) {
@@ -518,7 +529,7 @@ monitor_thread_shootdown(void)
      * force them into their fini_thread functions, and wait until
      * they all finish.  But don't signal ourself.
      *
-     * Add a timeout: if we make no progress for 60 consecutive
+     * Add a timeout: if we make no progress for 10 consecutive
      * seconds, then give up.  Progress means receiving the signal in
      * the other thread, the fini thread callback can take as long as
      * it likes.
@@ -534,8 +545,8 @@ monitor_thread_shootdown(void)
 	num_unfinished = 0;
 	for (tn = LIST_FIRST(&monitor_thread_list);
 	     tn != NULL;
-	     tn = LIST_NEXT(tn, tn_links)) {
-
+	     tn = LIST_NEXT(tn, tn_links))
+	{
 	    if (PTHREAD_EQUAL(self, tn->tn_self)) {
 		my_tn = tn;
 		continue;
@@ -564,13 +575,14 @@ monitor_thread_shootdown(void)
 	    last_started = num_started;
 	} else if (now.tv_sec > last.tv_sec + MONITOR_SHOOTDOWN_TIMEOUT
 		   && num_unstarted > 0) {
-	    MONITOR_DEBUG("warning: timeout exceeded (%d), giving up\n",
-			  MONITOR_SHOOTDOWN_TIMEOUT);
+	    MONITOR_WARN("timeout exceeded (%d): unable to deliver "
+			 "monitor_fini_thread() to %d threads\n",
+			 MONITOR_SHOOTDOWN_TIMEOUT, num_unstarted);
 	    break;
 	}
-
 	usleep(MONITOR_POLL_USLEEP_TIME);
     }
+    monitor_fini_thread_done = 1;
 
     /*
      * See if we need to run fini_thread from this thread.
@@ -784,8 +796,18 @@ monitor_pthread_cleanup_routine(void *arg)
 	monitor_fini_thread(NULL);
 	return;
     }
-
-    if (tn->tn_appl_started && !tn->tn_fini_started) {
+    if (monitor_fini_thread_done) {
+	/*
+	 * FIXME: On some systems (eg, Cray UPC/DMAPP), some side
+	 * threads seem to be resistant to signals.  In this case,
+	 * calling fini-thread after fini-process causes hpcrun to
+	 * abort.  So, we have to skip fini-thread.
+	 */
+	MONITOR_WARN("unable to deliver monitor_fini_thread callback (tid %d): "
+		     "fini_process has begun\n", tn->tn_tid);
+	tn->tn_fini_done = 1;
+    }
+    else if (tn->tn_appl_started && !tn->tn_fini_started) {
 	tn->tn_fini_started = 1;
 	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
 		      tn->tn_user_data, tn->tn_tid);
