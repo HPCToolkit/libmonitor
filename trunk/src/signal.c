@@ -55,12 +55,6 @@
  *----------------------------------------------------------------------
  */
 
-#ifdef NSIG
-#define MONITOR_NSIG  (NSIG)
-#else
-#define MONITOR_NSIG  (128)
-#endif
-
 /*  Sa_flags that monitor requires and forbids.
  */
 #define SAFLAGS_REQUIRED   (SA_SIGINFO | SA_RESTART)
@@ -127,6 +121,35 @@ static int monitor_shootdown_list[] = {
  */
 
 /*
+ *  Offer a synchronous signal from sigwait() to the client.
+ *
+ *  Returns: 0 if the client accepts the signal, ie, nothing left to
+ *  do (same as handler in monitor_sigaction).
+ */
+int
+monitor_sigwait_handler(int sig, siginfo_t *info, void *context)
+{
+    struct monitor_signal_entry *mse;
+    int ret;
+
+    monitor_signal_init();
+
+    if (sig <= 0 || sig >= MONITOR_NSIG) {
+	return 1;
+    }
+
+    mse = &monitor_signal_array[sig];
+    if (mse->mse_client_handler != NULL) {
+	ret = (mse->mse_client_handler)(sig, info, context);
+	if (ret == 0) {
+	    return 0;
+	}
+    }
+
+    return 1;
+}
+
+/*
  *  Catch all signals here.  Offer them to the client first (if
  *  registered), or else apply the application's disposition.
  */
@@ -139,7 +162,8 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
 
     if (sig <= 0 || sig >= MONITOR_NSIG ||
 	monitor_signal_array[sig].mse_avoid ||
-	monitor_signal_array[sig].mse_invalid) {
+	monitor_signal_array[sig].mse_invalid)
+    {
 	MONITOR_WARN("invalid signal: %d\n", sig);
 	return;
     }
@@ -152,8 +176,9 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
     mse = &monitor_signal_array[sig];
     if (mse->mse_client_handler != NULL) {
 	ret = (mse->mse_client_handler)(sig, info, context);
-	if (ret == 0)
+	if (ret == 0) {
 	    return;
+	}
     }
 
     /*
