@@ -64,6 +64,15 @@
 #define RTLD_NEXT  ((void *) -1l)
 #endif
 
+/*
+ *  Maximum signal number for array bounds.
+ */
+#ifdef NSIG
+#define MONITOR_NSIG  (NSIG)
+#else
+#define MONITOR_NSIG   128
+#endif
+
 #define TRUE   1
 #define FALSE  0
 #define SUCCESS   0
@@ -163,6 +172,7 @@ void monitor_end_library_fcn(void);
 void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 int  monitor_shootdown_signal(void);
+int  monitor_sigwait_handler(int, siginfo_t *, void *);
 void monitor_remove_client_signals(sigset_t *);
 void monitor_get_main_args(int *, char ***, char ***);
 int  monitor_in_main_start_func_wide(void *);

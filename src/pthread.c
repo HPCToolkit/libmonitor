@@ -38,6 +38,9 @@
  *    pthread_create
  *    pthread_exit
  *    pthread_sigmask
+ *    sigwait
+ *    sigwaitinfo
+ *    sigtimedwait
  *
  *  Support functions:
  *
@@ -63,6 +66,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ucontext.h>
 #include <unistd.h>
 
 #include "common.h"
@@ -123,11 +127,16 @@ typedef void  pthread_cleanup_pop_fcn_t(int);
 typedef int   sigaction_fcn_t(int, const struct sigaction *,
 			      struct sigaction *);
 typedef int   sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
+typedef int   sigwaitinfo_fcn_t(const sigset_t *, siginfo_t *);
+typedef int   sigtimedwait_fcn_t(const sigset_t *, siginfo_t *,
+				 const struct timespec *);
 typedef void *malloc_fcn_t(size_t);
 
 #ifdef MONITOR_STATIC
 extern pthread_create_fcn_t  __real_pthread_create;
 extern pthread_exit_fcn_t    __real_pthread_exit;
+extern sigwaitinfo_fcn_t     __real_sigwaitinfo;
+extern sigtimedwait_fcn_t    __real_sigtimedwait;
 #ifdef MONITOR_USE_SIGNALS
 extern sigaction_fcn_t    __real_sigaction;
 extern sigprocmask_fcn_t  __real_pthread_sigmask;
@@ -154,6 +163,8 @@ static pthread_cleanup_push_fcn_t  *real_pthread_cleanup_push;
 static pthread_cleanup_pop_fcn_t   *real_pthread_cleanup_pop;
 static sigaction_fcn_t    *real_sigaction;
 static sigprocmask_fcn_t  *real_pthread_sigmask;
+static sigwaitinfo_fcn_t  *real_sigwaitinfo;
+static sigtimedwait_fcn_t *real_sigtimedwait;
 static malloc_fcn_t  *real_malloc = NULL;
 
 /*
@@ -190,6 +201,7 @@ volatile static char monitor_has_used_threads = 0;
 volatile static char monitor_has_reached_main = 0;
 volatile static char monitor_thread_support_done = 0;
 volatile static char monitor_fini_thread_done = 0;
+static int shootdown_signal = 0;
 
 extern void monitor_thread_fence1;
 extern void monitor_thread_fence2;
@@ -258,6 +270,8 @@ monitor_thread_name_init(void)
     MONITOR_GET_REAL_NAME(real_sigaction, sigaction);
     MONITOR_GET_REAL_NAME(real_pthread_sigmask, pthread_sigmask);
 #endif
+    MONITOR_GET_REAL_NAME_WRAP(real_sigwaitinfo, sigwaitinfo);
+    MONITOR_GET_REAL_NAME_WRAP(real_sigtimedwait, sigtimedwait);
 }
 
 /*
@@ -498,7 +512,6 @@ monitor_thread_shootdown(void)
     pthread_t self;
     int num_started, num_unstarted, last_started;
     int num_finished, num_unfinished;
-    int sig;
 
     if (! monitor_has_used_threads) {
 	MONITOR_DEBUG1("(no threads)\n");
@@ -514,13 +527,13 @@ monitor_thread_shootdown(void)
      * Install the signal handler for thread shootdown.
      * Note: the signal handler is process-wide.
      */
-    sig = monitor_shootdown_signal();
-    MONITOR_DEBUG("using signal: %d\n", sig);
+    shootdown_signal = monitor_shootdown_signal();
+    MONITOR_DEBUG("using signal: %d\n", shootdown_signal);
     sigemptyset(&empty_set);
     my_action.sa_handler = monitor_shootdown_handler;
     my_action.sa_mask = empty_set;
     my_action.sa_flags = SA_RESTART;
-    if ((*real_sigaction)(sig, &my_action, NULL) != 0) {
+    if ((*real_sigaction)(shootdown_signal, &my_action, NULL) != 0) {
 	MONITOR_ERROR1("sigaction failed\n");
     }
 
@@ -555,7 +568,7 @@ monitor_thread_shootdown(void)
 		if (tn->tn_fini_started) {
 		    num_started++;
 		} else {
-		    (*real_pthread_kill)(tn->tn_self, sig);
+		    (*real_pthread_kill)(tn->tn_self, shootdown_signal);
 		    num_unstarted++;
 		}
 		if (tn->tn_fini_done)
@@ -1052,3 +1065,178 @@ MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
     return (*real_pthread_sigmask)(how, set, oldset);
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *  Override sigwait(), sigwaitinfo() and sigtimedwait()
+ *----------------------------------------------------------------------
+ */
+
+#define SIG_BUF_SIZE  500
+
+static void
+monitor_signal_list(char *name, const sigset_t *set)
+{
+    char buf[SIG_BUF_SIZE];
+    int sig, pos;
+
+    if (set == NULL) {
+	MONITOR_DEBUG("(%s) sigset_t is NULL\n", name);
+	return;
+    }
+
+    pos = 0;
+    for (sig = 1; sig < MONITOR_NSIG; sig++) {
+	if (sigismember(set, sig) > 0) {
+	    if (pos + 20 > SIG_BUF_SIZE) {
+		pos += sprintf(&buf[pos], " (and more) ");
+		break;
+	    }
+	    pos += sprintf(&buf[pos], " %d,", sig);
+	}
+    }
+    if (pos > 0) {
+	buf[pos - 1] = 0;
+    }
+
+    MONITOR_DEBUG("(%s) waiting on:%s\n", name, buf);
+}
+
+/*
+ *  Returns: 1 if we handled the signal (and thus we restart sigwait),
+ *  else 0 to pass the signal to the application.
+ */
+static int
+monitor_sigwait_helper(const sigset_t *set, int sig, int sigwait_errno,
+		       siginfo_t *info, ucontext_t *context)
+{
+    struct monitor_thread_node *tn;
+
+    /*
+     * If sigwaitinfo() returned an error, we restart EINTR and pass
+     * other errors back to the application.
+     */
+    if (sig < 0) {
+	return (sigwait_errno == EINTR);
+    }
+
+    /*
+     * End of process shootdown signal.
+     */
+    tn = monitor_get_tn();
+    if (monitor_in_exit_cleanup
+	&& sig == shootdown_signal
+	&& tn != NULL
+	&& tn->tn_appl_started
+	&& !tn->tn_fini_started
+	&& !tn->tn_block_shootdown)
+    {
+	tn->tn_fini_started = 1;
+	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
+		      tn->tn_user_data, tn->tn_tid);
+	monitor_fini_thread(tn->tn_user_data);
+	tn->tn_fini_done = 1;
+	return 1;
+    }
+
+    /*
+     * A signal for which the client has installed a handler via
+     * monitor_sigaction().
+     */
+    if (monitor_sigwait_handler(sig, info, context) == 0) {
+	return 1;
+    }
+
+    /*
+     * A signal not in 'set' is treated as EINTR and restarted.
+     */
+    if (! sigismember(set, sig)) {
+	return 1;
+    }
+
+    /*
+     * Otherwise, return the signal to the application.
+     */
+    return 0;
+}
+
+int
+MONITOR_WRAP_NAME(sigwait)(const sigset_t *set, int *sig)
+{
+    siginfo_t my_info;
+    ucontext_t context;
+    int k, ret, save_errno;
+
+    monitor_thread_name_init();
+    if (monitor_debug) {
+	monitor_signal_list("sigwait", set);
+    }
+
+    getcontext(&context);
+    do {
+	ret = real_sigwaitinfo(set, &my_info);
+	save_errno = errno;
+    }
+    while (monitor_sigwait_helper(set, ret, save_errno, &my_info, &context));
+
+    if (ret < 0) {
+	return save_errno;
+    }
+    if (sig != NULL) {
+	*sig = ret;
+    }
+    return 0;
+}
+
+int
+MONITOR_WRAP_NAME(sigwaitinfo)(const sigset_t *set, siginfo_t *info)
+{
+    siginfo_t my_info, *info_ptr;
+    ucontext_t context;
+    int k, ret, save_errno;
+
+    monitor_thread_name_init();
+    if (monitor_debug) {
+	monitor_signal_list("sigwaitinfo", set);
+    }
+
+    getcontext(&context);
+    info_ptr = (info != NULL) ? info : &my_info;
+    do {
+	ret = real_sigwaitinfo(set, info_ptr);
+	save_errno = errno;
+    }
+    while (monitor_sigwait_helper(set, ret, save_errno, info_ptr, &context));
+
+    errno = save_errno;
+    return ret;
+}
+
+int
+MONITOR_WRAP_NAME(sigtimedwait)(const sigset_t *set, siginfo_t *info,
+				const struct timespec *timeout)
+{
+    siginfo_t my_info, *info_ptr;
+    ucontext_t context;
+    int k, ret, save_errno;
+
+    monitor_thread_name_init();
+    if (monitor_debug) {
+	monitor_signal_list("sigtimedwait", set);
+    }
+
+    /*
+     * FIXME: if we restart sigtimedwait(), then we should subtract
+     * the elapsed time from the timeout.
+     */
+    getcontext(&context);
+    info_ptr = (info != NULL) ? info : &my_info;
+    do {
+	ret = real_sigtimedwait(set, info_ptr, timeout);
+	save_errno = errno;
+    }
+    while (monitor_sigwait_helper(set, ret, save_errno, info_ptr, &context));
+
+    errno = save_errno;
+    return ret;
+}

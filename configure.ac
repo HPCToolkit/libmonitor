@@ -344,6 +344,7 @@ if test "x$enable_pthreads" = xyes ; then
     AC_DEFINE([MONITOR_USE_PTHREADS], [1],
 	[Include support for pthreads.])
     wrap_list="${wrap_list} pthread_create pthread_exit"
+    wrap_list="${wrap_list} sigwait sigwaitinfo sigtimedwait"
     #
     # See if pthread_equal and pthread_cleanup_push/pop are macros or
     # library functions.
