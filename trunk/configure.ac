@@ -57,8 +57,8 @@ AC_CONFIG_FILES([src/monitor-run],  [chmod +x src/monitor-run])
 enable_static=no
 
 AC_PROG_CC
-AC_PROG_LIBTOOL
 AM_PROG_CC_C_O
+AC_PROG_LIBTOOL
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -69,11 +69,55 @@ AC_SUBST([wrap_list], ["main exit _exit"])
 # CPU type
 #------------------------------------------------------------
 
+host_cpu_ppc=no
 case "$host_cpu" in
     [*[pP][pP][cC]*] | [*[pP][oO][wW][eE][rR][pP][cC]*] )
 	host_cpu_ppc=yes
 	;;
 esac
+
+#------------------------------------------------------------
+# Compiler path, version and wordsize
+#------------------------------------------------------------
+
+# Find the location and version of the C compiler and warn if not
+# using GNU gcc.  This is mainly for display in the summary.  We don't
+# really do anything differently based on the version.
+#
+# The --version option works with GNU and Intel.  We could extend this
+# to PGI, IBM, etc, but we probably don't build cleanly with those
+# compilers.
+
+CC_VERSION='unknown non-gnu'
+version=`$CC --version 2>/dev/null`
+if echo "$version" | grep -i copyright >/dev/null ; then
+    CC_VERSION=`echo "$version" | head -1`
+fi
+
+CC_PATH=
+base=`echo $CC | awk '{ print $1 }'`
+case "$base" in
+    /* ) CC_PATH="$base" ;;
+    * )  AC_PATH_PROG([CC_PATH], [$base]) ;;
+esac
+if test "x$CC_PATH" = x ; then
+    CC_PATH=unknown
+fi
+
+AC_MSG_NOTICE([C compiler: $CC_VERSION])
+
+warn_non_gcc=no
+echo $version | grep -E -i -e 'copy.*free.*soft.*found' >/dev/null
+if test $? -ne 0 ; then
+    warn_non_gcc=yes
+    AC_MSG_WARN([Not using the GNU C compiler.])
+fi
+
+AC_CHECK_SIZEOF([void *])
+wordsize=`expr $ac_cv_sizeof_void_p '*' 8`
+
+AC_MSG_CHECKING([host wordsize])
+AC_MSG_RESULT([$wordsize bits])
 
 #------------------------------------------------------------
 # CFLAGS and Fence Labels
@@ -204,9 +248,10 @@ fi
 AC_SUBST([svn_revision])
 AC_DEFINE_UNQUOTED([SVN_REVISION], [$svn_revision], [SVN rev number.])
 
-#
+#------------------------------------------------------------
 # Option: --enable-debug=no
-#
+#------------------------------------------------------------
+
 AC_ARG_ENABLE([dummy-blank-line], [AS_HELP_STRING([], [])])
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
@@ -219,10 +264,12 @@ if test "x$enable_debug" = xyes ; then
 	[Debug mode defaults to on.])
 fi
 
-#
+#------------------------------------------------------------
 # Option: --enable-link-preload=yes
+#------------------------------------------------------------
+
 # Requires dlsym and __libc_start_main.
-#
+
 AC_ARG_ENABLE([link-preload],
     [AS_HELP_STRING([--enable-link-preload],
 	[build libmonitor.so shared library to run monitor with LD_PRELOAD
@@ -240,9 +287,10 @@ fi
 AM_CONDITIONAL([MONITOR_TEST_LINK_PRELOAD],
     [test x$enable_link_preload = xyes])
 
-#
+#------------------------------------------------------------
 # Option: --enable-link-static=yes
-#
+#------------------------------------------------------------
+
 AC_ARG_ENABLE([link-static],
     [AS_HELP_STRING([--enable-link-static],
 	[build libmonitor_wrap.a library to link monitor statically
@@ -253,10 +301,12 @@ AC_ARG_ENABLE([link-static],
 AM_CONDITIONAL([MONITOR_TEST_LINK_STATIC],
     [test x$enable_link_static = xyes])
 
-#
+#------------------------------------------------------------
 # Option: --enable-dlfcn=yes
-# Note: AC uses 'enable_dlopen', so we use dlfcn.
-#
+#------------------------------------------------------------
+
+# Note: autoconf uses 'enable_dlopen', so we use dlfcn.
+
 AC_ARG_ENABLE([dlfcn],
     [AS_HELP_STRING([--enable-dlfcn],
 	[include support for dlopen [default=yes]])],
@@ -276,10 +326,12 @@ fi
 AM_CONDITIONAL([MONITOR_TEST_USE_DLOPEN],
     [test x$enable_dlfcn = xyes])
 
-#
+#------------------------------------------------------------
 # Option: --enable-fork=yes
+#------------------------------------------------------------
+
 # Requires fork and exec families.
-#
+
 AC_ARG_ENABLE([fork],
     [AS_HELP_STRING([--enable-fork],
         [include support for fork and exec families [default=yes]])],
@@ -302,13 +354,14 @@ fi
 AM_CONDITIONAL([MONITOR_TEST_USE_FORK],
     [test x$enable_fork = xyes])
 
-#
+#------------------------------------------------------------
 # Option: --enable-mpi=yes
-#
+#------------------------------------------------------------
+
 # Note: we try to support MPI in a generic way that is independent of
 # the MPI implementation, so this option is just yes/no and doesn't
 # require the <mpi.h> header.
-#
+
 AC_ARG_ENABLE([mpi],
     [AS_HELP_STRING([--enable-mpi],
         [include support for MPI [default=yes]])],
@@ -326,10 +379,12 @@ fi
 
 AM_CONDITIONAL([MONITOR_TEST_USE_MPI], [test x$enable_mpi = xyes])
 
-#
+#------------------------------------------------------------
 # Option: --enable-pthreads=yes
+#------------------------------------------------------------
+
 # Requires libpthread.
-#
+
 AC_ARG_ENABLE([pthreads],
     [AS_HELP_STRING([--enable-pthreads],
 	[include support for pthreads [default=yes]])],
@@ -360,9 +415,10 @@ fi
 AM_CONDITIONAL([MONITOR_TEST_USE_PTHREADS],
     [test x$enable_pthreads = xyes])
 
-#
+#------------------------------------------------------------
 # Option: --enable-signals=yes
-#
+#------------------------------------------------------------
+
 AC_ARG_ENABLE([signals],
     [AS_HELP_STRING([--enable-signals],
         [include support for signals [default=yes]])],
@@ -423,16 +479,17 @@ AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([Libmonitor summary])
 AC_MSG_NOTICE([-------------------])
 
-if test "$warn_cflags_opt" = yes ; then
-    AC_MSG_WARN([Modified -O flags in CFLAGS to support asm fence labels.])
-    AC_MSG_WARN([Probably the compiler is duplicating code on ia64.])
-fi
-
 AC_MSG_NOTICE([svn revision: $svn_revision])
 AC_MSG_NOTICE([prefix: $prefix])
 AC_MSG_NOTICE([build: $build])
 AC_MSG_NOTICE([host:  $host])
-AC_MSG_NOTICE([CC CFLAGS: $CC $CFLAGS])
+
+AC_MSG_NOTICE([C compiler: $CC_VERSION])
+AC_MSG_NOTICE([Path: $CC_PATH])
+AC_MSG_NOTICE([CC:   '$CC'])
+AC_MSG_NOTICE([CFLAGS: '$CFLAGS'])
+
+AC_MSG_NOTICE([wordsize: $wordsize bits])
 AC_MSG_NOTICE([enable debug: $enable_debug])
 AC_MSG_NOTICE([enable link preload: $enable_link_preload])
 AC_MSG_NOTICE([enable link static: $enable_link_static])
@@ -442,3 +499,16 @@ AC_MSG_NOTICE([enable mpi: $enable_mpi])
 AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
 AC_MSG_NOTICE([enable signals: $enable_signals])
 AC_MSG_NOTICE([start main type: $enable_start_main])
+
+if test "$warn_non_gcc" = yes ; then
+    AC_MSG_NOTICE([])
+    AC_MSG_WARN([Not using the GNU C compiler.])
+    AC_MSG_WARN([This is not necessarily an error, but parts of libmonitor may])
+    AC_MSG_WARN([not compile cleanly without gcc.  If the build fails, try using])
+    AC_MSG_WARN([GNU gcc before reporting an error.])
+fi
+
+if test "$warn_cflags_opt" = yes ; then
+    AC_MSG_WARN([Modified -O flags in CFLAGS to support asm fence labels.])
+    AC_MSG_WARN([Probably the compiler is duplicating code on ia64.])
+fi
