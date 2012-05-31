@@ -3,10 +3,12 @@
  *
  *  Run several threads with various functions that respond to
  *  shootdown in different ways:
- *    0. loop of pthread_testcancel(),
+ *
  *    1. loop of cycles with no cancellation points,
- *    2. sigwait(),
- *    3+. exit() or _exit().
+ *    2. loop of cycles with with signals blocked,
+ *    3. sigwait(),
+ *    4. loop of pthread_testcancel(),
+ *    5+. exit() or _exit().
  *
  *  Verify that every thread gets a fini-thread callback and the
  *  process gets one fini-process callback, preferably in the main
@@ -30,10 +32,12 @@
 #include <pthread.h>
 
 #define MAX_THREADS  300
-#define MIN_THREADS    5
-#define PROG_TIME      4
+#define MIN_THREADS    8
+#define PROG_TIME      6
+#define HALF_TIME      3
 
 int num_threads;
+int exit_thread;
 char *func_type;
 
 struct thread_info {
@@ -120,6 +124,37 @@ run_cycles(struct thread_info *ti)
 }
 
 /*
+ *  Set the signal mask to block everything and then run a loop of
+ *  cycles.  It may be hard to get a good shootdown signal for this
+ *  thread.
+ */
+void
+run_mask(struct thread_info *ti)
+{
+    pthread_t self = ti->self;
+    int tid = ti->tid;
+    sigset_t fillset;
+    double x, sum;
+
+    printf("tid: %d, self: %p -- begin %s\n", tid, (void *)self, __func__);
+
+    sigfillset(&fillset);
+    if (pthread_sigmask(SIG_BLOCK, &fillset, NULL) != 0) {
+	err(1, "pthread_sigmask failed");
+    }
+
+    for (;;) {
+	sum = 0.0;
+	for (x = 1.0; x < 5000000; x += 1.0) {
+	    sum += x;
+	}
+	if (sum < 0.0) {
+	    printf("sum is negative: %g\n", sum);
+	}
+    }
+}
+
+/*
  *  Run a loop of sigwait() waiting on the signals that monitor uses
  *  for thread shootdown.
  */
@@ -167,10 +202,10 @@ run_exit(struct thread_info *ti)
     printf("tid: %d, self: %p -- begin %s\n", tid, (void *)self, __func__);
 
     end.tv_sec = start.tv_sec + PROG_TIME;
-    do_mesg = (tid == num_threads - 1);
+    do_mesg = (tid == exit_thread);
     for (;;) {
 	gettimeofday(&now, NULL);
-	if (do_mesg && now.tv_sec >= end.tv_sec - 2) {
+	if (do_mesg && now.tv_sec >= end.tv_sec - HALF_TIME) {
 	    printf("------------------------------\n");
 	    do_mesg = 0;
 	}
@@ -215,15 +250,18 @@ my_thread(void *data)
 
     pthread_cleanup_push(&cleanup_handler, ti);
 
-    if (tid == num_threads - 1) {
+    if (tid == exit_thread) {
 	run_exit(ti);
     }
-    if (strncmp(func_type, "cancel", 3) == 0
-	|| strncmp(func_type, "testcancel", 3) == 0) {
+    else if (strncmp(func_type, "cancel", 3) == 0
+	     || strncmp(func_type, "testcancel", 3) == 0) {
 	run_test_cancel(ti);
     }
     else if (strncmp(func_type, "cycles", 3) == 0) {
 	run_cycles(ti);
+    }
+    else if (strncmp(func_type, "mask", 3) == 0) {
+	run_mask(ti);
     }
     else if (strncmp(func_type, "sigwait", 3) == 0) {
 	run_sigwait(ti);
@@ -234,20 +272,20 @@ my_thread(void *data)
     else if (strncmp(func_type, "_exit", 3) == 0) {
 	run_u_exit(ti);
     }
-    else if (tid == 0) {
-	run_test_cancel(ti);
-    }
-    else if (tid == 1) {
+    else if (tid <= 1) {
 	run_cycles(ti);
     }
     else if (tid == 2) {
+	run_mask(ti);
+    }
+    else if (tid == 3) {
 	run_sigwait(ti);
     }
-    else if (tid % 2 == 1) {
-	run_u_exit(ti);
+    else if (tid == 4) {
+	run_test_cancel(ti);
     }
     else {
-	run_exit(ti);
+	run_u_exit(ti);
     }
 
     printf("==> end of thread %d, should not get here\n", tid);
@@ -260,7 +298,7 @@ my_thread(void *data)
 /*
  *  Program args: num_threads, function type.
  *
- *  Function type is: cancel, cycles, sigwait, exit or _exit.
+ *  Function type is: cancel, cycles, mask, sigwait, exit or _exit.
  *
  *  Default is to run one of each.
  */
@@ -283,6 +321,7 @@ main(int argc, char **argv)
     if (num_threads < min_threads) {
 	num_threads = min_threads;
     }
+    exit_thread = num_threads - 1;
     printf("num threads: %d, function type: %s\n", num_threads, func_type);
 
     if (atexit(&atexit_handler) != 0) {
@@ -297,6 +336,7 @@ main(int argc, char **argv)
         if (pthread_create(&td, NULL, &my_thread, ti) != 0) {
             err(1, "pthread_create failed");
 	}
+	usleep(50000);
     }
     ti = &thread[0];
     ti->tid = 0;
