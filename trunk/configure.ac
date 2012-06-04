@@ -58,12 +58,51 @@ enable_static=no
 
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CPP
 AC_PROG_LIBTOOL
+
+AC_PROG_AWK
+AC_PROG_GREP
+AC_PROG_SED
 
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
+AC_LANG([C])
+
 AC_SUBST([wrap_list], ["main exit _exit"])
+
+#------------------------------------------------------------
+# SVN Revision
+#------------------------------------------------------------
+
+# If this directory is an svn sandbox, then use svn info (and store
+# the result in a file), else expect the answer to be in the file.
+# Note: svn update changes the revision number, so svn info must take
+# precedence over the file.
+
+version_file="${srcdir}/.svn-revision"
+
+AC_MSG_CHECKING([for svn revision])
+
+svn_revision=`svn info $srcdir 2>/dev/null | $GREP -e '^Revision' | $AWK '{ print $2 }'`
+if test "x$svn_revision" != x ; then
+    rm -f "$version_file"
+    echo "$svn_revision" > "$version_file"
+elif test -f "$version_file" ; then
+    svn_revision=`cat $version_file`
+else
+    svn_revision=0
+fi
+
+AC_MSG_RESULT([$svn_revision])
+
+if test "$svn_revision" = 0 ; then
+    AC_MSG_WARN([unable to find svn revision])
+fi
+
+AC_SUBST([svn_revision])
+AC_DEFINE_UNQUOTED([SVN_REVISION], [$svn_revision], [SVN revision.])
 
 #------------------------------------------------------------
 # CPU type
@@ -90,12 +129,12 @@ esac
 
 CC_VERSION='unknown non-gnu'
 version=`$CC --version 2>/dev/null`
-if echo "$version" | grep -i copyright >/dev/null ; then
+if echo "$version" | $GREP -i copyright >/dev/null ; then
     CC_VERSION=`echo "$version" | head -1`
 fi
 
 CC_PATH=
-base=`echo $CC | awk '{ print $1 }'`
+base=`echo $CC | $AWK '{ print $1 }'`
 case "$base" in
     /* ) CC_PATH="$base" ;;
     * )  AC_PATH_PROG([CC_PATH], [$base]) ;;
@@ -107,7 +146,7 @@ fi
 AC_MSG_NOTICE([C compiler: $CC_VERSION])
 
 warn_non_gcc=no
-echo $version | grep -E -i -e 'copy.*free.*soft.*found' >/dev/null
+echo $version | $GREP -E -i -e 'copy.*free.*soft.*found' >/dev/null
 if test $? -ne 0 ; then
     warn_non_gcc=yes
     AC_MSG_WARN([Not using the GNU C compiler.])
@@ -127,8 +166,6 @@ AC_MSG_RESULT([$wordsize bits])
 # make long pipelines.  This breaks our fence labels because it
 # duplicates the symbol.  Here, we test for this and try lowering the
 # optimization level if needed.
-
-AC_LANG_PUSH([C])
 
 orig_cflags="$CFLAGS"
 cflags_noopt=
@@ -185,8 +222,6 @@ int foo(int x)
     fi
 done
 
-AC_LANG_POP
-
 #------------------------------------------------------------
 # GNU atomic ops
 #------------------------------------------------------------
@@ -194,8 +229,6 @@ AC_LANG_POP
 # Test if CC supports GNU atomic ops: __sync_val_compare_and_swap()
 
 AC_MSG_CHECKING([if CC supports GNU atomic ops])
-
-AC_LANG_PUSH([C])
 
 AC_LINK_IFELSE([
 #include <stdio.h>
@@ -211,42 +244,8 @@ int main(int argc, char **argv)
 
 AC_MSG_RESULT([$use_gnu_atomic_ops])
 
-AC_LANG_POP([C])
-
 AM_CONDITIONAL([MONITOR_TEST_USE_GNU_ATOMIC_OPS],
     [test x$use_gnu_atomic_ops = xyes])
-
-#------------------------------------------------------------
-# SVN Revision
-#------------------------------------------------------------
-
-# If this directory is an svn sandbox, then use svn info (and store
-# the result in a file), else expect the answer to be in the file.
-# Note: svn update changes the revision number, so svn info must take
-# precedence over the file.
-
-version_file="${srcdir}/.svn-revision"
-
-AC_MSG_CHECKING([for svn revision])
-
-svn_revision=`svn info $srcdir 2>/dev/null | grep -e '^Revision' | awk '{ print $2 }'`
-if test "x$svn_revision" != x ; then
-    rm -f "$version_file"
-    echo "$svn_revision" > "$version_file"
-elif test -f "$version_file" ; then
-    svn_revision=`cat $version_file`
-else
-    svn_revision=0
-fi
-
-AC_MSG_RESULT([$svn_revision])
-
-if test "$svn_revision" = 0 ; then
-    AC_MSG_WARN([unable to find svn revision])
-fi
-
-AC_SUBST([svn_revision])
-AC_DEFINE_UNQUOTED([SVN_REVISION], [$svn_revision], [SVN rev number.])
 
 #------------------------------------------------------------
 # Option: --enable-debug=no
@@ -255,13 +254,13 @@ AC_DEFINE_UNQUOTED([SVN_REVISION], [$svn_revision], [SVN rev number.])
 AC_ARG_ENABLE([dummy-blank-line], [AS_HELP_STRING([], [])])
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
-	[debug mode is always on [default=no]])],
+	[debug mode is always on (default=no)])],
     [],
     [enable_debug=no])
 
 if test "x$enable_debug" = xyes ; then
     AC_DEFINE([MONITOR_DEBUG_DEFAULT_ON], [1],
-	[Debug mode defaults to on.])
+	[Debug mode is always on.])
 fi
 
 #------------------------------------------------------------
@@ -273,7 +272,7 @@ fi
 AC_ARG_ENABLE([link-preload],
     [AS_HELP_STRING([--enable-link-preload],
 	[build libmonitor.so shared library to run monitor with LD_PRELOAD
-	[default=yes]])],
+	(default=yes)])],
     [],
     [enable_link_preload=yes])
 
@@ -294,7 +293,7 @@ AM_CONDITIONAL([MONITOR_TEST_LINK_PRELOAD],
 AC_ARG_ENABLE([link-static],
     [AS_HELP_STRING([--enable-link-static],
 	[build libmonitor_wrap.a library to link monitor statically
-	[default=yes]])],
+	(default=yes)])],
     [],
     [enable_link_static=yes])
 
@@ -309,7 +308,7 @@ AM_CONDITIONAL([MONITOR_TEST_LINK_STATIC],
 
 AC_ARG_ENABLE([dlfcn],
     [AS_HELP_STRING([--enable-dlfcn],
-	[include support for dlopen [default=yes]])],
+	[include support for dlopen (default=yes)])],
     [],
     [enable_dlfcn=yes])
 
@@ -334,7 +333,7 @@ AM_CONDITIONAL([MONITOR_TEST_USE_DLOPEN],
 
 AC_ARG_ENABLE([fork],
     [AS_HELP_STRING([--enable-fork],
-        [include support for fork and exec families [default=yes]])],
+        [include support for fork and exec families (default=yes)])],
     [],
     [enable_fork=yes])
 
@@ -364,7 +363,7 @@ AM_CONDITIONAL([MONITOR_TEST_USE_FORK],
 
 AC_ARG_ENABLE([mpi],
     [AS_HELP_STRING([--enable-mpi],
-        [include support for MPI [default=yes]])],
+        [include support for MPI (default=yes)])],
     [],
     [enable_mpi=yes])
 
@@ -387,7 +386,7 @@ AM_CONDITIONAL([MONITOR_TEST_USE_MPI], [test x$enable_mpi = xyes])
 
 AC_ARG_ENABLE([pthreads],
     [AS_HELP_STRING([--enable-pthreads],
-	[include support for pthreads [default=yes]])],
+	[include support for pthreads (default=yes)])],
     [],
     [enable_pthreads=yes])
 
@@ -421,7 +420,7 @@ AM_CONDITIONAL([MONITOR_TEST_USE_PTHREADS],
 
 AC_ARG_ENABLE([signals],
     [AS_HELP_STRING([--enable-signals],
-        [include support for signals [default=yes]])],
+        [include support for signals (default=yes)])],
     [],
     [enable_signals=yes])
 
@@ -442,18 +441,70 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
 fi
 
 #------------------------------------------------------------
+# Option: --enable-open-signals=LIST
+#------------------------------------------------------------
+
+AC_ARG_ENABLE([open-signals],
+    [AS_HELP_STRING([--enable-open-signals=LIST],
+	[comma-separated list of signal numbers (27) or
+	 names (SIGPROF) that the application may not block,
+	 but do not use SIGRTMIN names (default empty)])],
+    [],
+    [enable_open_signals= ])
+
+AC_MSG_CHECKING([open signals list])
+
+# We pass $open_signals_list to signal.c with one comma after each
+# element (or else empty) to be used in an array init, but we remove
+# the final comma in $open_signals_mesg.
+
+case "$enable_open_signals" in
+    yes | no | none | empty )
+	enable_open_signals=
+	;;
+esac
+enable_open_signals=`echo $enable_open_signals | tr ',' ' '`
+
+open_signals_list=
+for sig in $enable_open_signals ; do
+    case "$sig" in
+	[[0-9]*] ) ;;
+	SIG* ) ;;
+	* ) AC_MSG_ERROR([invalid signal name: $sig]) ;;
+    esac
+    open_signals_list="${open_signals_list} ${sig},"
+done
+case "$open_signals_list" in
+    '' ) open_signals_mesg=none ;;
+    * )  open_signals_mesg=`echo $open_signals_list | $SED -e 's/,$//'` ;;
+esac
+
+AC_MSG_RESULT([$open_signals_mesg])
+
+AC_COMPILE_IFELSE([
+#include <signal.h>
+int signal_list[[]] = { $open_signals_list 1 };
+],  [],
+    [AC_MSG_ERROR([invalid open signals list, see config.log for details])])
+
+AC_DEFINE_UNQUOTED([MONITOR_OPEN_SIGNALS_LIST],
+    [$open_signals_list],
+    [List of signals that the application may not block.])
+
+#------------------------------------------------------------
 # Option: --enable-start-main=TYPE
 #------------------------------------------------------------
 
-AC_MSG_CHECKING([type of __libc_start_main function])
 AC_ARG_ENABLE([start-main],
     [AS_HELP_STRING([--enable-start-main=TYPE],
-        [type of __libc_start_main function (ppc, x86)])],
+        [type of __libc_start_main() function (x86, ppc)])],
     [],
     [enable_start_main=x86
      if test "x$host_cpu_ppc" = xyes ; then
 	 enable_start_main=ppc
      fi])
+
+AC_MSG_CHECKING([type of __libc_start_main() function])
 
 case "$enable_start_main" in
     ppc )
@@ -463,17 +514,17 @@ case "$enable_start_main" in
     x86 )
 	;;
     * )
-	AC_MSG_ERROR([invalid start main type (ppc or x86): $enable_start_main])
+	AC_MSG_ERROR([invalid start main type (x86, ppc): $enable_start_main])
 	;;
 esac
 
 AC_MSG_RESULT([$enable_start_main])
 
-AC_OUTPUT
-
 #------------------------------------------------------------
 # Display a summary of the config options.
 #------------------------------------------------------------
+
+AC_OUTPUT
 
 AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([Libmonitor summary])
@@ -498,6 +549,7 @@ AC_MSG_NOTICE([enable fork: $enable_fork])
 AC_MSG_NOTICE([enable mpi: $enable_mpi])
 AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
 AC_MSG_NOTICE([enable signals: $enable_signals])
+AC_MSG_NOTICE([open signals: $open_signals_mesg])
 AC_MSG_NOTICE([start main type: $enable_start_main])
 
 if test "$warn_non_gcc" = yes ; then

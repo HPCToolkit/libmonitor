@@ -34,8 +34,11 @@
    */
 #undef LT_OBJDIR
 
-/* Debug mode defaults to on. */
+/* Debug mode is always on. */
 #undef MONITOR_DEBUG_DEFAULT_ON
+
+/* List of signals that the application may not block. */
+#undef MONITOR_OPEN_SIGNALS_LIST
 
 /* pthread_cleanup_push is a function, not a macro. */
 #undef MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN
@@ -91,7 +94,7 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* SVN rev number. */
+/* SVN revision. */
 #undef SVN_REVISION
 
 /* Version number of package */
