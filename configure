@@ -14769,6 +14769,8 @@ $as_echo "$as_me: CFLAGS: '$CFLAGS'" >&6;}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: wordsize: $wordsize bits" >&5
 $as_echo "$as_me: wordsize: $wordsize bits" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: gnu atomic ops: $use_gnu_atomic_ops" >&5
+$as_echo "$as_me: gnu atomic ops: $use_gnu_atomic_ops" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: enable debug: $enable_debug" >&5
 $as_echo "$as_me: enable debug: $enable_debug" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: enable link preload: $enable_link_preload" >&5

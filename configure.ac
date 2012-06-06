@@ -541,6 +541,7 @@ AC_MSG_NOTICE([CC:   '$CC'])
 AC_MSG_NOTICE([CFLAGS: '$CFLAGS'])
 
 AC_MSG_NOTICE([wordsize: $wordsize bits])
+AC_MSG_NOTICE([gnu atomic ops: $use_gnu_atomic_ops])
 AC_MSG_NOTICE([enable debug: $enable_debug])
 AC_MSG_NOTICE([enable link preload: $enable_link_preload])
 AC_MSG_NOTICE([enable link static: $enable_link_static])
