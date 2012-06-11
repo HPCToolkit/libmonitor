@@ -73,6 +73,7 @@
 #include "monitor.h"
 #include "pthread_h.h"
 #include "queue.h"
+#include "spinlock.h"
 
 /*
  *----------------------------------------------------------------------
@@ -119,7 +120,6 @@ typedef int   pthread_key_create_fcn_t(pthread_key_t *, void (*)(void *));
 typedef int   pthread_key_delete_fcn_t(pthread_key_t);
 typedef int   pthread_kill_fcn_t(pthread_t, int);
 typedef pthread_t pthread_self_fcn_t(void);
-typedef int   pthread_mutex_lock_fcn_t(pthread_mutex_t *);
 typedef void *pthread_getspecific_fcn_t(pthread_key_t);
 typedef int   pthread_setspecific_fcn_t(pthread_key_t, const void *);
 typedef void  pthread_cleanup_push_fcn_t(void (*)(void *), void *);
@@ -154,9 +154,6 @@ static pthread_key_create_fcn_t   *real_pthread_key_create;
 static pthread_key_delete_fcn_t   *real_pthread_key_delete;
 static pthread_kill_fcn_t  *real_pthread_kill;
 static pthread_self_fcn_t  *real_pthread_self;
-static pthread_mutex_lock_fcn_t  *real_pthread_mutex_lock;
-static pthread_mutex_lock_fcn_t  *real_pthread_mutex_trylock;
-static pthread_mutex_lock_fcn_t  *real_pthread_mutex_unlock;
 static pthread_getspecific_fcn_t  *real_pthread_getspecific;
 static pthread_setspecific_fcn_t  *real_pthread_setspecific;
 static pthread_cleanup_push_fcn_t  *real_pthread_cleanup_push;
@@ -177,11 +174,11 @@ static malloc_fcn_t  *real_malloc = NULL;
  *  tn_* variables to indicate the thread status and when it has
  *  finished.
  */
-static pthread_mutex_t monitor_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define MONITOR_THREAD_LOCK     spinlock_lock(&monitor_thread_lock)
+#define MONITOR_THREAD_TRYLOCK  spinlock_trylock(&monitor_thread_lock)
+#define MONITOR_THREAD_UNLOCK   spinlock_unlock(&monitor_thread_lock)
 
-#define MONITOR_THREAD_LOCK    (*real_pthread_mutex_lock)(&monitor_thread_mutex)
-#define MONITOR_THREAD_TRYLOCK (*real_pthread_mutex_trylock)(&monitor_thread_mutex)
-#define MONITOR_THREAD_UNLOCK  (*real_pthread_mutex_unlock)(&monitor_thread_mutex)
+static spinlock_t monitor_thread_lock = SPINLOCK_UNLOCKED;
 
 static struct monitor_thread_node monitor_init_tn_array[MONITOR_TN_ARRAY_SIZE];
 static struct monitor_thread_node *monitor_tn_array = &monitor_init_tn_array[0];
@@ -254,9 +251,6 @@ monitor_thread_name_init(void)
     MONITOR_GET_REAL_NAME(real_pthread_key_delete, pthread_key_delete);
     MONITOR_GET_REAL_NAME(real_pthread_kill, pthread_kill);
     MONITOR_GET_REAL_NAME(real_pthread_self, pthread_self);
-    MONITOR_GET_REAL_NAME(real_pthread_mutex_lock,   pthread_mutex_lock);
-    MONITOR_GET_REAL_NAME(real_pthread_mutex_trylock, pthread_mutex_trylock);
-    MONITOR_GET_REAL_NAME(real_pthread_mutex_unlock, pthread_mutex_unlock);
     MONITOR_GET_REAL_NAME(real_pthread_getspecific,  pthread_getspecific);
     MONITOR_GET_REAL_NAME(real_pthread_setspecific,  pthread_setspecific);
 #ifdef MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN
@@ -1051,15 +1045,27 @@ int
 MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
 				   sigset_t *oldset)
 {
+    char buf[MONITOR_SIG_BUF_SIZE];
+    char *type;
     sigset_t my_set;
 
     monitor_signal_init();
     monitor_thread_name_init();
 
+    type = (how == SIG_UNBLOCK) ? "unblock" : "block";
+    if (monitor_debug) {
+	monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
+	MONITOR_DEBUG("(%s) request:%s\n", type, buf);
+    }
+
     if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
 	my_set = *set;
 	monitor_remove_client_signals(&my_set);
 	set = &my_set;
+	if (monitor_debug) {
+	    monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
+	    MONITOR_DEBUG("(%s) actual: %s\n", type, buf);
+	}
     }
 
     return (*real_pthread_sigmask)(how, set, oldset);
@@ -1071,36 +1077,6 @@ MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
  *  Override sigwait(), sigwaitinfo() and sigtimedwait()
  *----------------------------------------------------------------------
  */
-
-#define SIG_BUF_SIZE  500
-
-static void
-monitor_signal_list(char *name, const sigset_t *set)
-{
-    char buf[SIG_BUF_SIZE];
-    int sig, pos;
-
-    if (set == NULL) {
-	MONITOR_DEBUG("(%s) sigset_t is NULL\n", name);
-	return;
-    }
-
-    pos = 0;
-    for (sig = 1; sig < MONITOR_NSIG; sig++) {
-	if (sigismember(set, sig) > 0) {
-	    if (pos + 20 > SIG_BUF_SIZE) {
-		pos += sprintf(&buf[pos], " (and more) ");
-		break;
-	    }
-	    pos += sprintf(&buf[pos], " %d,", sig);
-	}
-    }
-    if (pos > 0) {
-	buf[pos - 1] = 0;
-    }
-
-    MONITOR_DEBUG("(%s) waiting on:%s\n", name, buf);
-}
 
 /*
  *  Returns: 1 if we handled the signal (and thus we restart sigwait),
@@ -1163,13 +1139,15 @@ monitor_sigwait_helper(const sigset_t *set, int sig, int sigwait_errno,
 int
 MONITOR_WRAP_NAME(sigwait)(const sigset_t *set, int *sig)
 {
+    char buf[MONITOR_SIG_BUF_SIZE];
     siginfo_t my_info;
     ucontext_t context;
-    int k, ret, save_errno;
+    int ret, save_errno;
 
     monitor_thread_name_init();
     if (monitor_debug) {
-	monitor_signal_list("sigwait", set);
+	monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
+	MONITOR_DEBUG("waiting on:%s\n", buf);
     }
 
     getcontext(&context);
@@ -1191,13 +1169,15 @@ MONITOR_WRAP_NAME(sigwait)(const sigset_t *set, int *sig)
 int
 MONITOR_WRAP_NAME(sigwaitinfo)(const sigset_t *set, siginfo_t *info)
 {
+    char buf[MONITOR_SIG_BUF_SIZE];
     siginfo_t my_info, *info_ptr;
     ucontext_t context;
-    int k, ret, save_errno;
+    int ret, save_errno;
 
     monitor_thread_name_init();
     if (monitor_debug) {
-	monitor_signal_list("sigwaitinfo", set);
+	monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
+	MONITOR_DEBUG("waiting on:%s\n", buf);
     }
 
     getcontext(&context);
@@ -1216,13 +1196,15 @@ int
 MONITOR_WRAP_NAME(sigtimedwait)(const sigset_t *set, siginfo_t *info,
 				const struct timespec *timeout)
 {
+    char buf[MONITOR_SIG_BUF_SIZE];
     siginfo_t my_info, *info_ptr;
     ucontext_t context;
-    int k, ret, save_errno;
+    int ret, save_errno;
 
     monitor_thread_name_init();
     if (monitor_debug) {
-	monitor_signal_list("sigtimedwait", set);
+	monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
+	MONITOR_DEBUG("waiting on:%s\n", buf);
     }
 
     /*
