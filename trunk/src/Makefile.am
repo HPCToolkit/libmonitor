@@ -34,8 +34,8 @@
 ##  $Id$
 ##
 
-MONITOR_MAIN_FILES = common.h monitor.h callback.c main.c mpi.c
-MONITOR_THREAD_FILES = pthread_h.h queue.h pthread.c
+MONITOR_MAIN_FILES = callback.c main.c mpi.c utils.c
+MONITOR_THREAD_FILES = pthread.c
 MONITOR_SCRIPT_FILES = monitor-link monitor-run
 MONITOR_MPI_FILES =  \
 	mpi_init_c.c  mpi_init_thread_c.c  mpi_final_c.c  mpi_comm_c.c   \

@@ -79,6 +79,7 @@
 #define FAILURE  -1
 
 #define MONITOR_POLL_USLEEP_TIME  100000
+#define MONITOR_SIG_BUF_SIZE   500
 
 /*
  *  Format (fmt) must be a string constant in these macros.  Some
@@ -174,6 +175,7 @@ void monitor_thread_shootdown(void);
 int  monitor_shootdown_signal(void);
 int  monitor_sigwait_handler(int, siginfo_t *, void *);
 void monitor_remove_client_signals(sigset_t *);
+int  monitor_sigset_string(char *, int, const sigset_t *);
 void monitor_get_main_args(int *, char ***, char ***);
 int  monitor_in_main_start_func_wide(void *);
 int  monitor_in_main_start_func_narrow(void *);
