@@ -597,7 +597,9 @@ monitor_appl_sigaction(int sig, const struct sigaction *act,
 	return (*real_sigaction)(sig, act, oldact);
     }
 
-    if (act->sa_handler == SIG_DFL) {
+    if (act == NULL) {
+	action = "null";
+    } else if (act->sa_handler == SIG_DFL) {
 	action = "default";
     } else if (act->sa_handler == SIG_IGN) {
 	action = "ignore";

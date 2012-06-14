@@ -88,12 +88,12 @@
  *  On some systems, pthread_equal() and pthread_cleanup_push/pop()
  *  are macros and sometimes they're library functions.
  */
-#ifdef MONITOR_PTHREAD_EQUAL_IS_FCN
+#ifdef  MONITOR_PTHREAD_EQUAL_IS_FCN
 #define PTHREAD_EQUAL(t1, t2)  ((*real_pthread_equal)((t1), (t2)))
 #else
 #define PTHREAD_EQUAL(t1, t2)  pthread_equal((t1), (t2))
 #endif
-#ifdef MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN
+#ifdef  MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN
 #define PTHREAD_CLEANUP_PUSH(fcn, arg)  ((*real_pthread_cleanup_push)((fcn), (arg)))
 #define PTHREAD_CLEANUP_POP(arg)        ((*real_pthread_cleanup_pop)(arg))
 #else
@@ -124,6 +124,7 @@ typedef void *pthread_getspecific_fcn_t(pthread_key_t);
 typedef int   pthread_setspecific_fcn_t(pthread_key_t, const void *);
 typedef void  pthread_cleanup_push_fcn_t(void (*)(void *), void *);
 typedef void  pthread_cleanup_pop_fcn_t(int);
+typedef int   pthread_setcancelstate_fcn_t(int, int *);
 typedef int   sigaction_fcn_t(int, const struct sigaction *,
 			      struct sigaction *);
 typedef int   sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
@@ -158,6 +159,7 @@ static pthread_getspecific_fcn_t  *real_pthread_getspecific;
 static pthread_setspecific_fcn_t  *real_pthread_setspecific;
 static pthread_cleanup_push_fcn_t  *real_pthread_cleanup_push;
 static pthread_cleanup_pop_fcn_t   *real_pthread_cleanup_pop;
+static pthread_setcancelstate_fcn_t  *real_pthread_setcancelstate;
 static sigaction_fcn_t    *real_sigaction;
 static sigprocmask_fcn_t  *real_pthread_sigmask;
 static sigwaitinfo_fcn_t  *real_sigwaitinfo;
@@ -257,6 +259,7 @@ monitor_thread_name_init(void)
     MONITOR_GET_REAL_NAME(real_pthread_cleanup_push, pthread_cleanup_push);
     MONITOR_GET_REAL_NAME(real_pthread_cleanup_pop,  pthread_cleanup_pop);
 #endif
+    MONITOR_GET_REAL_NAME(real_pthread_setcancelstate, pthread_setcancelstate);
 #ifdef MONITOR_USE_SIGNALS
     MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
     MONITOR_GET_REAL_NAME_WRAP(real_pthread_sigmask, pthread_sigmask);
@@ -438,6 +441,7 @@ static void
 monitor_shootdown_handler(int sig)
 {
     struct monitor_thread_node *tn;
+    int old_state;
 
     tn = (*real_pthread_getspecific)(monitor_pthread_key);
     if (tn == NULL) {
@@ -450,18 +454,23 @@ monitor_shootdown_handler(int sig)
 		      "bad magic in thread node\n");
 	return;
     }
-    if (monitor_fini_thread_done) {
-	MONITOR_WARN("unable to deliver monitor_fini_thread callback (tid %d): "
-		     "fini_process has begun\n", tn->tn_tid);
+    if (!tn->tn_appl_started || tn->tn_fini_started || tn->tn_block_shootdown) {
+	/* fini-thread has already run, or else we don't want it to run. */
 	return;
     }
-    if (tn->tn_appl_started && !tn->tn_fini_started && !tn->tn_block_shootdown) {
-	tn->tn_fini_started = 1;
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
-		      tn->tn_user_data, tn->tn_tid);
-	monitor_fini_thread(tn->tn_user_data);
-	tn->tn_fini_done = 1;
+    if (monitor_fini_thread_done) {
+	MONITOR_WARN("unable to deliver monitor_fini_thread callback (tid %d): "
+		     "monitor_fini_process() has begun\n", tn->tn_tid);
+	return;
     }
+
+    (*real_pthread_setcancelstate)(PTHREAD_CANCEL_DISABLE, &old_state);
+    tn->tn_fini_started = 1;
+    MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
+		  tn->tn_user_data, tn->tn_tid);
+    monitor_fini_thread(tn->tn_user_data);
+    tn->tn_fini_done = 1;
+    (*real_pthread_setcancelstate)(old_state, NULL);
 }
 
 /*
@@ -505,12 +514,14 @@ monitor_thread_shootdown(void)
     sigset_t empty_set;
     pthread_t self;
     int num_started, num_unstarted, last_started;
-    int num_finished, num_unfinished;
+    int num_finished, num_unfinished, old_state;
 
     if (! monitor_has_used_threads) {
 	MONITOR_DEBUG1("(no threads)\n");
 	return;
     }
+
+    (*real_pthread_setcancelstate)(PTHREAD_CANCEL_DISABLE, &old_state);
 
     MONITOR_THREAD_LOCK;
     monitor_in_exit_cleanup = 1;
@@ -601,6 +612,8 @@ monitor_thread_shootdown(void)
 	monitor_fini_thread(my_tn->tn_user_data);
 	my_tn->tn_fini_done = 1;
     }
+
+    (*real_pthread_setcancelstate)(old_state, NULL);
 }
 
 /*
@@ -797,30 +810,32 @@ monitor_pthread_cleanup_routine(void *arg)
 {
     struct monitor_thread_node *tn = arg;
 
-    if (tn == NULL || tn->tn_magic != MONITOR_TN_MAGIC) {
-	MONITOR_WARN1("missing thread-specific data\n");
-	MONITOR_DEBUG1("calling monitor_fini_thread(NULL)\n");
-	monitor_fini_thread(NULL);
+    if (tn == NULL) {
+	MONITOR_WARN1("unable to deliver monitor_fini_thread callback: "
+		      "missing cleanup handler argument\n");
+	return;
+    }
+    if (tn->tn_magic != MONITOR_TN_MAGIC) {
+	MONITOR_WARN1("unable to deliver monitor_fini_thread callback: "
+		      "bad magic in thread node\n");
+	return;
+    }
+    if (!tn->tn_appl_started || tn->tn_fini_started || tn->tn_block_shootdown) {
+	/* fini-thread has already run, or else we don't want it to run. */
 	return;
     }
     if (monitor_fini_thread_done) {
-	/*
-	 * FIXME: On some systems (eg, Cray UPC/DMAPP), some side
-	 * threads seem to be resistant to signals.  In this case,
-	 * calling fini-thread after fini-process causes hpcrun to
-	 * abort.  So, we have to skip fini-thread.
-	 */
 	MONITOR_WARN("unable to deliver monitor_fini_thread callback (tid %d): "
-		     "fini_process has begun\n", tn->tn_tid);
-	tn->tn_fini_done = 1;
+		     "monitor_fini_process() has begun\n", tn->tn_tid);
+	return;
     }
-    else if (tn->tn_appl_started && !tn->tn_fini_started) {
-	tn->tn_fini_started = 1;
-	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
-		      tn->tn_user_data, tn->tn_tid);
-	monitor_fini_thread(tn->tn_user_data);
-	tn->tn_fini_done = 1;
-    }
+
+    tn->tn_fini_started = 1;
+    MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
+		  tn->tn_user_data, tn->tn_tid);
+    monitor_fini_thread(tn->tn_user_data);
+    tn->tn_fini_done = 1;
+
     monitor_unlink_thread_node(tn);
 }
 
@@ -868,8 +883,8 @@ monitor_begin_thread(void *arg)
 
     PTHREAD_CLEANUP_PUSH(monitor_pthread_cleanup_routine, tn);
 
-    MONITOR_DEBUG("tid = %d, start_routine = %p\n",
-		  tn->tn_tid, tn->tn_start_routine);
+    MONITOR_DEBUG("tid = %d, self = %p, start_routine = %p\n",
+		  tn->tn_tid, (void *)tn->tn_self, tn->tn_start_routine);
     MONITOR_DEBUG("calling monitor_init_thread(tid = %d, data = %p) ...\n",
 		  tn->tn_tid, tn->tn_user_data);
     tn->tn_user_data = monitor_init_thread(tn->tn_tid, tn->tn_user_data);
@@ -1087,6 +1102,7 @@ monitor_sigwait_helper(const sigset_t *set, int sig, int sigwait_errno,
 		       siginfo_t *info, ucontext_t *context)
 {
     struct monitor_thread_node *tn;
+    int old_state;
 
     /*
      * If sigwaitinfo() returned an error, we restart EINTR and pass
@@ -1100,18 +1116,22 @@ monitor_sigwait_helper(const sigset_t *set, int sig, int sigwait_errno,
      * End of process shootdown signal.
      */
     tn = monitor_get_tn();
-    if (monitor_in_exit_cleanup
-	&& sig == shootdown_signal
+    if (sig == shootdown_signal
+	&& monitor_in_exit_cleanup
+	&& !monitor_fini_thread_done
 	&& tn != NULL
 	&& tn->tn_appl_started
 	&& !tn->tn_fini_started
 	&& !tn->tn_block_shootdown)
     {
+	(*real_pthread_setcancelstate)(PTHREAD_CANCEL_DISABLE, &old_state);
 	tn->tn_fini_started = 1;
 	MONITOR_DEBUG("calling monitor_fini_thread(data = %p), tid = %d ...\n",
 		      tn->tn_user_data, tn->tn_tid);
 	monitor_fini_thread(tn->tn_user_data);
 	tn->tn_fini_done = 1;
+	(*real_pthread_setcancelstate)(old_state, NULL);
+
 	return 1;
     }
 
