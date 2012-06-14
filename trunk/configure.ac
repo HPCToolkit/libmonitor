@@ -390,6 +390,11 @@ AC_ARG_ENABLE([pthreads],
     [],
     [enable_pthreads=yes])
 
+# Although we use libpthread, we access the pthread functions lazily
+# via dlsym().  So, we don't want to add -lpthread to LIBS.
+
+ORIG_LIBS="$LIBS"
+
 if test "x$enable_pthreads" = xyes ; then
     AC_SEARCH_LIBS([pthread_create], [pthread], [], [enable_pthreads=no])
 fi
@@ -410,6 +415,8 @@ if test "x$enable_pthreads" = xyes ; then
         [AC_DEFINE([MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN], [1],
 	    [pthread_cleanup_push is a function, not a macro.])])
 fi
+
+LIBS="$ORIG_LIBS"
 
 AM_CONDITIONAL([MONITOR_TEST_USE_PTHREADS],
     [test x$enable_pthreads = xyes])

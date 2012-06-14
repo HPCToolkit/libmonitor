@@ -11983,6 +11983,11 @@ else
 fi
 
 
+# Although we use libpthread, we access the pthread functions lazily
+# via dlsym().  So, we don't want to add -lpthread to LIBS.
+
+ORIG_LIBS="$LIBS"
+
 if test "x$enable_pthreads" = xyes ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing pthread_create" >&5
 $as_echo_n "checking for library containing pthread_create... " >&6; }
@@ -12139,6 +12144,8 @@ $as_echo "#define MONITOR_PTHREAD_CLEANUP_PUSH_IS_FCN 1" >>confdefs.h
 fi
 
 fi
+
+LIBS="$ORIG_LIBS"
 
  if test x$enable_pthreads = xyes; then
   MONITOR_TEST_USE_PTHREADS_TRUE=
