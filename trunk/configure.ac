@@ -448,55 +448,55 @@ if test "x$enable_pthreads" = xyes && test "x$enable_signals" = xyes ; then
 fi
 
 #------------------------------------------------------------
-# Option: --enable-open-signals=LIST
+# Option: --enable-client-signals=LIST
 #------------------------------------------------------------
 
-AC_ARG_ENABLE([open-signals],
-    [AS_HELP_STRING([--enable-open-signals=LIST],
-	[comma-separated list of signal numbers (27) or
-	 names (SIGPROF) that the application may not block,
+AC_ARG_ENABLE([client-signals],
+    [AS_HELP_STRING([--enable-client-signals=LIST],
+	[comma-separated list of signal names (SIGPROF) or
+	 numbers (27) that are kept open for the client,
 	 but do not use SIGRTMIN names (default empty)])],
     [],
-    [enable_open_signals= ])
+    [enable_client_signals= ])
 
-AC_MSG_CHECKING([open signals list])
+AC_MSG_CHECKING([client signals list])
 
-# We pass $open_signals_list to signal.c with one comma after each
+# We pass $client_signals_list to signal.c with one comma after each
 # element (or else empty) to be used in an array init, but we remove
-# the final comma in $open_signals_mesg.
+# the final comma in $client_signals_mesg.
 
-case "$enable_open_signals" in
+case "$enable_client_signals" in
     yes | no | none | empty )
-	enable_open_signals=
+	enable_client_signals=
 	;;
 esac
-enable_open_signals=`echo $enable_open_signals | tr ',' ' '`
+enable_client_signals=`echo $enable_client_signals | tr ',' ' '`
 
-open_signals_list=
-for sig in $enable_open_signals ; do
+client_signals_list=
+for sig in $enable_client_signals ; do
     case "$sig" in
 	[[0-9]*] ) ;;
 	SIG* ) ;;
 	* ) AC_MSG_ERROR([invalid signal name: $sig]) ;;
     esac
-    open_signals_list="${open_signals_list} ${sig},"
+    client_signals_list="${client_signals_list} ${sig},"
 done
-case "$open_signals_list" in
-    '' ) open_signals_mesg=none ;;
-    * )  open_signals_mesg=`echo $open_signals_list | $SED -e 's/,$//'` ;;
+case "$client_signals_list" in
+    '' ) client_signals_mesg=none ;;
+    * )  client_signals_mesg=`echo $client_signals_list | $SED -e 's/,$//'` ;;
 esac
 
-AC_MSG_RESULT([$open_signals_mesg])
+AC_MSG_RESULT([$client_signals_mesg])
 
 AC_COMPILE_IFELSE([
 #include <signal.h>
-int signal_list[[]] = { $open_signals_list 1 };
+int signal_list[[]] = { $client_signals_list 1 };
 ],  [],
-    [AC_MSG_ERROR([invalid open signals list, see config.log for details])])
+    [AC_MSG_ERROR([invalid client signals list, see config.log for details])])
 
-AC_DEFINE_UNQUOTED([MONITOR_OPEN_SIGNALS_LIST],
-    [$open_signals_list],
-    [List of signals that the application may not block.])
+AC_DEFINE_UNQUOTED([MONITOR_CLIENT_SIGNALS_LIST],
+    [$client_signals_list],
+    [List of signals kept open for the client.])
 
 #------------------------------------------------------------
 # Option: --enable-start-main=TYPE
@@ -557,7 +557,7 @@ AC_MSG_NOTICE([enable fork: $enable_fork])
 AC_MSG_NOTICE([enable mpi: $enable_mpi])
 AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
 AC_MSG_NOTICE([enable signals: $enable_signals])
-AC_MSG_NOTICE([open signals: $open_signals_mesg])
+AC_MSG_NOTICE([client signals: $client_signals_mesg])
 AC_MSG_NOTICE([start main type: $enable_start_main])
 
 if test "$warn_non_gcc" = yes ; then
