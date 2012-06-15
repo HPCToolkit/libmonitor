@@ -111,10 +111,10 @@ static int monitor_signal_stop_list[] = {
 };
 
 /*  Signals that the application is not allowed to block.  This list
- * comes from the option --enable-open-signals in configure.
+ *  comes from the --enable-client-signals option in configure.
  */
 static int monitor_signal_open_list[] = {
-    MONITOR_OPEN_SIGNALS_LIST  -1
+    MONITOR_CLIENT_SIGNALS_LIST  -1
 };
 
 /*  Signals that monitor tries for thread shootdown.  We build this
@@ -263,6 +263,7 @@ monitor_signal_init(void)
     struct monitor_signal_entry *mse;
     struct sigaction *sa;
     char *shootdown_str;
+    char buf[MONITOR_SIG_BUF_SIZE];
     int num_avoid, num_valid, num_invalid;
     int i, k, sig, ret;
 
@@ -281,7 +282,10 @@ monitor_signal_init(void)
 	monitor_signal_array[monitor_signal_stop_list[i]].mse_stop = 1;
     }
     for (i = 0; monitor_signal_open_list[i] > 0; i++) {
-	monitor_signal_array[monitor_signal_open_list[i]].mse_keep_open = 1;
+	sig = monitor_signal_open_list[i];
+	if (1 <= sig && sig < MONITOR_NSIG) {
+	    monitor_signal_array[sig].mse_keep_open = 1;
+	}
     }
 
     /*
@@ -359,8 +363,18 @@ monitor_signal_init(void)
 	MONITOR_DEBUG("MONITOR_SHOOTDOWN_SIGNAL = %d\n", shootdown_signal);
     }
 
-    MONITOR_DEBUG("valid: %d, invalid: %d, avoid: %d, max signum: %d\n",
-		  num_valid, num_invalid, num_avoid, MONITOR_NSIG - 1);
+    if (monitor_debug) {
+	MONITOR_DEBUG("valid: %d, invalid: %d, avoid: %d, max signum: %d\n",
+		      num_valid, num_invalid, num_avoid, MONITOR_NSIG - 1);
+
+        monitor_signal_list_string(buf, MONITOR_SIG_BUF_SIZE,
+				   monitor_signal_open_list);
+	MONITOR_DEBUG("client list:%s\n", buf);
+
+        monitor_signal_list_string(buf, MONITOR_SIG_BUF_SIZE,
+				   monitor_shootdown_list);
+	MONITOR_DEBUG("shootdown list:%s\n", buf);
+    }
 }
 
 /*
