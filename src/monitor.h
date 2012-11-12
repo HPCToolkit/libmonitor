@@ -103,6 +103,8 @@ extern int monitor_mpi_comm_size(void);
 extern int monitor_mpi_comm_rank(void);
 extern int monitor_block_shootdown(void);
 extern void monitor_unblock_shootdown(void);
+extern void monitor_disable_new_threads(void);
+extern void monitor_enable_new_threads(void);
 
 /*
  *  Special access to wrapped functions for the application.
