@@ -810,6 +810,37 @@ monitor_unblock_shootdown(void)
 }
 
 /*
+ *  Allow the client to ignore some new threads.  This is mostly
+ *  useful for library calls that we call that create new threads.
+ *  PAPI cuda does this.
+ */
+void
+monitor_disable_new_threads(void)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    if (tn == NULL) {
+	MONITOR_DEBUG1("unable to find thread node\n");
+	return;
+    }
+    tn->tn_ignore_threads = 1;
+}
+
+void
+monitor_enable_new_threads(void)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    if (tn == NULL) {
+	MONITOR_DEBUG1("unable to find thread node\n");
+	return;
+    }
+    tn->tn_ignore_threads = 0;
+}
+
+/*
  *----------------------------------------------------------------------
  *  PTHREAD_CREATE OVERRIDE and HELPER FUNCTIONS
  *----------------------------------------------------------------------
@@ -989,12 +1020,26 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
     if (! monitor_has_used_threads) {
 	monitor_thread_list_init();
 	monitor_has_used_threads = 1;
-	/*
-	 * Normally, we run thread_support here, on the first call to
-	 * pthread_create().  But if we're here early, before
-	 * libc_start_main, then defer thread_support until after
-	 * init_process in libc_start_main.
-	 */
+    }
+
+    /*
+     * If we are ignoring this thread, then call the real
+     * pthread_create(), don't put it on the thread list and don't
+     * give any callbacks.
+     */
+    tn = monitor_get_tn();
+    if (tn != NULL && tn->tn_ignore_threads) {
+	MONITOR_DEBUG1("ignoring this new thread\n");
+	return (*real_pthread_create)(thread, attr, start_routine, arg);
+    }
+
+    /*
+     * Normally, we run thread_support here, on the first call to
+     * pthread_create().  But if we're here early, before
+     * libc_start_main, then defer thread_support until after
+     * init_process in libc_start_main.
+     */
+    if (! monitor_thread_support_done) {
 	if (monitor_has_reached_main) {
 	    monitor_call_thread_support();
 	} else {
