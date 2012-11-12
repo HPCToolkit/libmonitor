@@ -44,6 +44,7 @@
  *    monitor_real_exit
  *    monitor_real_sigprocmask
  *    monitor_real_fork
+ *    monitor_get_addr_main
  */
 
 #include "config.h"
@@ -418,6 +419,15 @@ monitor_real_fork(void)
 }
 
 /*
+ *  Returns: the address of the application's main() function.
+ */
+void *
+monitor_get_addr_main(void)
+{
+    return real_main;
+}
+
+/*
  *----------------------------------------------------------------------
  *  EXTERNAL OVERRIDES and their helper functions
  *----------------------------------------------------------------------
@@ -610,6 +620,12 @@ int __attribute__ ((weak))
 monitor_get_thread_num(void)
 {
     return (0);
+}
+
+void * __attribute__ ((weak))
+monitor_get_addr_thread_start(void)
+{
+    return NULL;
 }
 
 void * __attribute__ ((weak))
