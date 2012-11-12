@@ -89,6 +89,8 @@ extern int monitor_sigaction(int sig, monitor_sighandler_t *handler,
 			     int flags, struct sigaction *act);
 extern int monitor_broadcast_signal(int sig);
 extern int monitor_is_threaded(void);
+extern void *monitor_get_addr_main(void);
+extern void *monitor_get_addr_thread_start(void);
 extern void *monitor_get_user_data(void);
 extern int monitor_get_thread_num(void);
 extern void *monitor_stack_bottom(void);

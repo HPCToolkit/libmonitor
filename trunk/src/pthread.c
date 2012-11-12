@@ -52,6 +52,7 @@
  *    monitor_in_start_func_narrow
  *    monitor_real_pthread_sigmask
  *    monitor_broadcast_signal
+ *    monitor_get_addr_thread_start
  */
 
 #include "config.h"
@@ -658,6 +659,19 @@ monitor_get_thread_num(void)
 
     tn = monitor_get_tn();
     return (tn == NULL) ? -1 : tn->tn_tid;
+}
+
+/*
+ *  Returns: the address of the pthread start routine for the current
+ *  thread, or else NULL on error.
+ */
+void *
+monitor_get_addr_thread_start(void)
+{
+    struct monitor_thread_node *tn;
+
+    tn = monitor_get_tn();
+    return (tn == NULL) ? NULL : tn->tn_start_routine;
 }
 
 /*
