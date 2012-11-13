@@ -41,6 +41,7 @@
  *
  *  Support functions:
  *
+ *    monitor_real_execve
  *    monitor_real_system
  */
 
@@ -133,21 +134,21 @@ monitor_fork_init(void)
  *  by monitor_real_system() so that we don't monitor the system
  *  function.
  *
- *  For most binaries, unsetenv(LD_PRELAOD) would work.  But inside
+ *  For most binaries, unsetenv(LD_PRELOAD) would work.  But inside
  *  bash, unsetenv() doesn't seem to change environ (why!?).  Also,
  *  copying environ is safer than modifying it in place if environ is
  *  somehow read-only.
  */
 static char **
-monitor_copy_environ(void)
+monitor_copy_environ(char *const oldenv[])
 {
     char **newenv = &newenv_array[0];
     size_t pagesize = MONITOR_DEFAULT_PAGESIZE;
     size_t size;
     int k, n, prot, flags;
 
-    /* Count the size of the environ array. */
-    for (n = 0; environ[n] != NULL; n++) {
+    /* Count the size of the old environ array. */
+    for (n = 0; oldenv[n] != NULL; n++) {
     }
     n += 2;
 
@@ -173,11 +174,11 @@ monitor_copy_environ(void)
 	}
     }
 
-    /* Copy environ and omit LD_PRELOAD. */
+    /* Copy old environ and omit LD_PRELOAD. */
     n = 0;
-    for (k = 0; environ[k] != NULL; k++) {
-	if (strstr(environ[k], "LD_PRELOAD") == NULL) {
-	    newenv[n] = environ[k];
+    for (k = 0; oldenv[k] != NULL; k++) {
+	if (strstr(oldenv[k], "LD_PRELOAD") == NULL) {
+	    newenv[n] = oldenv[k];
 	    n++;
 	}
     }
@@ -565,7 +566,7 @@ monitor_system(const char *command, int callback)
 	arglist[2] = (char *)command;
 	arglist[3] = NULL;
 	(*real_execve)(SHELL, arglist,
-		       callback ? environ : monitor_copy_environ());
+		       callback ? environ : monitor_copy_environ(environ));
 	monitor_real_exit(127);
     }
     else {
@@ -602,6 +603,29 @@ MONITOR_WRAP_NAME(system)(const char *command)
  *----------------------------------------------------------------------
  */
 
+/*
+ *  Don't call fini process and remove LD_PRELOAD from the environment
+ *  so the new program won't be monitored.
+ */
+int
+monitor_real_execve(const char *path, char *const argv[], char *const envp[])
+{
+    monitor_fork_init();
+    MONITOR_DEBUG("command = %s\n", path);
+
+    if (path == NULL || argv == NULL || envp == NULL) {
+	MONITOR_DEBUG("error: null arg: path: %s, argv: %p, envp: %p\n",
+		      path, argv, envp);
+	errno = EACCES;
+	return -1;
+    }
+
+    return (*real_execve)(path, argv, monitor_copy_environ(envp));
+}
+
+/*
+ *  Run command unmonitored and without callbacks.
+ */
 int
 monitor_real_system(const char *command)
 {

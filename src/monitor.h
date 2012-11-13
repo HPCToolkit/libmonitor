@@ -78,6 +78,8 @@ extern void monitor_mpi_post_fini(void);
 extern void monitor_real_abort(void);
 extern void monitor_real_exit(int status);
 extern pid_t monitor_real_fork(void);
+extern int monitor_real_execve(const char *path, char *const argv[],
+			       char *const envp[]);
 extern int monitor_real_system(const char *command);
 extern void *monitor_real_dlopen(const char *path, int flags);
 extern int monitor_real_dlclose(void *handle);
