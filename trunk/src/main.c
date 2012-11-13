@@ -411,7 +411,13 @@ monitor_real_fork(void)
 #ifdef MONITOR_USE_FORK
     MONITOR_GET_REAL_NAME_WRAP(real_fork, fork);
     MONITOR_DEBUG1("(real)\n");
-    return (*real_fork)();
+
+    pid_t ret = (*real_fork)();
+    if (ret == 0) {
+	/* child process */
+	monitor_reset_thread_list(&monitor_main_tn);
+    }
+    return ret;
 #else
     MONITOR_DEBUG1("(unavailable)\n");
     return (-1);
