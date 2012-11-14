@@ -65,6 +65,12 @@ monitor_fini_process(int how, void *data)
     MONITOR_DEBUG("(default callback) how = %d\n", how);
 }
 
+void __attribute__ ((weak))
+monitor_begin_process_exit(int how)
+{
+    MONITOR_DEBUG("(default callback) how = %d\n", how);
+}
+
 void * __attribute__ ((weak))
 monitor_thread_pre_create(void)
 {

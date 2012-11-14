@@ -274,11 +274,14 @@ monitor_end_process_fcn(int how)
 	 * Race winner: use the first thread that starts process exit
 	 * to launch the fini-thread and fini-process callbacks.
 	 */
-	MONITOR_DEBUG("begin process exit (how = %d)\n", how);
 	if (tn != NULL) {
 	    tn->tn_exit_win = 1;
 	}
+	MONITOR_DEBUG("calling monitor_begin_process_exit (how = %d) ...\n", how);
+	monitor_begin_process_exit(how);
+
 	monitor_thread_shootdown();
+
 	MONITOR_DEBUG("calling monitor_fini_process (how = %d) ...\n", how);
 	monitor_fini_process(how, monitor_main_tn.tn_user_data);
     }
