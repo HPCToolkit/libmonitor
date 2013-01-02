@@ -1,7 +1,7 @@
 /*
  *  Shared thread declarations.
  *
- *  Copyright (c) 2007-2012, Rice University.
+ *  Copyright (c) 2007-2013, Rice University.
  *  All rights reserved.
  *  
  *  Redistribution and use in source and binary forms, with or without
