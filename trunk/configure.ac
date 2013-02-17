@@ -149,7 +149,7 @@ warn_non_gcc=no
 echo $version | $GREP -E -i -e 'copy.*free.*soft.*found' >/dev/null
 if test $? -ne 0 ; then
     warn_non_gcc=yes
-    AC_MSG_WARN([Not using the GNU C compiler.])
+    AC_MSG_WARN([not using the GNU C compiler])
 fi
 
 AC_CHECK_SIZEOF([void *])
@@ -179,7 +179,7 @@ do
     esac
 done
 
-for opt in orig -O1 none fail
+for opt in orig -O2 -O1 -O0 none fail
 do
     case "$opt" in
 	orig )
@@ -206,13 +206,18 @@ extern void fence;
 int baz(void);
 int foo(int x)
 {
-  int ret = 0;
-  if (x != 0) {
-    ret = baz();
-  }
-  asm (".globl fence");
-  asm ("fence:");
-  return ret;
+    int ret = 0;
+    if (x != 0) {
+        ret = baz();
+    }
+    asm (".globl fence");
+    asm ("fence:");
+    return ret;
+}
+int foo2(int y)
+{
+    y += 2;
+    return foo(y);
 }
 ], [ans=yes], [ans=no])
 
@@ -221,6 +226,10 @@ int foo(int x)
 	break
     fi
 done
+
+if test "$warn_cflags_opt" = yes ; then
+    AC_MSG_WARN([modified CFLAGS to support asm fence labels])
+fi
 
 #------------------------------------------------------------
 # GNU atomic ops
@@ -560,15 +569,24 @@ AC_MSG_NOTICE([enable signals: $enable_signals])
 AC_MSG_NOTICE([client signals: $client_signals_mesg])
 AC_MSG_NOTICE([start main type: $enable_start_main])
 
+end_warning=no
+
 if test "$warn_non_gcc" = yes ; then
-    AC_MSG_NOTICE([])
+    AC_MSG_NOTICE([------------------------------------------------------------])
     AC_MSG_WARN([Not using the GNU C compiler.])
     AC_MSG_WARN([This is not necessarily an error, but parts of libmonitor may])
     AC_MSG_WARN([not compile cleanly without gcc.  If the build fails, try using])
     AC_MSG_WARN([GNU gcc before reporting an error.])
+    end_warning=yes
 fi
 
 if test "$warn_cflags_opt" = yes ; then
+    AC_MSG_NOTICE([------------------------------------------------------------])
     AC_MSG_WARN([Modified -O flags in CFLAGS to support asm fence labels.])
     AC_MSG_WARN([Probably the compiler is duplicating code on ia64.])
+    end_warning=yes
+fi
+
+if test "$end_warning" = yes ; then
+    AC_MSG_NOTICE([------------------------------------------------------------])
 fi

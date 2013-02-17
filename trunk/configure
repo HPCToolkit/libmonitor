@@ -11342,8 +11342,8 @@ warn_non_gcc=no
 echo $version | $GREP -E -i -e 'copy.*free.*soft.*found' >/dev/null
 if test $? -ne 0 ; then
     warn_non_gcc=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not using the GNU C compiler." >&5
-$as_echo "$as_me: WARNING: Not using the GNU C compiler." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: not using the GNU C compiler" >&5
+$as_echo "$as_me: WARNING: not using the GNU C compiler" >&2;}
 fi
 
 # The cast to long int works around a bug in the HP C Compiler
@@ -11407,7 +11407,7 @@ do
     esac
 done
 
-for opt in orig -O1 none fail
+for opt in orig -O2 -O1 -O0 none fail
 do
     case "$opt" in
 	orig )
@@ -11437,13 +11437,18 @@ extern void fence;
 int baz(void);
 int foo(int x)
 {
-  int ret = 0;
-  if (x != 0) {
-    ret = baz();
-  }
-  asm (".globl fence");
-  asm ("fence:");
-  return ret;
+    int ret = 0;
+    if (x != 0) {
+        ret = baz();
+    }
+    asm (".globl fence");
+    asm ("fence:");
+    return ret;
+}
+int foo2(int y)
+{
+    y += 2;
+    return foo(y);
 }
 
 _ACEOF
@@ -11460,6 +11465,11 @@ $as_echo "$ans" >&6; }
 	break
     fi
 done
+
+if test "$warn_cflags_opt" = yes ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: modified CFLAGS to support asm fence labels" >&5
+$as_echo "$as_me: WARNING: modified CFLAGS to support asm fence labels" >&2;}
+fi
 
 #------------------------------------------------------------
 # GNU atomic ops
@@ -14799,9 +14809,11 @@ $as_echo "$as_me: client signals: $client_signals_mesg" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: start main type: $enable_start_main" >&5
 $as_echo "$as_me: start main type: $enable_start_main" >&6;}
 
+end_warning=no
+
 if test "$warn_non_gcc" = yes ; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
-$as_echo "$as_me: " >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: ------------------------------------------------------------" >&5
+$as_echo "$as_me: ------------------------------------------------------------" >&6;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Not using the GNU C compiler." >&5
 $as_echo "$as_me: WARNING: Not using the GNU C compiler." >&2;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This is not necessarily an error, but parts of libmonitor may" >&5
@@ -14810,11 +14822,20 @@ $as_echo "$as_me: WARNING: This is not necessarily an error, but parts of libmon
 $as_echo "$as_me: WARNING: not compile cleanly without gcc.  If the build fails, try using" >&2;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: GNU gcc before reporting an error." >&5
 $as_echo "$as_me: WARNING: GNU gcc before reporting an error." >&2;}
+    end_warning=yes
 fi
 
 if test "$warn_cflags_opt" = yes ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: ------------------------------------------------------------" >&5
+$as_echo "$as_me: ------------------------------------------------------------" >&6;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Modified -O flags in CFLAGS to support asm fence labels." >&5
 $as_echo "$as_me: WARNING: Modified -O flags in CFLAGS to support asm fence labels." >&2;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Probably the compiler is duplicating code on ia64." >&5
 $as_echo "$as_me: WARNING: Probably the compiler is duplicating code on ia64." >&2;}
+    end_warning=yes
+fi
+
+if test "$end_warning" = yes ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: ------------------------------------------------------------" >&5
+$as_echo "$as_me: ------------------------------------------------------------" >&6;}
 fi
