@@ -58,6 +58,7 @@
 #include "config.h"
 #include <sys/time.h>
 #include <sys/types.h>
+#include <alloca.h>
 #ifdef MONITOR_DYNAMIC
 #include <dlfcn.h>
 #endif
