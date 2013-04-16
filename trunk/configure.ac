@@ -257,10 +257,63 @@ AM_CONDITIONAL([MONITOR_TEST_USE_GNU_ATOMIC_OPS],
     [test x$use_gnu_atomic_ops = xyes])
 
 #------------------------------------------------------------
+# Blue Gene/Q
+# Option: --enable-bgq
+#------------------------------------------------------------
+
+# Test for Blue Gene/P/Q.  On BG/Q (not P), signal 37 (SIGMUFIFOFULL)
+# is non-terminating.
+
+AC_ARG_ENABLE([dummy-blank-line], [AS_HELP_STRING([], [])])
+AC_ARG_ENABLE([bgq],
+    [AS_HELP_STRING([--enable-bgq],
+	[enable settings for Blue Gene/Q compute nodes,
+	 rarely needed (default=auto detect)])],
+    [],
+    [enable_bgq=check])
+
+case "$enable_bgq" in
+    yes | no ) ;;
+    * ) enable_bgq=check ;;
+esac
+
+if test "$enable_bgq" = check ; then
+    AC_MSG_CHECKING([for blue gene/Q compute node])
+
+    blue_gene=no
+    if test "$host_cpu_ppc" = yes && test -d /bgsys ; then
+	blue_gene=yes
+    fi
+    blue_gene_p=no
+    for f in /bgsys/drivers/ppcfloor/cnk/*
+    do
+        case "$f" in
+	    */bgp_* ) blue_gene_p=yes ; break ;;
+	esac
+    done
+    if test "$wordsize" = 64 ; then
+	blue_gene_p=no
+    fi
+
+    enable_bgq=no
+    if test "$blue_gene" = yes && test "$blue_gene_p" = no ; then
+	enable_bgq=yes
+    fi
+
+    AC_MSG_RESULT([$enable_bgq])
+else
+    AC_MSG_NOTICE([enable blue gene/Q compute node ... $enable_bgq])
+fi
+
+if test "$enable_bgq" = yes ; then
+    AC_DEFINE([MONITOR_BLUE_GENE_Q], [1],
+	[Compile for Blue Gene/Q compute node.])
+fi
+
+#------------------------------------------------------------
 # Option: --enable-debug=no
 #------------------------------------------------------------
 
-AC_ARG_ENABLE([dummy-blank-line], [AS_HELP_STRING([], [])])
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],
 	[debug mode is always on (default=no)])],

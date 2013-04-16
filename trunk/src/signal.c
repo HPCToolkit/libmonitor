@@ -100,8 +100,12 @@ static int monitor_signal_avoid_list[] = {
 };
 
 /*  Signals whose default actions do not terminate the process.
+ *  On BG/Q, sig 37 = SIGMUFIFOFULL is non-terminating.
  */
 static int monitor_signal_noterm_list[] = {
+#ifdef MONITOR_BLUE_GENE_Q
+    37,
+#endif
     SIGCHLD, SIGCONT, SIGURG, SIGWINCH, -1
 };
 
