@@ -748,6 +748,7 @@ enable_fast_install
 with_gnu_ld
 enable_libtool_lock
 enable_dummy_blank_line
+enable_bgq
 enable_debug
 enable_link_preload
 enable_link_static
@@ -1398,6 +1399,8 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
 
+  --enable-bgq            enable settings for Blue Gene/Q compute nodes,
+                          rarely needed (default=auto detect)
   --enable-debug          debug mode is always on (default=no)
   --enable-link-preload   build libmonitor.so shared library to run monitor
                           with LD_PRELOAD (default=yes)
@@ -11514,13 +11517,71 @@ fi
 
 
 #------------------------------------------------------------
-# Option: --enable-debug=no
+# Blue Gene/Q
+# Option: --enable-bgq
 #------------------------------------------------------------
+
+# Test for Blue Gene/P/Q.  On BG/Q (not P), signal 37 (SIGMUFIFOFULL)
+# is non-terminating.
 
 # Check whether --enable-dummy-blank-line was given.
 if test "${enable_dummy_blank_line+set}" = set; then :
   enableval=$enable_dummy_blank_line;
 fi
+
+# Check whether --enable-bgq was given.
+if test "${enable_bgq+set}" = set; then :
+  enableval=$enable_bgq;
+else
+  enable_bgq=check
+fi
+
+
+case "$enable_bgq" in
+    yes | no ) ;;
+    * ) enable_bgq=check ;;
+esac
+
+if test "$enable_bgq" = check ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for blue gene/Q compute node" >&5
+$as_echo_n "checking for blue gene/Q compute node... " >&6; }
+
+    blue_gene=no
+    if test "$host_cpu_ppc" = yes && test -d /bgsys ; then
+	blue_gene=yes
+    fi
+    blue_gene_p=no
+    for f in /bgsys/drivers/ppcfloor/cnk/*
+    do
+        case "$f" in
+	    */bgp_* ) blue_gene_p=yes ; break ;;
+	esac
+    done
+    if test "$wordsize" = 64 ; then
+	blue_gene_p=no
+    fi
+
+    enable_bgq=no
+    if test "$blue_gene" = yes && test "$blue_gene_p" = no ; then
+	enable_bgq=yes
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_bgq" >&5
+$as_echo "$enable_bgq" >&6; }
+else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: enable blue gene/Q compute node ... $enable_bgq" >&5
+$as_echo "$as_me: enable blue gene/Q compute node ... $enable_bgq" >&6;}
+fi
+
+if test "$enable_bgq" = yes ; then
+
+$as_echo "#define MONITOR_BLUE_GENE_Q 1" >>confdefs.h
+
+fi
+
+#------------------------------------------------------------
+# Option: --enable-debug=no
+#------------------------------------------------------------
 
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :

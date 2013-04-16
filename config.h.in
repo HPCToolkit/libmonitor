@@ -34,6 +34,9 @@
    */
 #undef LT_OBJDIR
 
+/* Compile for Blue Gene/Q compute node. */
+#undef MONITOR_BLUE_GENE_Q
+
 /* List of signals kept open for the client. */
 #undef MONITOR_CLIENT_SIGNALS_LIST
 
