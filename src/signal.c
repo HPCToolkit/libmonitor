@@ -83,6 +83,7 @@ struct monitor_signal_entry {
     char  mse_avoid;
     char  mse_invalid;
     char  mse_noterm;
+    char  mse_noraise;
     char  mse_stop;
     char  mse_blocked;
     char  mse_appl_hand;
@@ -102,6 +103,14 @@ static int monitor_signal_avoid_list[] = {
  */
 static int monitor_signal_noterm_list[] = {
     SIGCHLD, SIGCONT, SIGURG, SIGWINCH, -1
+};
+
+/*  Synchronous signals where we terminate the process by returning
+ *  from the signal handler instead of reraising.  This gives a better
+ *  stack trace for signals like segv, etc.
+ */
+static int monitor_signal_noraise_list[] = {
+    SIGSEGV, SIGBUS, SIGILL, -1
 };
 
 /*  Signals whose default action is to stop the process.
@@ -239,6 +248,10 @@ monitor_signal_handler(int sig, siginfo_t *info, void *context)
 	sigemptyset(&action.sa_mask);
 	(*real_sigaction)(sig, &action, NULL);
 	(*real_sigprocmask)(SIG_SETMASK, &action.sa_mask, NULL);
+	if (mse->mse_noraise) {
+	    /* For segv, etc, we just return. */
+	    return;
+	}
 	raise(sig);
     }
     else {
@@ -277,6 +290,9 @@ monitor_signal_init(void)
     }
     for (i = 0; monitor_signal_noterm_list[i] > 0; i++) {
 	monitor_signal_array[monitor_signal_noterm_list[i]].mse_noterm = 1;
+    }
+    for (i = 0; monitor_signal_noraise_list[i] > 0; i++) {
+	monitor_signal_array[monitor_signal_noraise_list[i]].mse_noraise = 1;
     }
     for (i = 0; monitor_signal_stop_list[i] > 0; i++) {
 	monitor_signal_array[monitor_signal_stop_list[i]].mse_stop = 1;
