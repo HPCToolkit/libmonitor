@@ -16,15 +16,14 @@ case, libmonitor separates the job of hooking the application program
 from the profiling tasks.  See src/monitor.h for the declarations of
 the callback functions.
 
-Libmonitor is hosted by the SciDAC Outreach Center.
+Libmonitor is now hosted on GitHub as a separate repository within the
+HPCToolkit project.
 
-    https://outreach.scidac.gov/projects/libmonitor/
+    https://github.com/HPCToolkit
 
-Libmonitor is available via anonymous svn checkout with the usual
-trunk, tags and branches layout.  Note that the SciDAC Outreach svn
-server uses https for anonymous checkout.
+Libmonitor can be cloned from github by:
 
-    svn co https://outreach.scidac.gov/svn/libmonitor/trunk
+    git clone https://github.com/hpctoolkit/libmonitor.git  
 
 Libmonitor is a rewrite from scratch of Philip Mucci's monitor at the
 University of Tennessee to allow running monitor on both dynamic and
@@ -38,7 +37,7 @@ Engineering Research Institute (PERI).
 
     http://hpctoolkit.org/
 
-Libmonitor is Copyright (c) 2007-2013, Rice University and is licensed
+Libmonitor is Copyright (c) 2007-2016, Rice University and is licensed
 under a 3-clause BSD license.  See the file LICENSE for details.
 
 Send bug reports to: hpctoolkit-forum@rice.edu

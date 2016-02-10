@@ -1,7 +1,7 @@
 /*
  *  Override mpi_init_thread__ in Fortran.
  *
- *  Copyright (c) 2007-2013, Rice University.
+ *  Copyright (c) 2007-2016, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$
