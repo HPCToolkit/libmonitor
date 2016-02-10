@@ -76,7 +76,16 @@ int monitor_debug = 0;
  *----------------------------------------------------------------------
  */
 
+/*
+ *  Powerpc uses a different signature for __libc_start_main() and
+ *  adds a fourth argument to main().
+ */
+
 #ifdef MONITOR_START_MAIN_PPC
+
+#define AUXVEC_ARG   , auxvec
+#define AUXVEC_DECL  , void * auxvec
+
 #define START_MAIN_PARAM_LIST 		\
     int  argc,				\
     char **argv,			\
@@ -89,18 +98,23 @@ int monitor_debug = 0;
 static void *new_stinfo[4];
 
 #else  /* default __libc_start_main() args */
+
+#define AUXVEC_ARG
+#define AUXVEC_DECL
+
 #define START_MAIN_PARAM_LIST 		\
-    int  (*main)(int, char **),		\
+    int  (*main)(int, char **, char **),  \
     int  argc,				\
     char **argv,			\
     void (*init)(void),			\
     void (*fini)(void),			\
     void (*rtld_fini)(void),		\
     void *stack_end
+
 #endif
 
 typedef int start_main_fcn_t(START_MAIN_PARAM_LIST);
-typedef int main_fcn_t(int, char **);
+typedef int main_fcn_t(int, char **, char **  AUXVEC_DECL );
 typedef void exit_fcn_t(int);
 typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
 typedef pid_t fork_fcn_t(void);
@@ -126,6 +140,7 @@ static fork_fcn_t  *real_fork = NULL;
 
 static int monitor_argc = 0;
 static char **monitor_argv = NULL;
+static char **monitor_envp = NULL;
 
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
@@ -139,8 +154,6 @@ extern void monitor_main_fence3;
 extern void monitor_main_fence4;
 
 static struct monitor_thread_node monitor_main_tn;
-
-extern char **environ;
 
 /*
  *----------------------------------------------------------------------
@@ -330,7 +343,7 @@ monitor_get_main_args(int *argc_ptr, char ***argv_ptr, char ***env_ptr)
 	*argv_ptr = monitor_argv;
     }
     if (env_ptr != NULL) {
-	*env_ptr = environ;
+	*env_ptr = monitor_envp;
     }
 }
 
@@ -455,7 +468,7 @@ monitor_get_addr_main(void)
  *  Dynamic case -- we get into __libc_start_main() via LD_PRELOAD.
  */
 int
-monitor_main(int argc, char **argv)
+monitor_main(int argc, char **argv, char **envp  AUXVEC_DECL )
 {
     int ret;
 
@@ -464,6 +477,7 @@ monitor_main(int argc, char **argv)
     MONITOR_DEBUG1("\n");
     monitor_argc = argc;
     monitor_argv = argv;
+    monitor_envp = envp;
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
@@ -478,9 +492,9 @@ monitor_main(int argc, char **argv)
      * application via monitor_wrap_main().  The application should
      * call __real_main() and exit() itself and not return.
      */
-    monitor_wrap_main(monitor_argc, monitor_argv, environ);
+    monitor_wrap_main(monitor_argc, monitor_argv, monitor_envp);
 #endif
-    ret = (*real_main)(monitor_argc, monitor_argv);
+    ret = (*real_main)(argc, argv, envp  AUXVEC_ARG );
     MONITOR_ASM_LABEL(monitor_main_fence3);
 
     monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
@@ -491,14 +505,14 @@ monitor_main(int argc, char **argv)
 
 #ifdef MONITOR_STATIC
 int
-__wrap_main(int argc, char **argv)
+__wrap_main(int argc, char **argv, char **envp  AUXVEC_DECL )
 {
     monitor_normal_init();
 
     MONITOR_DEBUG1("\n");
     real_main = &__real_main;
 
-    return monitor_main(argc, argv);
+    return monitor_main(argc, argv, envp  AUXVEC_ARG );
 }
 
 #else  /* MONITOR_DYNAMIC */
