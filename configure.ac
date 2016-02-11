@@ -76,30 +76,10 @@ AC_SUBST([wrap_list], ["main exit _exit"])
 # SVN Revision
 #------------------------------------------------------------
 
-# If this directory is an svn sandbox, then use svn info (and store
-# the result in a file), else expect the answer to be in the file.
-# Note: svn update changes the revision number, so svn info must take
-# precedence over the file.
+# Git does not provide linear rev numbers, so there's nothing to
+# export to toolkit (sigh).
 
-version_file="${srcdir}/.svn-revision"
-
-AC_MSG_CHECKING([for svn revision])
-
-svn_revision=`svn info $srcdir 2>/dev/null | $GREP -e '^Revision' | $AWK '{ print $2 }'`
-if test "x$svn_revision" != x ; then
-    rm -f "$version_file"
-    echo "$svn_revision" > "$version_file"
-elif test -f "$version_file" ; then
-    svn_revision=`cat $version_file`
-else
-    svn_revision=0
-fi
-
-AC_MSG_RESULT([$svn_revision])
-
-if test "$svn_revision" = 0 ; then
-    AC_MSG_WARN([unable to find svn revision])
-fi
+svn_revision=0
 
 AC_SUBST([svn_revision])
 AC_DEFINE_UNQUOTED([SVN_REVISION], [$svn_revision], [SVN revision.])
@@ -599,7 +579,6 @@ AC_MSG_NOTICE([-------------------])
 AC_MSG_NOTICE([Libmonitor summary])
 AC_MSG_NOTICE([-------------------])
 
-AC_MSG_NOTICE([svn revision: $svn_revision])
 AC_MSG_NOTICE([prefix: $prefix])
 AC_MSG_NOTICE([build: $build])
 AC_MSG_NOTICE([host:  $host])

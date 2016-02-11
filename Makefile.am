@@ -45,17 +45,20 @@ SVN_REVISION = @svn_revision@
 # literal.
 #
 MY_DIST_FILES = LICENSE Makefile.am Makefile.in README  \
-	aclocal.m4 config.h.in configure configure.ac .svn-revision  \
+	aclocal.m4 config.h.in configure configure.ac  \
 	src/Makefile.am src/*.in src/*.h src/*.c  \
 	config tests/Makefile tests/*.c
 
-MY_DIST_DIR = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-r$(SVN_REVISION)
+MY_DIST_DIR = $(PACKAGE_NAME)-$(PACKAGE_VERSION)
 MY_TAR_FILE = $(MY_DIST_DIR).tar
 
 dist:
+	@echo "cleaning source tree (ignore errors) ..."
+	-cd "$(srcdir)" && test -f Makefile && $(MAKE) clean
 	rm -f "$(MY_DIST_DIR)" "$(MY_TAR_FILE)" "$(MY_TAR_FILE).gz"
 	ln -s "$(srcdir)" "$(MY_DIST_DIR)"
 	tar cf "$(MY_TAR_FILE)"  \
+		--exclude .git  \
 		--exclude .svn  \
 		$(addprefix $(MY_DIST_DIR)/,$(MY_DIST_FILES))
 	rm -f "$(MY_DIST_DIR)"
