@@ -39,10 +39,10 @@ AC_COPYRIGHT([libmonitor is Copyright (c) 2007-2016, Rice University.
 See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror no-dist])
+
+AM_INIT_AUTOMAKE([1.11.1 foreign no-dist -Wall])
 AM_MAINTAINER_MODE
 AC_PREREQ(2.67)
-AM_INIT_AUTOMAKE(1.11.1)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
@@ -182,6 +182,7 @@ do
     AC_MSG_CHECKING([if asm fence labels work with CFLAGS='$CFLAGS'])
 
     AC_COMPILE_IFELSE([
+    AC_LANG_SOURCE([[
 extern void fence;
 int baz(void);
 int foo(int x)
@@ -199,7 +200,7 @@ int foo2(int y)
     y += 2;
     return foo(y);
 }
-], [ans=yes], [ans=no])
+]])], [ans=yes], [ans=no])
 
     AC_MSG_RESULT([$ans])
     if test "$ans" = yes ; then
@@ -220,6 +221,7 @@ fi
 AC_MSG_CHECKING([if CC supports GNU atomic ops])
 
 AC_LINK_IFELSE([
+AC_LANG_SOURCE([[
 #include <stdio.h>
 int main(int argc, char **argv)
 {
@@ -228,8 +230,7 @@ int main(int argc, char **argv)
     printf("%ld", x);
     return 0;
 }
-],  [use_gnu_atomic_ops=yes],
-    [use_gnu_atomic_ops=no])
+]])], [use_gnu_atomic_ops=yes], [use_gnu_atomic_ops=no])
 
 AC_MSG_RESULT([$use_gnu_atomic_ops])
 
@@ -531,9 +532,11 @@ esac
 AC_MSG_RESULT([$client_signals_mesg])
 
 AC_COMPILE_IFELSE([
+AC_LANG_SOURCE([[
 #include <signal.h>
-int signal_list[[]] = { $client_signals_list 1 };
-],  [],
+int signal_list[] = { $client_signals_list 10 };
+]])],
+    [],
     [AC_MSG_ERROR([invalid client signals list, see config.log for details])])
 
 AC_DEFINE_UNQUOTED([MONITOR_CLIENT_SIGNALS_LIST],
