@@ -40,9 +40,9 @@ See the file LICENSE for details.])
 
 AC_CONFIG_AUX_DIR([config])
 
-AM_INIT_AUTOMAKE([1.11.1 foreign no-dist -Wall])
+AM_INIT_AUTOMAKE([1.15.0 foreign no-dist -Wall])
 AM_MAINTAINER_MODE
-AC_PREREQ(2.67)
+AC_PREREQ(2.69)
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
@@ -56,6 +56,7 @@ AC_CONFIG_FILES([src/monitor-run],  [chmod +x src/monitor-run])
 #
 enable_static=no
 
+AM_PROG_AR
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CPP
