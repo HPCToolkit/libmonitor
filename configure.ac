@@ -143,10 +143,13 @@ AC_MSG_RESULT([$wordsize bits])
 # CFLAGS and Fence Labels
 #------------------------------------------------------------
 
-# On ia64, gcc at -O2 or higher will duplicate code after a branch to
-# make long pipelines.  This breaks our fence labels because it
-# duplicates the symbol.  Here, we test for this and try lowering the
-# optimization level if needed.
+# Some compilers (icc -O2) and some platforms (gcc ia64) will
+# duplicate code to make longer pipelines.  This breaks our fence
+# labels because it duplicates the symbol.  Here, we test for this
+# and try lowering the optimization level if needed.
+#
+# To deal with automake issues, we replace CFLAGS with MONITOR_CFLAGS
+# for most files, and FENCE_CFLAGS for files with asm fence labels.
 
 orig_cflags="$CFLAGS"
 cflags_noopt=
@@ -184,22 +187,33 @@ do
 
     AC_COMPILE_IFELSE([
     AC_LANG_SOURCE([[
-extern void fence;
-int baz(void);
-int foo(int x)
+extern int fence1;
+extern int fence2;
+int baz1(int);
+int baz2(int);
+int baz3(int);
+int baz4(int);
+int baz5(int);
+int foo1(int x)
 {
-    int ret = 0;
-    if (x != 0) {
-        ret = baz();
+    asm (".globl fence1");
+    asm ("fence1:");
+    int ret = baz1(x);
+    if (x > 5) {
+        ret += baz2(x);
     }
-    asm (".globl fence");
-    asm ("fence:");
+    ret += baz3(x);
+    asm (".globl fence2");
+    asm ("fence2:");
     return ret;
 }
 int foo2(int y)
 {
-    y += 2;
-    return foo(y);
+    int ret = baz4(y);
+    if (y > 5) {
+        ret += baz2(y);
+    }
+    return foo1(ret);
 }
 ]])], [ans=yes], [ans=no])
 
@@ -209,9 +223,18 @@ int foo2(int y)
     fi
 done
 
+# Replace CFLAGS with MONITOR_CFLAGS and FENCE_CFLAGS.
+
+MONITOR_CFLAGS="$orig_cflags"
+FENCE_CFLAGS="$CFLAGS"
+CFLAGS="$orig_cflags"
+
 if test "$warn_cflags_opt" = yes ; then
     AC_MSG_WARN([modified CFLAGS to support asm fence labels])
 fi
+
+AC_SUBST([MONITOR_CFLAGS])
+AC_SUBST([FENCE_CFLAGS])
 
 #------------------------------------------------------------
 # GNU atomic ops
@@ -577,6 +600,9 @@ AC_MSG_RESULT([$enable_start_main])
 # Display a summary of the config options.
 #------------------------------------------------------------
 
+# We now split CFLAGS into MONITOR_CFLAGS and FENCE_CFLAGS.
+CFLAGS=
+
 AC_OUTPUT
 
 AC_MSG_NOTICE([-------------------])
@@ -590,7 +616,8 @@ AC_MSG_NOTICE([host:  $host])
 AC_MSG_NOTICE([C compiler: $CC_VERSION])
 AC_MSG_NOTICE([Path: $CC_PATH])
 AC_MSG_NOTICE([CC:   '$CC'])
-AC_MSG_NOTICE([CFLAGS: '$CFLAGS'])
+AC_MSG_NOTICE([CFLAGS: '$MONITOR_CFLAGS'])
+AC_MSG_NOTICE([Fence CFLAGS: '$FENCE_CFLAGS'])
 
 AC_MSG_NOTICE([wordsize: $wordsize bits])
 AC_MSG_NOTICE([gnu atomic ops: $use_gnu_atomic_ops])
@@ -618,8 +645,7 @@ fi
 
 if test "$warn_cflags_opt" = yes ; then
     AC_MSG_NOTICE([------------------------------------------------------------])
-    AC_MSG_WARN([Modified -O flags in CFLAGS to support asm fence labels.])
-    AC_MSG_WARN([Probably the compiler is duplicating code on ia64.])
+    AC_MSG_NOTICE([Note: Modified -O flags in CFLAGS to support asm fence labels.])
     end_warning=yes
 fi
 

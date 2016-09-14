@@ -654,6 +654,8 @@ MONITOR_TEST_LINK_PRELOAD_FALSE
 MONITOR_TEST_LINK_PRELOAD_TRUE
 MONITOR_TEST_USE_GNU_ATOMIC_OPS_FALSE
 MONITOR_TEST_USE_GNU_ATOMIC_OPS_TRUE
+FENCE_CFLAGS
+MONITOR_CFLAGS
 CC_PATH
 svn_revision
 wrap_list
@@ -13357,10 +13359,13 @@ $as_echo "$wordsize bits" >&6; }
 # CFLAGS and Fence Labels
 #------------------------------------------------------------
 
-# On ia64, gcc at -O2 or higher will duplicate code after a branch to
-# make long pipelines.  This breaks our fence labels because it
-# duplicates the symbol.  Here, we test for this and try lowering the
-# optimization level if needed.
+# Some compilers (icc -O2) and some platforms (gcc ia64) will
+# duplicate code to make longer pipelines.  This breaks our fence
+# labels because it duplicates the symbol.  Here, we test for this
+# and try lowering the optimization level if needed.
+#
+# To deal with automake issues, we replace CFLAGS with MONITOR_CFLAGS
+# for most files, and FENCE_CFLAGS for files with asm fence labels.
 
 orig_cflags="$CFLAGS"
 cflags_noopt=
@@ -13401,22 +13406,33 @@ $as_echo_n "checking if asm fence labels work with CFLAGS='$CFLAGS'... " >&6; }
 /* end confdefs.h.  */
 
 
-extern void fence;
-int baz(void);
-int foo(int x)
+extern int fence1;
+extern int fence2;
+int baz1(int);
+int baz2(int);
+int baz3(int);
+int baz4(int);
+int baz5(int);
+int foo1(int x)
 {
-    int ret = 0;
-    if (x != 0) {
-        ret = baz();
+    asm (".globl fence1");
+    asm ("fence1:");
+    int ret = baz1(x);
+    if (x > 5) {
+        ret += baz2(x);
     }
-    asm (".globl fence");
-    asm ("fence:");
+    ret += baz3(x);
+    asm (".globl fence2");
+    asm ("fence2:");
     return ret;
 }
 int foo2(int y)
 {
-    y += 2;
-    return foo(y);
+    int ret = baz4(y);
+    if (y > 5) {
+        ret += baz2(y);
+    }
+    return foo1(ret);
 }
 
 _ACEOF
@@ -13434,10 +13450,19 @@ $as_echo "$ans" >&6; }
     fi
 done
 
+# Replace CFLAGS with MONITOR_CFLAGS and FENCE_CFLAGS.
+
+MONITOR_CFLAGS="$orig_cflags"
+FENCE_CFLAGS="$CFLAGS"
+CFLAGS="$orig_cflags"
+
 if test "$warn_cflags_opt" = yes ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: modified CFLAGS to support asm fence labels" >&5
 $as_echo "$as_me: WARNING: modified CFLAGS to support asm fence labels" >&2;}
 fi
+
+
+
 
 #------------------------------------------------------------
 # GNU atomic ops
@@ -14386,6 +14411,9 @@ $as_echo "$enable_start_main" >&6; }
 #------------------------------------------------------------
 # Display a summary of the config options.
 #------------------------------------------------------------
+
+# We now split CFLAGS into MONITOR_CFLAGS and FENCE_CFLAGS.
+CFLAGS=
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -16734,8 +16762,10 @@ $as_echo "$as_me: C compiler: $CC_VERSION" >&6;}
 $as_echo "$as_me: Path: $CC_PATH" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: CC:   '$CC'" >&5
 $as_echo "$as_me: CC:   '$CC'" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: CFLAGS: '$CFLAGS'" >&5
-$as_echo "$as_me: CFLAGS: '$CFLAGS'" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: CFLAGS: '$MONITOR_CFLAGS'" >&5
+$as_echo "$as_me: CFLAGS: '$MONITOR_CFLAGS'" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Fence CFLAGS: '$FENCE_CFLAGS'" >&5
+$as_echo "$as_me: Fence CFLAGS: '$FENCE_CFLAGS'" >&6;}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: wordsize: $wordsize bits" >&5
 $as_echo "$as_me: wordsize: $wordsize bits" >&6;}
@@ -16781,10 +16811,8 @@ fi
 if test "$warn_cflags_opt" = yes ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: ------------------------------------------------------------" >&5
 $as_echo "$as_me: ------------------------------------------------------------" >&6;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Modified -O flags in CFLAGS to support asm fence labels." >&5
-$as_echo "$as_me: WARNING: Modified -O flags in CFLAGS to support asm fence labels." >&2;}
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Probably the compiler is duplicating code on ia64." >&5
-$as_echo "$as_me: WARNING: Probably the compiler is duplicating code on ia64." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Note: Modified -O flags in CFLAGS to support asm fence labels." >&5
+$as_echo "$as_me: Note: Modified -O flags in CFLAGS to support asm fence labels." >&6;}
     end_warning=yes
 fi
 
