@@ -204,10 +204,10 @@ volatile static char monitor_thread_support_done = 0;
 volatile static char monitor_fini_thread_done = 0;
 static int shootdown_signal = 0;
 
-extern void monitor_thread_fence1;
-extern void monitor_thread_fence2;
-extern void monitor_thread_fence3;
-extern void monitor_thread_fence4;
+extern char monitor_thread_fence1;
+extern char monitor_thread_fence2;
+extern char monitor_thread_fence3;
+extern char monitor_thread_fence4;
 
 /*
  *----------------------------------------------------------------------
@@ -682,7 +682,8 @@ monitor_get_addr_thread_start(void)
 int
 monitor_unwind_thread_bottom_frame(void *addr)
 {
-    return (&monitor_thread_fence1 <= addr && addr <= &monitor_thread_fence4);
+    return (&monitor_thread_fence1 <= (char *) addr
+	    && (char *) addr <= &monitor_thread_fence4);
 }
 
 /*
@@ -710,7 +711,8 @@ int
 monitor_in_start_func_wide(void *addr)
 {
     return monitor_in_main_start_func_wide(addr) ||
-	(&monitor_thread_fence1 <= addr && addr <= &monitor_thread_fence4);
+	(&monitor_thread_fence1 <= (char *) addr
+	 && (char *) addr <= &monitor_thread_fence4);
 }
 
 /*
@@ -722,7 +724,8 @@ int
 monitor_in_start_func_narrow(void *addr)
 {
     return monitor_in_main_start_func_narrow(addr) ||
-	(&monitor_thread_fence2 <= addr && addr <= &monitor_thread_fence3);
+	(&monitor_thread_fence2 <= (char *) addr 
+	 && (char *) addr <= &monitor_thread_fence3);
 }
 
 /*
