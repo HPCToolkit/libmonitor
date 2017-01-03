@@ -1,7 +1,7 @@
 /*
  *  Override MPI_Comm_rank in C/C++.
  *
- *  Copyright (c) 2007-2016, Rice University.
+ *  Copyright (c) 2007-2017, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$

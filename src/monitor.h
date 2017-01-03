@@ -1,7 +1,7 @@
 /*
  *  Include file for libmonitor clients.
  *
- *  Copyright (c) 2007-2016, Rice University.
+ *  Copyright (c) 2007-2017, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
