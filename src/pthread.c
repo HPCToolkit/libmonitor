@@ -228,7 +228,7 @@ monitor_get_tn(void)
     if (monitor_has_used_threads) {
 	tn = (*real_pthread_getspecific)(monitor_pthread_key);
 	if (tn != NULL && tn->tn_magic != MONITOR_TN_MAGIC) {
-	    MONITOR_WARN("bad magic in thread node: %p\n", tn);
+	    MONITOR_WARN_NO_TID("bad magic in thread node: %p\n", tn);
 	    tn = NULL;
 	}
     } else {

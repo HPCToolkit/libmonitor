@@ -100,6 +100,11 @@
 	    __VA_ARGS__ );					\
 } while (0)
 
+#define MONITOR_WARN_NO_TID_ARGS(fmt, ...)  do {		\
+    fprintf(stderr, "monitor warning [%d,--] %s: " fmt ,	\
+	    getpid(), __VA_ARGS__ );				\
+} while (0)
+
 #define MONITOR_ERROR_ARGS(fmt, ...)  do {			\
     fprintf(stderr, "monitor error [%d,%d] %s: " fmt ,		\
 	    getpid(), monitor_get_thread_num(),			\
@@ -112,6 +117,7 @@
 
 #define MONITOR_WARN1(fmt)      MONITOR_WARN_ARGS(fmt, __func__)
 #define MONITOR_WARN(fmt, ...)  MONITOR_WARN_ARGS(fmt, __func__, __VA_ARGS__)
+#define MONITOR_WARN_NO_TID(fmt, ...)  MONITOR_WARN_NO_TID_ARGS(fmt, __func__, __VA_ARGS__)
 
 #define MONITOR_ERROR1(fmt)      MONITOR_ERROR_ARGS(fmt, __func__)
 #define MONITOR_ERROR(fmt, ...)  MONITOR_ERROR_ARGS(fmt, __func__, __VA_ARGS__)
