@@ -83,7 +83,7 @@
  *----------------------------------------------------------------------
  */
 
-#define MONITOR_TN_ARRAY_SIZE  150
+#define MONITOR_TN_ARRAY_SIZE  600
 #define MONITOR_SHOOTDOWN_TIMEOUT  10
 
 /*
