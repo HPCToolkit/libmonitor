@@ -5,7 +5,7 @@
 #  programs, run them with the monitor-run script in debug mode, and
 #  observe the output.
 #
-#  Copyright (c) 2007-2017, Rice University.
+#  Copyright (c) 2007-2018, Rice University.
 #  See the file LICENSE for details.
 #
 #  $Id$
