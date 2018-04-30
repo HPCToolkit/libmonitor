@@ -62,6 +62,7 @@ struct monitor_thread_node {
     void  *tn_arg;
     void  *tn_user_data;
     void  *tn_stack_bottom;
+    void  *tn_thread_info;
     char   tn_is_main;
     char   tn_ignore_threads;
     volatile char  tn_appl_started;

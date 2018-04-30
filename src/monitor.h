@@ -48,6 +48,11 @@ enum { MONITOR_EXIT_NORMAL = 1, MONITOR_EXIT_SIGNAL, MONITOR_EXIT_EXEC };
 extern "C" {
 #endif
 
+struct monitor_thread_info {
+    void * mti_create_return_addr;
+    void * mti_start_routine;
+};
+
 /*
  *  Callback functions for the client to override.
  */
@@ -108,6 +113,7 @@ extern int monitor_block_shootdown(void);
 extern void monitor_unblock_shootdown(void);
 extern void monitor_disable_new_threads(void);
 extern void monitor_enable_new_threads(void);
+extern int monitor_get_new_thread_info(struct monitor_thread_info *);
 
 /*
  *  Special access to wrapped functions for the application.
