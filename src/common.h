@@ -180,7 +180,7 @@ void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 int  monitor_shootdown_signal(void);
 int  monitor_sigwait_handler(int, siginfo_t *, void *);
-void monitor_remove_client_signals(sigset_t *);
+void monitor_remove_client_signals(sigset_t *, int);
 int  monitor_sigset_string(char *, int, const sigset_t *);
 int  monitor_signal_list_string(char *, int, int *);
 void monitor_get_main_args(int *, char ***, char ***);

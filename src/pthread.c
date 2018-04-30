@@ -1116,34 +1116,23 @@ MONITOR_WRAP_NAME(pthread_exit)(void *data)
 
 /*
  *  Allow the application to modify the thread signal mask, but don't
- *  let it block a signal that the client catches.
+ *  let it change the mask for any signal in the keep open list.
  */
 #ifdef MONITOR_USE_SIGNALS
 int
 MONITOR_WRAP_NAME(pthread_sigmask)(int how, const sigset_t *set,
 				   sigset_t *oldset)
 {
-    char buf[MONITOR_SIG_BUF_SIZE];
-    char *type;
     sigset_t my_set;
 
     monitor_signal_init();
     monitor_thread_name_init();
 
-    type = (how == SIG_UNBLOCK) ? "unblock" : "block";
-    if (monitor_debug) {
-	monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
-	MONITOR_DEBUG("(%s) request:%s\n", type, buf);
-    }
-
-    if (set != NULL && (how == SIG_BLOCK || how == SIG_SETMASK)) {
+    if (set != NULL) {
+	MONITOR_DEBUG1("\n");
 	my_set = *set;
-	monitor_remove_client_signals(&my_set);
+	monitor_remove_client_signals(&my_set, how);
 	set = &my_set;
-	if (monitor_debug) {
-	    monitor_sigset_string(buf, MONITOR_SIG_BUF_SIZE, set);
-	    MONITOR_DEBUG("(%s) actual: %s\n", type, buf);
-	}
     }
 
     return (*real_pthread_sigmask)(how, set, oldset);
