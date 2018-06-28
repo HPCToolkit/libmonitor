@@ -800,6 +800,7 @@ enable_mpi
 enable_pthreads
 enable_signals
 enable_client_signals
+enable_shootdown_signal
 enable_start_main
 '
       ac_precious_vars='build_alias
@@ -1462,6 +1463,8 @@ Optional Features:
                           comma-separated list of signal names (SIGPROF) or
                           numbers (27) that are kept open for the client, but
                           do not use SIGRTMIN names (default empty)
+  --enable-shootdown-signal=SIG
+                          signal number for the fini-thread notify signal
   --enable-start-main=TYPE
                           type of __libc_start_main() function (x86, ppc)
 
@@ -14375,6 +14378,45 @@ _ACEOF
 
 
 #------------------------------------------------------------
+# Option: --enable-shootdown-signal=SIG
+#------------------------------------------------------------
+
+# Check whether --enable-shootdown-signal was given.
+if test "${enable_shootdown_signal+set}" = set; then :
+  enableval=$enable_shootdown_signal;
+else
+  enable_shootdown_signal=default
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking shootdown signal" >&5
+$as_echo_n "checking shootdown signal... " >&6; }
+
+config_shootdown_signal=0
+shootdown_mesg=default
+
+case "$enable_shootdown_signal" in
+    [0-9]* | SIG* )
+        config_shootdown_signal="$enable_shootdown_signal"
+	shootdown_mesg="$enable_shootdown_signal"
+	;;
+    yes | no | default )
+	;;
+    * )
+        as_fn_error $? "invalid signal name: $enable_shootdown_signal" "$LINENO" 5
+	;;
+esac
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $shootdown_mesg" >&5
+$as_echo "$shootdown_mesg" >&6; }
+
+
+cat >>confdefs.h <<_ACEOF
+#define MONITOR_CONFIG_SHOOTDOWN_SIGNAL $config_shootdown_signal
+_ACEOF
+
+
+#------------------------------------------------------------
 # Option: --enable-start-main=TYPE
 #------------------------------------------------------------
 
@@ -16789,6 +16831,8 @@ $as_echo "$as_me: enable pthreads: $enable_pthreads" >&6;}
 $as_echo "$as_me: enable signals: $enable_signals" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: client signals: $client_signals_mesg" >&5
 $as_echo "$as_me: client signals: $client_signals_mesg" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: shootdown signal: $shootdown_mesg" >&5
+$as_echo "$as_me: shootdown signal: $shootdown_mesg" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: start main type: $enable_start_main" >&5
 $as_echo "$as_me: start main type: $enable_start_main" >&6;}
 

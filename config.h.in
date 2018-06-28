@@ -39,6 +39,9 @@
 /* List of signals kept open for the client. */
 #undef MONITOR_CLIENT_SIGNALS_LIST
 
+/* monitor shootdown signal from configure */
+#undef MONITOR_CONFIG_SHOOTDOWN_SIGNAL
+
 /* Debug mode is always on. */
 #undef MONITOR_DEBUG_DEFAULT_ON
 

@@ -568,6 +568,39 @@ AC_DEFINE_UNQUOTED([MONITOR_CLIENT_SIGNALS_LIST],
     [List of signals kept open for the client.])
 
 #------------------------------------------------------------
+# Option: --enable-shootdown-signal=SIG
+#------------------------------------------------------------
+
+AC_ARG_ENABLE([shootdown-signal],
+    [AS_HELP_STRING([--enable-shootdown-signal=SIG],
+	[signal number for the fini-thread notify signal])],
+    [],
+    [enable_shootdown_signal=default ])
+
+AC_MSG_CHECKING([shootdown signal])
+
+config_shootdown_signal=0
+shootdown_mesg=default
+
+case "$enable_shootdown_signal" in
+    [[0-9]*] | SIG* )
+        config_shootdown_signal="$enable_shootdown_signal"
+	shootdown_mesg="$enable_shootdown_signal"
+	;;
+    yes | no | default )
+	;;
+    * )
+        AC_MSG_ERROR([invalid signal name: $enable_shootdown_signal])
+	;;
+esac
+
+AC_MSG_RESULT([$shootdown_mesg])
+
+AC_DEFINE_UNQUOTED([MONITOR_CONFIG_SHOOTDOWN_SIGNAL],
+    [$config_shootdown_signal],
+    [monitor shootdown signal from configure])
+
+#------------------------------------------------------------
 # Option: --enable-start-main=TYPE
 #------------------------------------------------------------
 
@@ -630,6 +663,7 @@ AC_MSG_NOTICE([enable mpi: $enable_mpi])
 AC_MSG_NOTICE([enable pthreads: $enable_pthreads])
 AC_MSG_NOTICE([enable signals: $enable_signals])
 AC_MSG_NOTICE([client signals: $client_signals_mesg])
+AC_MSG_NOTICE([shootdown signal: $shootdown_mesg])
 AC_MSG_NOTICE([start main type: $enable_start_main])
 
 end_warning=no
