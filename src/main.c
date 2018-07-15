@@ -145,7 +145,7 @@ static char **monitor_envp = NULL;
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
 volatile static char monitor_fini_process_done = 0;
-static char monitor_has_reached_main = 0;
+static char monitor_process_fcn_called = 0;
 volatile static long monitor_end_process_cookie = 0;
 
 extern char monitor_main_fence1;
@@ -248,6 +248,11 @@ monitor_end_library_fcn(void)
 void
 monitor_begin_process_fcn(void *user_data, int is_fork)
 {
+    if (!is_fork) {
+      if (monitor_process_fcn_called) return;
+      monitor_begin_library_fcn();
+      monitor_process_fcn_called  = 1; 
+    }
     monitor_normal_init();
     if (is_fork) {
 	monitor_reset_thread_list(&monitor_main_tn);
@@ -256,7 +261,7 @@ monitor_begin_process_fcn(void *user_data, int is_fork)
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
 
-    if (monitor_has_reached_main) {
+    if (monitor_process_fcn_called) {
 	MONITOR_DEBUG1("calling monitor_init_process() ...\n");
 	monitor_main_tn.tn_user_data =
 	    monitor_init_process(&monitor_argc, monitor_argv, user_data);
@@ -484,7 +489,7 @@ monitor_main(int argc, char **argv, char **envp  AUXVEC_DECL )
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
-    monitor_has_reached_main = 1;
+
     monitor_begin_process_fcn(NULL, FALSE);
 
     MONITOR_ASM_LABEL(monitor_main_fence2);

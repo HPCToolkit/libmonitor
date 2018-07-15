@@ -1050,6 +1050,8 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
 
     MONITOR_DEBUG1("\n");
 
+    monitor_begin_process_fcn(NULL, FALSE);
+
     /*
      * There is no race condition to get here first because until now,
      * there is only one thread.
