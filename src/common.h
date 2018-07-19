@@ -176,7 +176,6 @@ void monitor_signal_init(void);
 void monitor_begin_process_fcn(void *, int);
 void monitor_end_process_fcn(int);
 void monitor_end_library_fcn(void);
-void monitor_thread_release(void);
 void monitor_thread_shootdown(void);
 int  monitor_shootdown_signal(void);
 int  monitor_sigwait_handler(int, siginfo_t *, void *);

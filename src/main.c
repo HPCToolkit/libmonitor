@@ -144,8 +144,8 @@ static char **monitor_envp = NULL;
 
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
+volatile static char monitor_init_process_called = 0;
 volatile static char monitor_fini_process_done = 0;
-static char monitor_has_reached_main = 0;
 volatile static long monitor_end_process_cookie = 0;
 
 extern char monitor_main_fence1;
@@ -245,23 +245,40 @@ monitor_end_library_fcn(void)
     monitor_fini_library_called = 1;
 }
 
+/*
+ *  Run the init process callback function on first entry to main(),
+ *  fork() or pthread_create().  This is before we create any new
+ *  threads, so we don't need an atomic test.
+ */
 void
 monitor_begin_process_fcn(void *user_data, int is_fork)
 {
     monitor_normal_init();
+
     if (is_fork) {
+	/* Fork() always runs the init process callback.
+	 */
 	monitor_reset_thread_list(&monitor_main_tn);
 	monitor_main_tn.tn_user_data = user_data;
     }
+    else {
+	/* If called from main() or pthread_create(), then run the
+	 * init process callback only on the first time.
+	 */
+	if (monitor_init_process_called) {
+	    return;
+	}
+    }
+
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
+    monitor_init_process_called = 1;
 
-    if (monitor_has_reached_main) {
-	MONITOR_DEBUG1("calling monitor_init_process() ...\n");
-	monitor_main_tn.tn_user_data =
-	    monitor_init_process(&monitor_argc, monitor_argv, user_data);
-	monitor_thread_release();
-    }
+    monitor_begin_library_fcn();
+
+    MONITOR_DEBUG1("calling monitor_init_process() ...\n");
+    monitor_main_tn.tn_user_data =
+	monitor_init_process(&monitor_argc, monitor_argv, user_data);
 }
 
 /*
@@ -484,7 +501,6 @@ monitor_main(int argc, char **argv, char **envp  AUXVEC_DECL )
 
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
-    monitor_has_reached_main = 1;
     monitor_begin_process_fcn(NULL, FALSE);
 
     MONITOR_ASM_LABEL(monitor_main_fence2);
@@ -729,12 +745,14 @@ monitor_reset_thread_list(struct monitor_thread_node *main_tn)
     return;
 }
 
+#if 0
 void __attribute__ ((weak))
 monitor_thread_release(void)
 {
     MONITOR_DEBUG1("(weak)\n");
     return;
 }
+#endif
 
 void __attribute__ ((weak))
 monitor_thread_shootdown(void)
