@@ -6,7 +6,7 @@
  *  will get into an infinite loop trying to signal threads that don't
  *  exist.
  *
- *  Copyright (c) 2007-2018, Rice University.
+ *  Copyright (c) 2007-2019, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$
