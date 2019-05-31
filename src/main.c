@@ -144,7 +144,6 @@ static char **monitor_envp = NULL;
 
 volatile static char monitor_init_library_called = 0;
 volatile static char monitor_fini_library_called = 0;
-volatile static char monitor_init_process_called = 0;
 volatile static char monitor_fini_process_done = 0;
 volatile static long monitor_end_process_cookie = 0;
 
@@ -247,13 +246,17 @@ monitor_end_library_fcn(void)
 
 /*
  *  Run the init process callback function on first entry to main(),
- *  fork() or pthread_create().  This is before we create any new
- *  threads, so we don't need an atomic test.
+ *  fork(), pthread_create() or client entry.
  */
 void
 monitor_begin_process_fcn(void *user_data, int is_fork)
 {
+    static long monitor_init_process_called = 0;
+
     monitor_normal_init();
+
+    /* Always compare and set to 1, in case of fork. */
+    long val = compare_and_swap(&monitor_init_process_called, 0, 1);
 
     if (is_fork) {
 	/* Fork() always runs the init process callback.
@@ -261,18 +264,14 @@ monitor_begin_process_fcn(void *user_data, int is_fork)
 	monitor_reset_thread_list(&monitor_main_tn);
 	monitor_main_tn.tn_user_data = user_data;
     }
-    else {
-	/* If called from main() or pthread_create(), then run the
-	 * init process callback only on the first time.
+    else if (val) {
+	/* If already called, then skip the init process callback.
 	 */
-	if (monitor_init_process_called) {
-	    return;
-	}
+	return;
     }
 
     monitor_fini_library_called = 0;
     monitor_fini_process_done = 0;
-    monitor_init_process_called = 1;
 
     monitor_begin_library_fcn();
 
@@ -411,6 +410,16 @@ monitor_get_main_tn(void)
  *  CLIENT SUPPORT FUNCTIONS
  *----------------------------------------------------------------------
  */
+
+/*
+ *  If the client gains control before libmonitor, then it can call
+ *  this to initialize monitor and get an init-process callback.
+ */
+void
+monitor_initialize(void)
+{
+    monitor_begin_process_fcn(NULL, FALSE);
+}
 
 /*
  *  Client access to the real _exit().

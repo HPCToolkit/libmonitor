@@ -81,6 +81,7 @@ extern void monitor_mpi_post_fini(void);
 /*
  *  Monitor support functions.
  */
+extern void monitor_initialize(void);
 extern void monitor_real_abort(void);
 extern void monitor_real_exit(int status);
 extern pid_t monitor_real_fork(void);
