@@ -111,7 +111,7 @@ static char *newenv_array[MONITOR_INIT_ENVIRON_SIZE];
  *----------------------------------------------------------------------
  */
 
-static void
+void
 monitor_fork_init(void)
 {
     static int init_done = 0;

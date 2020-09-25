@@ -206,6 +206,10 @@ monitor_normal_init(void)
     MONITOR_REQUIRE_DLSYM(real_start_main, "__libc_start_main");
 #endif
 
+#ifdef MONITOR_USE_FORK
+    monitor_fork_init();
+#endif
+
 #ifdef MONITOR_USE_SIGNALS
     MONITOR_GET_REAL_NAME_WRAP(real_sigprocmask, sigprocmask);
     monitor_signal_init();
