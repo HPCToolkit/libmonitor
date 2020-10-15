@@ -512,7 +512,7 @@ void
 monitor_thread_shootdown(void)
 {
     struct timeval last, now;
-    struct monitor_thread_node *tn, *my_tn;
+    struct monitor_thread_node *tn, *my_tn, *main_tn;
     struct sigaction my_action;
     sigset_t empty_set;
     pthread_t self;
@@ -546,6 +546,20 @@ monitor_thread_shootdown(void)
     }
 
     /*
+     * If shootdown is called from non-main thread, then cheat and put
+     * main on the thread list.  Main gets a fini-thread callback and
+     * the current thread gets both fini-thread and fini-process.
+     */
+    self = (*real_pthread_self)();
+    main_tn = monitor_get_main_tn();
+    if (! PTHREAD_EQUAL(self, main_tn->tn_self)) {
+	main_tn->tn_appl_started = 1;
+	main_tn->tn_fini_started = 0;
+	main_tn->tn_fini_done = 0;
+	LIST_INSERT_HEAD(&monitor_thread_list, main_tn, tn_links);
+    }
+
+    /*
      * Walk through the list of unfinished threads, send a signal to
      * force them into their fini_thread functions, and wait until
      * they all finish.  But don't signal ourself.
@@ -555,7 +569,6 @@ monitor_thread_shootdown(void)
      * the other thread, the fini thread callback can take as long as
      * it likes.
      */
-    self = (*real_pthread_self)();
     my_tn = NULL;
     gettimeofday(&last, NULL);
     last_started = 0;
