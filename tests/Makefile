@@ -14,7 +14,7 @@
 CC = gcc
 CFLAGS = -g -O -Wall
 
-THREAD_PROGRAMS = cancel exit shootdown thread_fork
+THREAD_PROGRAMS = cancel exit side-exit shootdown thread_fork
 NONTHREAD_PROGRAMS = emain
 
 PROGRAMS = $(THREAD_PROGRAMS) $(NONTHREAD_PROGRAMS)
