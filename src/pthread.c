@@ -1066,11 +1066,12 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
 
     MONITOR_DEBUG1("\n");
 
-    monitor_begin_process_fcn(NULL, FALSE);
-
     /*
      * There is no race condition to get here first because until now,
      * there is only one thread.
+     *
+     * Note: monitor should be fully initialized before issuing any
+     * callback functions.
      */
     if (! monitor_has_used_threads) {
 	monitor_thread_list_init();
@@ -1078,11 +1079,29 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
     }
 
     /*
+     * Create a thread info struct for pthread_create() callback
+     * function.  Note: this info is only available during the
+     * lifetime of the pthread_create() override.
+     */
+    mti.mti_create_return_addr = __builtin_return_address(0);
+    mti.mti_start_routine = (void *) start_routine;
+
+    my_tn = monitor_get_tn();
+    if (my_tn != NULL) {
+	my_tn->tn_thread_info = &mti;
+    }
+
+    /*
+     * This may be the first entry into monitor if pthread_create() is
+     * called from a library init ctor before main.
+     */
+    monitor_begin_process_fcn(NULL, FALSE);
+
+    /*
      * If we are ignoring this thread, then call the real
      * pthread_create(), don't put it on the thread list and don't
      * give any callbacks.
      */
-    my_tn = monitor_get_tn();
     if (my_tn != NULL && my_tn->tn_ignore_threads) {
 	MONITOR_DEBUG1("ignoring this new thread\n");
 	return (*real_pthread_create)(thread, attr, start_routine, arg);
@@ -1096,17 +1115,6 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
 	MONITOR_DEBUG1("calling monitor_init_thread_support() ...\n");
 	monitor_thread_support_done = 1;
 	monitor_init_thread_support();
-    }
-
-    /*
-     * Create a thread info struct for pthread_create() support
-     * functions.  Note: this info is only available during the
-     * lifetime of the pthread_create() override.
-     */
-    if (my_tn != NULL) {
-        mti.mti_create_return_addr = __builtin_return_address(0);
-        mti.mti_start_routine = (void *) start_routine;
-	my_tn->tn_thread_info = &mti;
     }
 
     /*

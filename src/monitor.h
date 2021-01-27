@@ -60,6 +60,7 @@ extern void monitor_init_library(void);
 extern void monitor_fini_library(void);
 extern void *monitor_init_process(int *argc, char **argv, void *data);
 extern void monitor_fini_process(int how, void *data);
+extern void monitor_at_main(void);
 extern void monitor_begin_process_exit(int);
 extern void *monitor_pre_fork(void);
 extern void monitor_post_fork(pid_t child, void *data);

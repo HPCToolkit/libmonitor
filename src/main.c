@@ -515,6 +515,7 @@ monitor_main(int argc, char **argv, char **envp  AUXVEC_DECL )
     monitor_main_tn.tn_stack_bottom = alloca(8);
     strncpy(monitor_main_tn.tn_stack_bottom, "stakbot", 8);
     monitor_begin_process_fcn(NULL, FALSE);
+    monitor_at_main();
 
     MONITOR_ASM_LABEL(monitor_main_fence2);
 #ifdef MONITOR_STATIC
