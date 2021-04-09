@@ -1102,7 +1102,7 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
      * pthread_create(), don't put it on the thread list and don't
      * give any callbacks.
      */
-    if (my_tn != NULL && my_tn->tn_ignore_threads) {
+    if (my_tn == NULL || my_tn->tn_ignore_threads) {
 	MONITOR_DEBUG1("ignoring this new thread\n");
 	return (*real_pthread_create)(thread, attr, start_routine, arg);
     }
@@ -1173,7 +1173,7 @@ MONITOR_WRAP_NAME(pthread_exit)(void *data)
     struct monitor_thread_node *tn;
 
     tn = monitor_get_tn();
-    if (tn == NULL || tn->tn_is_main) {
+    if (tn != NULL && tn->tn_is_main) {
 	MONITOR_DEBUG1("pthread_exit called from main thread\n");
 	monitor_end_process_fcn(MONITOR_EXIT_NORMAL);
     }
