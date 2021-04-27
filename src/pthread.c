@@ -1103,7 +1103,7 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
      * give any callbacks.
      */
     if (my_tn == NULL || my_tn->tn_ignore_threads) {
-	MONITOR_DEBUG1("ignoring this new thread\n");
+	MONITOR_DEBUG("launching ignored thread: start = %p\n", start_routine);
 	return (*real_pthread_create)(thread, attr, start_routine, arg);
     }
 
@@ -1137,8 +1137,12 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
      */
     attr = monitor_adjust_stack_size((pthread_attr_t *)attr, &default_attr,
 				     &restore, &destroy, &old_size);
+
+    MONITOR_DEBUG("launching monitored thread: monitor = %p, start = %p\n",
+		  monitor_begin_thread, start_routine);
     ret = (*real_pthread_create)(thread, attr, monitor_begin_thread,
 				 (void *)tn);
+
     if (restore) {
 	(*real_pthread_attr_setstacksize)((pthread_attr_t *)attr, old_size);
     }

@@ -15,7 +15,7 @@ CC = gcc
 CFLAGS = -g -O -Wall
 
 THREAD_PROGRAMS = cancel exit side-exit shootdown thread_fork
-NONTHREAD_PROGRAMS = emain
+NONTHREAD_PROGRAMS = emain hidden
 
 PROGRAMS = $(THREAD_PROGRAMS) $(NONTHREAD_PROGRAMS)
 
@@ -28,6 +28,9 @@ $(THREAD_PROGRAMS): %: %.c
 
 emain: emain.c libearly.so
 	$(CC) -o $@ $(CFLAGS) $< -L. -learly
+
+hidden: hidden.c
+	$(CC) -o $@ $(CFLAGS) $< -ldl
 
 libearly.so: early.c
 	$(CC) -o $@ $(CFLAGS) -shared -fPIC $< -ldl -lpthread
