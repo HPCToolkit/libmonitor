@@ -1122,12 +1122,22 @@ MONITOR_WRAP_NAME(pthread_create)(PTHREAD_CREATE_PARAM_LIST)
      * early, then the new thread will spin-wait until init_process
      * and thread_support are done.
      */
+    MONITOR_DEBUG("calling monitor_thread_pre_create(start_routine = %p) ...\n",
+		  start_routine);
+    void * user_data = monitor_thread_pre_create();
+
+    /*
+     * Allow the client to ignore this new thread.
+     */
+    if (user_data == MONITOR_IGNORE_NEW_THREAD) {
+	MONITOR_DEBUG("launching ignored thread: start = %p\n", start_routine);
+	return (*real_pthread_create)(thread, attr, start_routine, arg);
+    }
+
     tn = monitor_make_thread_node();
     tn->tn_start_routine = start_routine;
     tn->tn_arg = arg;
-    MONITOR_DEBUG("calling monitor_thread_pre_create(start_routine = %p) ...\n",
-		  start_routine);
-    tn->tn_user_data = monitor_thread_pre_create();
+    tn->tn_user_data = user_data;
 
     /*
      * Allow the client to change the thread stack size.  Note: we
