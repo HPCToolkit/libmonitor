@@ -1,7 +1,7 @@
 /*
  *  Libmonitor pthread functions.
  *
- *  Copyright (c) 2007-2021, Rice University.
+ *  Copyright (c) 2007-2022, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without

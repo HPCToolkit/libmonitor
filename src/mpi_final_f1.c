@@ -1,7 +1,7 @@
 /*
  *  Override mpi_finalize_ in Fortran.
  *
- *  Copyright (c) 2007-2021, Rice University.
+ *  Copyright (c) 2007-2022, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$

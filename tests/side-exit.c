@@ -8,7 +8,7 @@
  *  By contrast, exit.c has multiple calls to exit() and pthread_exit()
  *  as a stress test of concurrency.
  *
- *  Copyright (c) 2007-2021, Rice University.
+ *  Copyright (c) 2007-2022, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$
