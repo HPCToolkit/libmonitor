@@ -73,6 +73,8 @@ extern char **environ;
  *----------------------------------------------------------------------
  */
 
+#define NO_SYSTEM_OVERRIDE  "MONITOR_NO_SYSTEM_OVERRIDE"
+
 #define MONITOR_INIT_ARGV_SIZE  64
 #define MONITOR_INIT_ENVIRON_SIZE  250
 #define MONITOR_DEFAULT_PAGESIZE  4096
@@ -84,6 +86,7 @@ typedef int execve_fcn_t(const char *path, char *const argv[],
 typedef int sigaction_fcn_t(int, const struct sigaction *,
 			    struct sigaction *);
 typedef int sigprocmask_fcn_t(int, const sigset_t *, sigset_t *);
+typedef int system_fcn_t(const char *);
 typedef void *malloc_fcn_t(size_t);
 
 #ifdef MONITOR_STATIC
@@ -93,6 +96,7 @@ extern execv_fcn_t   __real_execvp;
 extern execve_fcn_t  __real_execve;
 extern sigaction_fcn_t    __real_sigaction;
 extern sigprocmask_fcn_t  __real_sigprocmask;
+extern system_fcn_t       __real_system;
 #endif
 
 static fork_fcn_t    *real_fork = NULL;
@@ -101,9 +105,12 @@ static execv_fcn_t   *real_execvp = NULL;
 static execve_fcn_t  *real_execve = NULL;
 static sigaction_fcn_t    *real_sigaction = NULL;
 static sigprocmask_fcn_t  *real_sigprocmask = NULL;
+static system_fcn_t  *real_system = NULL;
 static malloc_fcn_t  *real_malloc = NULL;
 
 static char *newenv_array[MONITOR_INIT_ENVIRON_SIZE];
+
+static int override_system = 1;
 
 /*
  *----------------------------------------------------------------------
@@ -126,6 +133,10 @@ monitor_fork_init(void)
     MONITOR_GET_REAL_NAME_WRAP(real_execve, execve);
     MONITOR_GET_REAL_NAME_WRAP(real_sigaction, sigaction);
     MONITOR_GET_REAL_NAME_WRAP(real_sigprocmask, sigprocmask);
+    MONITOR_GET_REAL_NAME_WRAP(real_system, system);
+
+    override_system = (getenv(NO_SYSTEM_OVERRIDE) == NULL);
+
     init_done = 1;
 }
 
@@ -594,7 +605,19 @@ monitor_system(const char *command, int callback)
 int
 MONITOR_WRAP_NAME(system)(const char *command)
 {
-    return monitor_system(command, TRUE);
+    int ret;
+
+    monitor_fork_init();
+
+    if (override_system) {
+	ret = monitor_system(command, TRUE);
+    }
+    else {
+	MONITOR_DEBUG("system (no override): %s\n", command);
+	ret = (*real_system)(command);
+    }
+
+    return ret;
 }
 
 /*
