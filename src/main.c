@@ -545,6 +545,8 @@ __wrap_main(int argc, char **argv, char **envp  AUXVEC_DECL )
     MONITOR_DEBUG1("\n");
     real_main = &__real_main;
 
+    monitor_start_main_init();
+
     return monitor_main(argc, argv, envp  AUXVEC_ARG );
 }
 
@@ -560,11 +562,16 @@ __libc_start_main(START_MAIN_PARAM_LIST)
     memcpy(new_stinfo, stinfo, sizeof(new_stinfo));
     new_stinfo[1] = &monitor_main;
 
+    /* Set real_main first, so monitor_get_addr_main() works. */
+    monitor_start_main_init();
+
     (*real_start_main)(argc, argv, envp, auxp, rtld_fini,
 		       new_stinfo, stack_end);
 
 #else
     real_main = main;
+
+    monitor_start_main_init();
 
     (*real_start_main)(monitor_main, argc, argv, init, fini,
 		       rtld_fini, stack_end);
