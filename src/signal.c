@@ -1,7 +1,7 @@
 /*
  *  Libmonitor signal functions.
  *
- *  Copyright (c) 2007-2022, Rice University.
+ *  Copyright (c) 2007-2023, Rice University.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without

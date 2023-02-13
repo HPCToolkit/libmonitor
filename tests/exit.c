@@ -6,7 +6,7 @@
  *  followed by exactly one call to monitor_fini_process() and no
  *  segfaults.
  *
- *  Copyright (c) 2007-2022, Rice University.
+ *  Copyright (c) 2007-2023, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$

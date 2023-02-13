@@ -3,7 +3,7 @@
  *  dlsym("pthread_create").  This method seems to bypass monitor's
  *  normal way of overriding pthread_create().
  *
- *  Copyright (c) 2007-2022, Rice University.
+ *  Copyright (c) 2007-2023, Rice University.
  *  See the file LICENSE for details.
  *
  *  $Id$
