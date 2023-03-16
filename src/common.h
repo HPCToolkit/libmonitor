@@ -122,17 +122,11 @@
 #define MONITOR_ERROR1(fmt)      MONITOR_ERROR_ARGS(fmt, __func__)
 #define MONITOR_ERROR(fmt, ...)  MONITOR_ERROR_ARGS(fmt, __func__, __VA_ARGS__)
 
+void *monitor_dlsym(const char *symbol);
+
 #define MONITOR_REQUIRE_DLSYM(var, name)  do {		\
     if (var == NULL) {					\
-	const char *err_str;				\
-	dlerror();					\
-	var = dlsym(RTLD_NEXT, (name));			\
-	err_str = dlerror();				\
-	if (var == NULL) {				\
-	    MONITOR_ERROR("dlsym(%s) failed: %s\n",	\
-			 (name), err_str);		\
-	}						\
-	MONITOR_DEBUG("%s() = %p\n", (name), var);	\
+        var = monitor_dlsym(name);                      \
     }							\
 } while (0)
 
