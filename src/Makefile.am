@@ -39,7 +39,7 @@
 # library and then add that to the real library.  See Section 27.8,
 # "Per-Object Flags Emulation" of automake docs.  Blech.
 
-MONITOR_MAIN_FILES = callback.c mpi.c utils.c
+MONITOR_MAIN_FILES = callback.c mpi.c utils.c common.c
 MONITOR_THREAD_FILES =
 
 MONITOR_FENCE_FILES = main.c
